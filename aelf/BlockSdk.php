@@ -1,11 +1,13 @@
-<?php
+<?php namespace control\aelf;
+
 /***
  * 
  */
-namespace control\aelf;
-
-use Hhxsv5\PhpMultiCurl\Curl;
-use Hhxsv5\PhpMultiCurl\MultiCurl;
+require "http/Curl.php";
+require "http/MultiCurl.php";
+require "http/Response.php";
+use Hhxsv5\PhpMultiCurl\Curl as Curl;
+use Hhxsv5\PhpMultiCurl\MultiCurl as MultiCurl;
 
 Class Block{
 
@@ -27,13 +29,15 @@ Class Block{
     private static $WA_GETTRANSACTIONRESULTS = "/api/blockChain/transactionResults";
     private static $WA_SENDTRANSACTIONS = "/api/blockChain/sendTransactions";
     private static $WA_GETMBYTRANSACTIONID = "/api/blockChain/merklePathByTransactionId";
-
+    public $Curl;
     /**
      * Object construction through the url path.
      */
-    public function BlockChainSdk(String $url, String $version) {
+    public function __construct($url,$version='') {
+      
         $this->AElfClientUrl = $url;
         $this->version = $version;
+        $this->Curl = new Curl();
     }
 
 
@@ -42,6 +46,14 @@ Class Block{
     */
     public function getBlockHeight(){
         
+        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_BLOCKHEIGHT)->exec();
+        if ($Success->hasError()) {
+            //Fail
+            var_dump($Success->getError());
+        } else {
+            //Success
+            var_dump($Success->getBody());
+        }
     }
 
 }

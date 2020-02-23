@@ -1,9 +1,10 @@
 <?php
+namespace control\aelf;
+require_once "BlockSdk.php";
 /**
  * 
  * @day2020022
  */
-namespace control\aelf;
 
 /**
  * AELF
@@ -18,20 +19,22 @@ class Aelf{
     public $private_key;  //
 
     public function __construct($url,$version = null){
-        
-        $this->$url = $url;
+  
+
+        $this->url= $url;
+
         if($version != null){
-            $this->$version = $version;
+            $this-$version = $version;
         }
- 
         $this->getBlockChainSdkObj();
     }
-    private function getBlockChainSdkObj(){
-        
+    public function getBlockChainSdkObj(){
+    
         if($this->$blcokChainSdk==NULL){
-            
-            $c = new Block();
-            $c->index();
+           
+            $c = new Block($this->url);
+            $c->getBlockHeight();
         }
     }
 }
+$k = new Aelf('http://52.90.147.175:8000');
