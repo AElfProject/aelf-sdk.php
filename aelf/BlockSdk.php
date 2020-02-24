@@ -52,8 +52,99 @@ Class Block{
             var_dump($Success->getError());
         } else {
             //Success
+            return $Success->getBody();
+        }
+    }
+
+    /**
+     * Get information about a given block by block hash. Otionally with the list of its transactions.
+     * wa://api/blockChain/block?includeTransactions={includeTransactions}
+     */
+    public function getBlockByHash($blockHash,$includeTransactions=false){
+        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_BLOCK.'?blockHash='.$blockHash.'*includeTransactions='.$includeTransactions)->exec();
+        if ($Success->hasError()) {
+            //Fail
+            var_dump($Success->getError());
+        } else {
+            //Success
             var_dump($Success->getBody());
         }
     }
 
+    /**
+     * Get information of a block by specified height. Optional whether to include transaction
+     * information. wa://api/blockChain/blockByHeight?includeTransactions={includeTransactions}
+    */
+    public function getBlockByHeight($blockHeight,$includeTransactions = false){
+        if ($blockHeight == 0) {
+            throw new Exception("[20001]Not found");
+        }
+        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_BLOCKBYHEIGHT.'?blockHeight='.$blockHeight.'*includeTransactions='.$includeTransactions)->exec();
+        if ($Success->hasError()) {
+            //Fail
+            var_dump($Success->getError());
+        } else {
+            //Success
+            var_dump($Success->getBody());
+        }
+    }
+
+    /**
+     * Get the current status of the block chain. wa:/api/blockChain/chainStatus
+     */
+    public function getChainStatus(){
+        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETCHAINSTATUS)->exec();
+        if ($Success->hasError()) {
+            //Fail
+            var_dump($Success->getError());
+        } else {
+            //Success
+            var_dump($Success->getBody());
+        }
+    }
+
+    /**
+     * Get the protobuf definitions related to a contract /api/blockChain/contractFileDescriptorSet.
+     */
+    public function getContractFilCeDescriptorSet($address){
+        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETCFCRIPTORSET."?address=".$address)->exec();
+        if ($Success->hasError()) {
+            //Fail
+            var_dump($Success->getError());
+        } else {
+            //Success
+            var_dump($Success->getBody());
+        }
+
+    }
+
+    /**
+     * Gets the status information of the task queue wa:/api/blockChain/taskQueueStatus.
+     */
+    public function getTaskQueueStatus(){
+        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETTASKQUEUESTATUS)->exec();
+        if ($Success->hasError()) {
+            //Fail
+            var_dump($Success->getError());
+        } else {
+            //Success
+            var_dump($Success->getBody());
+        }
+    }
+
+    /**
+     * Gets information about the current transaction pool.wa:/api/blockChain/transactionPoolStatus
+     */
+    public function getTransactionPoolStatus(){
+        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETTRANSACTIONPOOLSTATUS)->exec();
+        if ($Success->hasError()) {
+            //Fail
+            var_dump($Success->getError());
+        } else {
+            //Success
+            var_dump($Success->getBody());
+        }
+    }
+
+    
 }

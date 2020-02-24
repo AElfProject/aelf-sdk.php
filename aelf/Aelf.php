@@ -32,8 +32,6 @@ class Aelf{
     
         if($this->$blcokChainSdk==NULL){
            
-            $c = new Block($this->url);
-            $c->getBlockHeight();
         }
     }
 }
