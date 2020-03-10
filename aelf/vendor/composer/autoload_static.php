@@ -8,10 +8,7 @@ class ComposerStaticInit02c3c020994888c831dc1abb6b1ed000
 {
     public static $files = array (
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
-        'a626201e4406003b96eee958a069f504' => __DIR__ . '/..' . '/bitwasp/bech32/src/bech32.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
-        'a882399941328d65de1fab340a9720e4' => __DIR__ . '/..' . '/yurunsoft/swoole-co-pool/src/function.php',
-        '7cfce27594bbc1dd0dbf7e3eb5cd4911' => __DIR__ . '/..' . '/bitwasp/bitcoin/src/Script/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -26,11 +23,6 @@ class ComposerStaticInit02c3c020994888c831dc1abb6b1ed000
         'k' => 
         array (
             'kornrunner\\' => 11,
-        ),
-        'Y' => 
-        array (
-            'Yurun\\Util\\' => 11,
-            'Yurun\\Swoole\\CoPool\\' => 20,
         ),
         'W' => 
         array (
@@ -64,10 +56,6 @@ class ComposerStaticInit02c3c020994888c831dc1abb6b1ed000
         array (
             'FG\\' => 3,
         ),
-        'E' => 
-        array (
-            'Elliptic\\' => 9,
-        ),
         'D' => 
         array (
             'Doctrine\\Instantiator\\' => 22,
@@ -76,14 +64,6 @@ class ComposerStaticInit02c3c020994888c831dc1abb6b1ed000
         'C' => 
         array (
             'Composer\\Semver\\' => 16,
-        ),
-        'B' => 
-        array (
-            'BitWasp\\Buffertools\\' => 20,
-            'BitWasp\\Bitcoin\\' => 16,
-            'BitWasp\\Bech32\\' => 15,
-            'BN\\' => 3,
-            'BI\\' => 3,
         ),
     );
 
@@ -101,14 +81,6 @@ class ComposerStaticInit02c3c020994888c831dc1abb6b1ed000
         'kornrunner\\' => 
         array (
             0 => __DIR__ . '/..' . '/kornrunner/secp256k1/src',
-        ),
-        'Yurun\\Util\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/yurunsoft/yurun-http/src',
-        ),
-        'Yurun\\Swoole\\CoPool\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/yurunsoft/swoole-co-pool/src',
         ),
         'Webmozart\\Assert\\' => 
         array (
@@ -154,10 +126,6 @@ class ComposerStaticInit02c3c020994888c831dc1abb6b1ed000
         array (
             0 => __DIR__ . '/..' . '/fgrosse/phpasn1/lib',
         ),
-        'Elliptic\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/simplito/elliptic-php/lib',
-        ),
         'Doctrine\\Instantiator\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/instantiator/src/Doctrine/Instantiator',
@@ -169,26 +137,6 @@ class ComposerStaticInit02c3c020994888c831dc1abb6b1ed000
         'Composer\\Semver\\' => 
         array (
             0 => __DIR__ . '/..' . '/composer/semver/src',
-        ),
-        'BitWasp\\Buffertools\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/bitwasp/buffertools/src/Buffertools',
-        ),
-        'BitWasp\\Bitcoin\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/bitwasp/bitcoin/src',
-        ),
-        'BitWasp\\Bech32\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/bitwasp/bech32/src',
-        ),
-        'BN\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/simplito/bn-php/lib',
-        ),
-        'BI\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/simplito/bigint-wrapper-php/lib',
         ),
     );
 

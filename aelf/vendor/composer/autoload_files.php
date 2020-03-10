@@ -7,8 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     '320cde22f66dd4f5d3fd621d3e88b98f' => $vendorDir . '/symfony/polyfill-ctype/bootstrap.php',
-    'a626201e4406003b96eee958a069f504' => $vendorDir . '/bitwasp/bech32/src/bech32.php',
     '6124b4c8570aa390c21fafd04a26c69f' => $vendorDir . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
-    'a882399941328d65de1fab340a9720e4' => $vendorDir . '/yurunsoft/swoole-co-pool/src/function.php',
-    '7cfce27594bbc1dd0dbf7e3eb5cd4911' => $vendorDir . '/bitwasp/bitcoin/src/Script/functions.php',
 );
