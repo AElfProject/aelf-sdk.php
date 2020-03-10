@@ -3,8 +3,8 @@
 /***
  * 
  */
-require_once "../base/Bytes.php";
-require_once "../base/Sha.php";
+require_once "base/Bytes.php";
+require_once "base/Sha.php";
 use Hhxsv5\PhpMultiCurl\Curl as Curl;
 use Hhxsv5\PhpMultiCurl\MultiCurl as MultiCurl;
 use StephenHill\Base58;

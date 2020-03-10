@@ -1,5 +1,7 @@
 <?php
+
 namespace control\aelf;
+require_once "vendor/autoload.php";
 require_once "BlockChainSdk.php";
 require_once "NetSdk.php";
 
@@ -8,8 +10,8 @@ require_once "NetSdk.php";
  * 
  * @day2020022
  */
-require_once "../base/Bytes.php";
-require_once "../base/Sha.php";
+require_once "base/Bytes.php";
+require_once "base/Sha.php";
 include "pro/GPBMetadata/Types.php";
 include "pro/GPBMetadata/Timestamp.php";
 include "pro/Aelf/Protobuf/Generated/Address.php";

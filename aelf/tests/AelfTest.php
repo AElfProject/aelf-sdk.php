@@ -1,6 +1,5 @@
 <?php
-require_once "../vendor/autoload.php";
-require_once "../src/Aelf.php";
+
 use control\aelf\Aelf;
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
@@ -10,38 +9,36 @@ class AelfTest extends TestCase{
     public $public_key;
     public $address;
     public $OPREATIONADDRESS;
-    /**
-     * Project initialization Set the url
-     */
-    public function __construct() {
+
+    public function setUp() {
         $url = 'http://18.223.158.83:8000';
 
         $this->Aelf = new Aelf($url);
         $this->OPREATIONADDRESS ='18.223.158.83:7003';
-        /**
-         * Initialization key
-         */
-        $bitcoinECDSA = new BitcoinECDSA();
 
+        $bitcoinECDSA = new BitcoinECDSA();
         $this->private_key = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
         $bitcoinECDSA->setPrivateKey($this->private_key);
         $this->public_key = $bitcoinECDSA->getUncompressedPubKey();
         $this->address= $this->Aelf->getAddressFromPrivateKey($this->private_key);
         
     }
+
     
-    public function testGetchainstatus(){
+    public function testgetChainStatus(){
         $chain_status =$this->Aelf->getChainStatus();
-        printf($chain_status);
+        print_r($chain_status);
         $this->assertTrue($chain_status['BestChainHeight'] > 0);
         $chain_id = $this->Aelf->getChainId();
-        printf($chain_id);
+        print_r($chain_id);
         $this->assertTrue($chain_id == 9992731);
+      
     }
-
+    
     public function testBlockapi(){
         $blockHeight = $this->Aelf->getBlockHeight();
-        printf('# getBlockHeight', $blockHeight);
+        print_r('# getBlockHeight');
+        print_r($blockHeight);
         $this->assertTrue($blockHeight > 0);
         $block = $this->Aelf->getBlockByHeight(1,true);
       
@@ -50,6 +47,7 @@ class AelfTest extends TestCase{
         $block2 = $this->Aelf->getBlockByHash($block['BlockHash'],false);
        
         $this->assertTrue($block2['Header']['Height'] == 1);
+        return $block2['Header']['Height'];
         
     }
 
@@ -189,9 +187,6 @@ class AelfTest extends TestCase{
        
         return $transactionObj;
     }
-
-
-
 }
 
 ?>
