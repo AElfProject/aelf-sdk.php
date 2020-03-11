@@ -39,7 +39,7 @@ Class BlockChainSdk{
         $this->AElfClientUrl = $url;
         $this->version = $version;
         $options = [//The custom options of cURL
-            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_TIMEOUT        => 0,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_USERAGENT      => 'Multi-cURL client v1.5.0',
         ];
