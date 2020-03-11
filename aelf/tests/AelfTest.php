@@ -3,9 +3,8 @@
  * Created by PhpStorm.
  * User: Administrator
  * Date: 2020/3/11 0011
- * Time: 17:00
+ * Time: 21:47
  */
-include_once '../src/Aelf.php';
 
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
