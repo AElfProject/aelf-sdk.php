@@ -1,24 +1,21 @@
 <?php
 
-namespace control\aelf;
-require_once "vendor/autoload.php";
+
 require_once "BlockChainSdk.php";
 require_once "NetSdk.php";
-
-
 /**
- * 
+ *
  * @day2020022
  */
-require_once "base/Bytes.php";
-require_once "base/Sha.php";
-include "pro/GPBMetadata/Types.php";
-include "pro/GPBMetadata/Timestamp.php";
-include "pro/Aelf/Protobuf/Generated/Address.php";
-include "pro/Aelf/Protobuf/Generated/Transaction.php";
-include "pro/Aelf/Protobuf/Generated/TransferInput.php";
-include "pro/Aelf/Protobuf/Generated/StringInput.php";
-include "pro/Aelf/Protobuf/Generated/Hash.php";
+require_once "Bytes.php";
+require_once "Sha.php";
+require_once "pro/Aelf/Protobuf/Generated/Address.php";
+require_once "pro/Aelf/Protobuf/Generated/Transaction.php";
+require_once "pro/Aelf/Protobuf/Generated/TransferInput.php";
+require_once "pro/Aelf/Protobuf/Generated/StringInput.php";
+require_once "pro/Aelf/Protobuf/Generated/Hash.php";
+require_once "pro/GPBMetadata/Types.php";
+require_once "pro/GPBMetadata/Timestamp.php";
 use Aelf\Protobuf\Generated\Address;
 use Aelf\Protobuf\Generated\Transaction;
 use Aelf\Protobuf\Generated\TransferInput;

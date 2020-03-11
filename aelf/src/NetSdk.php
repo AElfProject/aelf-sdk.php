@@ -1,4 +1,4 @@
-<?php namespace control\aelf;
+<?php
 
 /***
  * 
