@@ -63,10 +63,12 @@ class AelfTest extends TestCase
         $block = $this->Aelf->getBlockByHeight(1,true);
 
         $transaction_result = $this->Aelf->getTransactionResult($block['Body']['Transactions'][0]);
-        print_r('# get_transaction_result', $transaction_result);
+        print_r('# get_transaction_result' );
+        print_r($transaction_result);
         $this->assertTrue($transaction_result['Status'] == 'MINED');
         $transaction_results = $this->Aelf->getTransactionResults($block['BlockHash']);
-        print_r('# get_transaction_results', $transaction_results);
+        print_r('# get_transaction_results');
+        print_r($transaction_results);
         $merkle_path = $this->Aelf->getMerklePathByTransactionId($block['Body']['Transactions'][0]);
         $this->assertTrue(is_array($merkle_path['MerklePathNodes']));
     }
