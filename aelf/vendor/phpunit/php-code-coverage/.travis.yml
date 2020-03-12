@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BitWasp\Bitcoin\Serializer\MessageSigner;
+
+use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Signature\CompactSignatureSerializerInterface;
+use BitWasp\Bitcoin\MessageSigner\SignedMessage;
+use BitWasp\Buffertools\Buffer;
+use BitWasp\Buffertools\BufferInterface;
+
+class SignedMessageSerializer
+{
+
+    // Message headers
+    const HEADER = '-----BEGIN BITCOIN SIGNED MESSAGE-----';
+    const SIG_START = '-----BEGIN SIGNATURE-----';
+    const FOOTER = '-----END BITCOIN SIGNED MESSAGE-----';
+
+    /**
+     * @var CompactSignatureSerializerInterface
+     */
+    private $csSerializer;
+
+    /**
+     * @param CompactSignatureSerializerInterface $csSerializer
+     */
+    public function __construct(CompactSignatureSerializerInterface $csSerializer)
+    {
+        $this->csSerializer = $csSerializer;
+    }
+
+    /**
+     * @param SignedMessage $signedMe

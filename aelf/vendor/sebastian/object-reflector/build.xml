@@ -1,0 +1,41 @@
+build:
+    nodes:
+        php-scrutinizer-run:
+            project_setup:
+                override: true
+            tests:
+                override: [php-scrutinizer-run]
+
+    environment:
+        mysql: false
+        redis: false
+        postgresql: false
+        php:
+           version: 7.2
+           ini:
+               'zend.assertions': '1'
+               'assert.exception': '1'
+    dependencies:
+        override:
+            -
+                command: 'composer install'
+    tests:
+        override: true
+    project_setup:
+        override: true
+
+filter:
+    paths:
+        - src/*
+    excluded_paths:
+        - examples/*
+        - tests/*
+        - vendor/*
+
+tools:
+    php_cpd: true
+    php_pdepend: true
+    php_analyzer: true
+    php_sim: true
+    php_changetracking: true
+    

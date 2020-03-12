@@ -1,0 +1,18 @@
+cd72d394ca794d3466a3b2fc09d5a6c1dc86b47e	refs/heads/master
+cd72d394ca794d3466a3b2fc09d5a6c1dc86b47e	refs/remotes/origin/HEAD
+9304b75a61d8aa9ce34d679408a8b41d46d24663	refs/remotes/origin/_before-history-rewrite
+0cbfb85675812f1cf1c5b72cc29da0f162c2f566	refs/remotes/origin/danrot-long-method-annotation
+8a5cdb3dbd172e415549b62c500dfc8ce3d476cb	refs/remotes/origin/dependabot/composer/phpdocumentor/type-resolver-1.1.0
+cd72d394ca794d3466a3b2fc09d5a6c1dc86b47e	refs/remotes/origin/master
+c84d34115dcf27df15e0e71512995d145a3432c2	refs/remotes/origin/release/2.x
+bf329f6c1aadea3299f08ee804682b7c45b326a2	refs/remotes/origin/release/3.x
+deecf04b7c25d19066a43d1d873fed5d2fb37240	refs/remotes/origin/release/4.x
+2b05ea32215fffe542e11795ea33ad82def10c58	refs/tags/1.0.0
+fea7abe168dfd01d96f61daa4bc27891814b94f3	refs/tags/1.0.0-beta1
+6a34cf123c10f9585d1d2453e7602c97db438979	refs/tags/1.0.0-beta2
+3f8a4fca6dad3de99f76515c9a14222129f62b89	refs/tags/1.0.0-beta3
+f0a2901e56721169a14915afb7afd52f7cc31f48	refs/tags/1.0.0-beta4
+8f8cbd9ab6028e823c44444258788c386a457b0d	refs/tags/1.0.0-beta5
+838fbfa43f3f4bb9081613514eb55535e9854cfd	refs/tags/1.0.0-beta6
+cee3c0bc21d102762a81432d23f4bff9d5ef8658	refs/tags/1.0.0-beta7
+c999e7d32a64ad69b91d16f7904a1c

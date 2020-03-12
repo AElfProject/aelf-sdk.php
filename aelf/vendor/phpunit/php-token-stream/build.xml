@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BitWasp\Bitcoin\MessageSigner;
+
+use BitWasp\Bitcoin\Address\PayToPubKeyHashAddress;
+use BitWasp\Bitcoin\Bitcoin;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
+use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
+use BitWasp\Bitcoin\Crypto\Hash;
+use BitWasp\Bitcoin\Crypto\Random\Rfc6979;
+use BitWasp\Bitcoin\Network\NetworkInterface;
+use BitWasp\Buffertools\Buffer;
+use BitWasp\Buffertools\BufferInterface;
+use BitWasp\Buffertools\Buffertools;
+
+class MessageSigner
+{
+    /**
+     * @var EcAdapterInterface
+     */
+    private $ecAdapter;
+
+    /**
+     * @param EcAdapterInterface $ecAdapter
+     */
+    public function __construct(EcAdapterInterface $ecAdapter = null)
+    {
+        $this->ecAda

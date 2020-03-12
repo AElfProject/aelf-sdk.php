@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Mdanter\Ecc\Crypto\Signature;
+
+use Mdanter\Ecc\Math\GmpMathInterface;
+use Mdanter\Ecc\Crypto\Key\PrivateKeyInterface;
+use Mdanter\Ecc\Crypto\Key\PublicKeyInterface;
+use Mdanter\Ecc\Util\BinaryString;
+
+class Signer
+{
+
+    /**
+     *
+     * @var GmpMathInterface
+     */
+    private $adapter;
+
+    /**
+     *
+     * @param GmpMathInterface $adapter
+     */
+    public function __construct(GmpMathInterface $adapter)
+    {
+        $this->adapter = $adapter;
+    }
+
+    /**
+     * @param PrivateKeyInterface $key
+     * @param \GMP $truncatedHash - hash truncated for use in ECDSA
+     * @param \GMP $randomK
+     * @return SignatureInterface
+     */
+    public function sign(PrivateKeyInterface $key, \GMP $truncatedHash, \GMP $randomK): SignatureInterface
+    {
+        $math = $this->adapter;
+        $generator = $key->getPoint();
+        $modMath = $math->getModularArithmetic($generator->getOrder());
+
+        $k = $math->mod($randomK, $generator->getOrder());
+        $p1 = $generator->mul($k);
+        $r = $p1->getX();
+        $zero = gmp_init(0, 10);
+        if ($math->equals($r, $zero)) {
+            throw new \RuntimeException("Error: random number R = 0");
+        }
+
+        $s = $modMath->div($modMath->add($truncatedHash, $math->mul($key->getSecret(), $r)), $k);
+        if ($math->equals($s, $zero)) {
+            throw new \RuntimeException("Error: random number S = 0");
+        }
+
+        return new Signature($r, $s);
+    }
+
+    /**
+     * @param PublicKeyInterface $key
+     * @param SignatureI

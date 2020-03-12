@@ -1,0 +1,36 @@
+<?php
+
+namespace Elliptic\Curve\MontCurve;
+
+use BN\BN;
+
+class Point extends \Elliptic\Curve\BaseCurve\Point
+{
+    public $x;
+    public $z;
+
+    function __construct($curve, $x, $z)
+    {
+        parent::__construct($curve, "projective");
+        if( $x == null && $z == null )
+        {
+            $this->x = $this->curve->one;
+            $this->z = $this->curve->zero;
+        }
+        else
+        {
+            $this->x = new BN($x, 16);
+            $this->z = new BN($z, 16);
+            if( !$this->x->red )
+                $this->x = $this->x->toRed($this->curve->red);
+            if( !$this->z->red )
+                $this->z = $this->z->toRed($this->curve->red);
+        }
+    }
+
+    public function precompute($power = null) {
+        // No-op
+    }
+
+    protected function _encode($compact) {
+        return $this->getX()->toArray

@@ -1,0 +1,17 @@
+
+# BigInteger wrapper library for PHP
+
+## Information
+
+This library is a common interface for php_gmp and php_bcmath modules. It automatically detects supported modules and uses the best of them (gmp>bcmath). Gmp is a lot faster, but is also missing on many hosting services -- that is why this wrapper has been created. It is used for example in encryption functions of the [PrivMX WebMail](https://privmx.com) software.  
+
+## Installation
+
+You can install this library via Composer:
+```
+composer require simplito/bigint-wrapper-php
+```
+
+## Documentation
+
+If you want to force using a specific implementation, then define constant S_MATH_BIGINTEGER_MODE - set it to "gmp" o

@@ -1,0 +1,1033 @@
+"use strict";
+
+function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var parser = require('postcss-value-parser');
+
+var range = require('normalize-range');
+
+var OldValue = require('../old-value');
+
+var Value = require('../value');
+
+var utils = require('../utils');
+
+var IS_DIRECTION = /top|left|right|bottom/gi;
+
+var Gradient =
+/*#__PURE__*/
+function (_Value) {
+  _inheritsLoose(Gradient, _Value);
+
+  function Gradient() {
+    var _this;
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    _this = _Value.call.apply(_Value, [this].concat(args)) || this;
+
+    _defineProperty(_assertThisInitialized(_this), "directions", {
+      top: 'bottom',
+      left: 'right',
+      bottom: 'top',
+      right: 'left' // Direction to replace
+
+    });
+
+    _defineProperty(_assertThisInitialized(_this), "oldDirections", {
+      'top': 'left bottom, left top',
+      'left': 'right top, left top',
+      'bottom': 'left top, left bottom',
+      'right': 'left top, right top',
+      'top right': 'left bottom, right top',
+      'top left': 'right bottom, left top',
+      'right top': 'left bottom, right top',
+      'right bottom': 'left top, right bottom',
+      'bottom right': 'left top, right bottom',
+      'bottom left': 'right top, left bottom',
+      'left top': 'right bottom, left top',
+      'left bottom': 'right top, left bottom'
+      /**
+       * Change degrees for webkit prefix
+       */
+
+    });
+
+    return _this;
+  }
+
+  var _proto = Gradient.prototype;
+
+  _proto.replace = function replace(string, prefix) {
+    var ast = parser(string);
+
+    for (var _iterator = ast.nodes, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+      var _ref;
+
+      if (_isArray) {
+        if (_i >= _iterator.length) break;
+        _ref = _iterator[_i++];
+      } else {
+        _i = _iterator.next();
+        if (_i.done) break;
+        _ref = _i.value;
+      }
+
+      var node = _ref;
+
+      if (node.type === 'function' && node.value === this.name) {
+        node.nodes = this.newDirection(node.nodes);
+        node.nodes = this.normalize(node.nodes);
+
+        if (prefix === '-webkit- old') {
+          var changes = this.oldWebkit(node);
+
+          if (!changes) {
+            return false;
+          }
+        } else {
+          node.nodes = this.convertDirection(node.nodes);
+          node.value = prefix + node.value;
+        }
+      }
+    }
+
+    return ast.toString();
+  }
+  /**
+   * Replace first token
+   */
+  ;
+
+  _proto.replaceFirst = function replaceFirst(params) {
+    for (var _len2 = arguments.length, words = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+      words[_key2 - 1] = arguments[_key2];
+    }
+
+    var prefix = words.map(function (i) {
+      if (i === ' ') {
+        return {
+          type: 'space',
+          value: i
+        };
+      }
+
+      return {
+        type: 'word',
+        value: i
+      };
+    });
+    return prefix.concat(params.slice(1));
+  }
+  /**
+   * Convert angle unit to deg
+   */
+  ;
+
+  _proto.normalizeUnit = function normalizeUnit(str, full) {
+    var num = parseFloat(str);
+    var deg = num / full * 360;
+    return deg + "deg";
+  }
+  /**
+   * Normalize angle
+   */
+  ;
+
+  _proto.normalize = function normalize(nodes) {
+    if (!nodes[0]) return nodes;
+
+    if (/-?\d+(.\d+)?grad/.test(nodes[0].value)) {
+      nodes[0].value = this.normalizeUnit(nodes[0].value, 400);
+    } else if (/-?\d+(.\d+)?rad/.test(nodes[0].value)) {
+      nodes[0].value = this.normalizeUnit(nodes[0].value, 2 * Math.PI);
+    } else if (/-?\d+(.\d+)?turn/.test(nodes[0].value)) {
+      nodes[0].value = this.normalizeUnit(nodes[0].value, 1);
+    } else if (nodes[0].value.indexOf('deg') !== -1) {
+      var num = parseFloat(nodes[0].value);
+      num = range.wrap(0, 360, num);
+      nodes[0].value = num + "deg";
+    }
+
+    if (nodes[0].value === '0deg') {
+      nodes = this.replaceFirst(nodes, 'to', ' ', 'top');
+    } else if (nodes[0].value === '90deg') {
+      nodes = this.replaceFirst(nodes, 'to', ' ', 'right');
+    } else if (nodes[0].value === '180deg') {
+      nodes = this.replaceFirst(nodes, 'to', ' ', 'bottom');
+    } else if (nodes[0].value === '270deg') {
+      nodes = this.replaceFirst(nodes, 'to', ' ', 'left');
+    }
+
+    return nodes;
+  }
+  /**
+   * Replace old direction to new
+   */
+  ;
+
+  _proto.newDirection = function newDirection(params) {
+    if (params[0].value === 'to') {
+      return params;
+    }
+
+    IS_DIRECTION.lastIndex = 0; // reset search index of global regexp
+
+    if (!IS_DIRECTION.test(params[0].value)) {
+      return params;
+    }
+
+    params.unshift({
+      type: 'word',
+      value: 'to'
+    }, {
+      type: 'space',
+      value: ' '
+    });
+
+    for (var i = 2; i < params.length; i++) {
+      if (params[i].type === 'div') {
+        break;
+      }
+
+      if (params[i].type === 'word') {
+        params[i].value = this.revertDirection(params[i].value);
+      }
+    }
+
+    return params;
+  }
+  /**
+   * Look for at word
+   */
+  ;
+
+  _proto.isRadial = function isRadial(params) {
+    var state = 'before';
+
+    for (var _iterator2 = params, _isArray2 = Array.isArray(_iterator2), _i2 = 0, _iterator2 = _isArray2 ? _iterator2 : _iterator2[Symbol.iterator]();;) {
+      var _ref2;
+
+      if (_isArray2) {
+        if (_i2 >= _iterator2.length) break;
+        _ref2 = _iterator2[_i2++];
+      } else {
+        _i2 = _iterator2.next();
+        if (_i2.done) break;
+        _ref2 = _i2.value;
+      }
+
+      var param = _ref2;
+
+      if (state === 'before' && param.type === 'space') {
+        state = 'at';
+      } else if (state === 'at' && param.value === 'at') {
+        state = 'after';
+      } else if (state === 'after' && param.type === 'space') {
+        return true;
+      } else if (param.type === 'div') {
+        break;
+      } else {
+        state = 'before';
+      }
+    }
+
+    return false;
+  }
+  /**
+   * Change new direction to old
+   */
+  ;
+
+  _proto.convertDirection = function convertDirection(params) {
+    if (params.length > 0) {
+      if (params[0].value === 'to') {
+        this.fixDirection(params);
+      } else if (params[0].value.indexOf('deg') !== -1) {
+        this.fixAngle(params);
+      } else if (this.isRadial(params)) {
+        this.fixRadial(params);
+      }
+    }
+
+    return params;
+  }
+  /**
+   * Replace `to top left` to `bottom right`
+   */
+  ;
+
+  _proto.fixDirection = function fixDirection(params) {
+    params.splice(0, 2);
+
+    for (var _iterator3 = params, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : _iterator3[Symbol.iterator]();;) {
+      var _ref3;
+
+      if (_isArray3) {
+        if (_i3 >= _iterator3.length) break;
+        _ref3 = _iterator3[_i3++];
+      } else {
+        _i3 = _iterator3.next();
+        if (_i3.done) break;
+        _ref3 = _i3.value;
+      }
+
+      var param = _ref3;
+
+      if (param.type === 'div') {
+        break;
+      }
+
+      if (param.type === 'word') {
+        param.value = this.revertDirection(param.value);
+      }
+    }
+  }
+  /**
+   * Add 90 degrees
+   */
+  ;
+
+  _proto.fixAngle = function fixAngle(params) {
+    var first = params[0].value;
+    first = parseFloat(first);
+    first = Math.abs(450 - first) % 360;
+    first = this.roundFloat(first, 3);
+    params[0].value = first + "deg";
+  }
+  /**
+   * Fix radial direction syntax
+   */
+  ;
+
+  _proto.fixRadial = function fixRadial(params) {
+    var first = [];
+    var second = [];
+    var a, b, c, i, next;
+
+    for (i = 0; i < params.length - 2; i++) {
+      a = params[i];
+      b = params[i + 1];
+      c = params[i + 2];
+
+      if (a.type === 'space' && b.value === 'at' && c.type === 'space') {
+        next = i + 3;
+        break;
+      } else {
+        first.push(a);
+      }
+    }
+
+    var div;
+
+    for (i = next; i < params.length; i++) {
+      if (params[i].type === 'div') {
+        div = params[i];
+        break;
+      } else {
+        second.push(params[i]);
+      }
+    }
+
+    params.splice.apply(params, [0, i].concat(second, [div], first));
+  };
+
+  _proto.revertDirection = function revertDirection(word) {
+    return this.directions[word.toLowerCase()] || word;
+  }
+  /**
+   * Round float and save digits under dot
+   */
+  ;
+
+  _proto.roundFloat = function roundFloat(float, digits) {
+    return parseFloat(float.toFixed(digits));
+  }
+  /**
+   * Convert to old webkit syntax
+   */
+  ;
+
+  _proto.oldWebkit = function oldWebkit(node) {
+    var nodes = node.nodes;
+    var string = parser.stringify(node.nodes);
+
+    if (this.name !== 'linear-gradient') {
+      return false;
+    }
+
+    if (nodes[0] && nodes[0].value.indexOf('deg') !== -1) {
+      return false;
+    }
+
+    if (string.indexOf('px') !== -1 || string.indexOf('-corner') !== -1 || string.indexOf('-side') !== -1) {
+      return false;
+    }
+
+    var params = [[]];
+
+    for (var _iterator4 = nodes, _isArray4 = Array.isArray(_iterator4), _i4 = 0, _iterator4 = _isArray4 ? _iterator4 : _iterator4[Symbol.iterator]();;) {
+      var _ref4;
+
+      if (_isArray4) {
+        if (_i4 >= _iterator4.length) break;
+        _ref4 = _iterator4[_i4++];
+      } else {
+        _i4 = _iterator4.next();
+        if (_i4.done) break;
+        _ref4 = _i4.value;
+      }
+
+      var i = _ref4;
+      params[params.length - 1].push(i);
+
+      if (i.type === 'div' && i.value === ',') {
+        params.push([]);
+      }
+    }
+
+    this.oldDirection(params);
+    this.colorStops(params);
+    node.nodes = [];
+
+    for (var _i5 = 0, _params = params; _i5 < _params.length; _i5++) {
+      var param = _params[_i5];
+      node.nodes = node.nodes.concat(param);
+    }
+
+    node.nodes.unshift({
+      type: 'word',
+      value: 'linear'
+    }, this.cloneDiv(node.nodes));
+    node.value = '-webkit-gradient';
+    return true;
+  }
+  /**
+   * Change direction syntax to old webkit
+   */
+  ;
+
+  _proto.oldDirection = function oldDirection(params) {
+    var div = this.cloneDiv(params[0]);
+
+    if (params[0][0].value !== 'to') {
+      return params.unshift([{
+        type: 'word',
+        value: this.oldDirections.bottom
+      }, div]);
+    } else {
+      var words = [];
+
+      for (var _iterator5 = params[0].slice(2), _isArray5 = Array.isArray(_iterator5), _i6 = 0, _iterator5 = _isArray5 ? _iterator5 : _iterator5[Symbol.iterator]();;) {
+        var _ref5;
+
+        if (_isArray5) {
+          if (_i6 >= _iterator5.length) break;
+          _ref5 = _iterator5[_i6++];
+        } else {
+          _i6 = _iterator5.next();
+          if (_i6.done) break;
+          _ref5 = _i6.value;
+        }
+
+        var node = _ref5;
+
+        if (node.type === 'word') {
+          words.push(node.value.toLowerCase());
+        }
+      }
+
+      words = words.join(' ');
+      var old = this.oldDirections[words] || words;
+      params[0] = [{
+        type: 'word',
+        value: old
+      }, div];
+      return params[0];
+    }
+  }
+  /**
+   * Get div token from exists parameters
+   */
+  ;
+
+  _proto.cloneDiv = function cloneDiv(params) {
+    for (var _iterator6 = params, _isArray6 = Array.isArray(_iterator6), _i7 = 0, _iterator6 = _isArray6 ? _iterator6 : _iterator6[Symbol.iterator]();;) {
+      var _ref6;
+
+      if (_isArray6) {
+        if (_i7 >= _iterator6.length) break;
+        _ref6 = _iterator6[_i7++];
+      } else {
+        _i7 = _iterator6.next();
+        if (_i7.done) break;
+        _ref6 = _i7.value;
+      }
+
+      var i = _ref6;
+
+      if (i.type === 'div' && i.value === ',') {
+        return i;
+      }
+    }
+
+    return {
+      type: 'div',
+      value: ',',
+      after: ' '
+    };
+  }
+  /**
+   * Change colors syntax to old webkit
+   */
+  ;
+
+  _proto.colorStops = function colorStops(params) {
+    var result = [];
+
+    for (var i = 0; i < params.length; i++) {
+      var pos = void 0;
+      var param = params[i];
+      var item = void 0;
+
+      if (i === 0) {
+        continue;
+      }
+
+      var color = parser.stringify(param[0]);
+
+      if (param[1] && param[1].type === 'word') {
+        pos = param[1].value;
+      } else if (param[2] && param[2].type === 'word') {
+        pos = param[2].value;
+      }
+
+      var stop = void 0;
+
+      if (i === 1 && (!pos || pos === '0%')) {
+        stop = "from(" + color + ")";
+      } else if (i === params.length - 1 && (!pos || pos === '100%')) {
+        stop = "to(" + color + ")";
+      } else if (pos) {
+        stop = "color-stop(" + pos + ", " + color + ")";
+      } else {
+        stop = "color-stop(" + color + ")";
+      }
+
+      var div = param[param.length - 1];
+      params[i] = [{
+        type: 'word',
+        value: stop
+      }];
+
+      if (div.type === 'div' && div.value === ',') {
+        item = params[i].push(div);
+      }
+
+      result.push(item);
+    }
+
+    return result;
+  }
+  /**
+   * Remove old WebKit gradient too
+   */
+  ;
+
+  _proto.old = function old(prefix) {
+    if (prefix === '-webkit-') {
+      var type = this.name === 'linear-gradient' ? 'linear' : 'radial';
+      var string = '-gradient';
+      var regexp = utils.regexp("-webkit-(" + type + "-gradient|gradient\\(\\s*" + type + ")", false);
+      return new OldValue(this.name, prefix + this.name, string, regexp);
+    } else {
+      return _Value.prototype.old.call(this, prefix);
+    }
+  }
+  /**
+   * Do not add non-webkit prefixes for list-style and object
+   */
+  ;
+
+  _proto.add = function add(decl, prefix) {
+    var p = decl.prop;
+
+    if (p.indexOf('mask') !== -1) {
+      if (prefix === '-webkit-' || prefix === '-webkit- old') {
+        return _Value.prototype.add.call(this, decl, prefix);
+      }
+    } else if (p === 'list-style' || p === 'list-style-image' || p === 'content') {
+      if (prefix === '-webkit-' || prefix === '-webkit- old') {
+        return _Value.prototype.add.call(this, decl, prefix);
+      }
+    } else {
+      return _Value.prototype.add.call(this, decl, prefix);
+    }
+
+    return undefined;
+  };
+
+  return Gradient;
+}(Value);
+
+_defineProperty(Gradient, "names", ['linear-gradient', 'repeating-linear-gradient', 'radial-gradient', 'repeating-radial-gradient']);
+
+module.exports = Gradient;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               #!/bin/sh
+#
+# Copyright (c) 2006, 2008 Junio C Hamano
+#
+# The "pre-rebase" hook is run just before "git rebase" starts doing
+# its job, and can prevent the command from running by exiting with
+# non-zero status.
+#
+# The hook is called with the following parameters:
+#
+# $1 -- the upstream the series was forked from.
+# $2 -- the branch being rebased (or empty when rebasing the current branch).
+#
+# This sample shows how to prevent topic branches that are already
+# merged to 'next' branch from getting rebased, because allowing it
+# would result in rebasing already published history.
+
+publish=next
+basebranch="$1"
+if test "$#" = 2
+then
+	topic="refs/heads/$2"
+else
+	topic=`git symbolic-ref HEAD` ||
+	exit 0 ;# we do not interrupt rebasing detached HEAD
+fi
+
+case "$topic" in
+refs/heads/??/*)
+	;;
+*)
+	exit 0 ;# we do not interrupt others.
+	;;
+esac
+
+# Now we are dealing with a topic branch being rebased
+# on top of master.  Is it OK to rebase it?
+
+# Does the topic really exist?
+git show-ref -q "$topic" || {
+	echo >&2 "No such branch $topic"
+	exit 1
+}
+
+# Is topic fully merged to master?
+not_in_master=`git rev-list --pretty=oneline ^master "$topic"`
+if test -z "$not_in_master"
+then
+	echo >&2 "$topic is fully merged to master; better remove it."
+	exit 1 ;# we could allow it, but there is no point.
+fi
+
+# Is topic ever merged to next?  If so you should not be rebasing it.
+only_next_1=`git rev-list ^master "^$topic" ${publish} | sort`
+only_next_2=`git rev-list ^master           ${publish} | sort`
+if test "$only_next_1" = "$only_next_2"
+then
+	not_in_topic=`git rev-list "^$topic" master`
+	if test -z "$not_in_topic"
+	then
+		echo >&2 "$topic is already up to date with master"
+		exit 1 ;# we could allow it, but there is no point.
+	else
+		exit 0
+	fi
+else
+	not_in_next=`git rev-list --pretty=oneline ^${publish} "$topic"`
+	/usr/bin/perl -e '
+		my $topic = $ARGV[0];
+		my $msg = "* $topic has commits already merged to public branch:\n";
+		my (%not_in_next) = map {
+			/^([0-9a-f]+) /;
+			($1 => 1);
+		} split(/\n/, $ARGV[1]);
+		for my $elem (map {
+				/^([0-9a-f]+) (.*)$/;
+				[$1 => $2];
+			} split(/\n/, $ARGV[2])) {
+			if (!exists $not_in_next{$elem->[0]}) {
+				if ($msg) {
+					print STDERR $msg;
+					undef $msg;
+				}
+				print STDERR " $elem->[1]\n";
+			}
+		}
+	' "$topic" "$not_in_next" "$not_in_master"
+	exit 1
+fi
+
+<<\DOC_END
+
+This sample hook safeguards topic branches that have been
+published from being rewound.
+
+The workflow assumed here is:
+
+ * Once a topic branch forks from "master", "master" is never
+   merged into it again (either directly or indirectly).
+
+ * Once a topic branch is fully cooked and merged into "master",
+   it is deleted.  If you need to build on top of it to correct
+   earlier mistakes, a new topic branch is created by forking at
+   the tip of the "master".  This is not strictly necessary, but
+   it makes it easier to keep your history simple.
+
+ * Whenever you need to test or publish your changes to topic
+   branches, merge them into "next" branch.
+
+The script, being an example, hardcodes the publish branch name
+to be "next", but it is trivial to make it configurable via
+$GIT_DIR/config mechanism.
+
+With this workflow, you would want to know:
+
+(1) ... if a topic branch has ever been merged to "next".  Young
+    topic branches can have stupid mistakes you would rather
+    clean up before publishing, and things that have not been
+    merged into other branches can be easily rebased without
+    affecting other people.  But once it is published, you would
+    not want to rewind it.
+
+(2) ... if a topic branch has been fully merged to "master".
+    Then you can delete it.  More importantly, you should not
+    build on top of it -- other people may already want to
+    change things related to the topic as patches against your
+    "master", so if you need further changes, it is better to
+    fork the topic (perhaps with the same name) afresh from the
+    tip of "master".
+
+Let's look at this example:
+
+		   o---o---o---o---o---o---o---o---o---o "next"
+		  /       /           /           /
+		 /   a---a---b A     /           /
+		/   /               /           /
+	       /   /   c---c---c---c B         /
+	      /   /   /             \         /
+	     /   /   /   b---b C     \       /
+	    /   /   /   /             \     /
+    ---o---o---o---o---o---o---o---o---o---o---o "master"
+
+
+A, B and C are topic branches.
+
+ * A has one fix since it was merged up to "next".
+
+ * B has finished.  It has been fully merged up to "master" and "next",
+   and is ready to be deleted.
+
+ * C has not merged to "next" at all.
+
+We would want to allow C to be rebased, refuse A, and encourage
+B to be deleted.
+
+To compute (1):
+
+	git rev-list ^master ^topic next
+	git rev-list ^master        next
+
+	if these match, topic has not merged in next at all.
+
+To compute (2):
+
+	git rev-list master..topic
+
+	if this is empty, it is fully merged to "master".
+
+DOC_END
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              #!/bin/sh
+#
+# An example hook script to prepare the commit log message.
+# Called by "git commit" with the name of the file that has the
+# commit message, followed by the description of the commit
+# message's source.  The hook's purpose is to edit the commit
+# message file.  If the hook fails with a non-zero status,
+# the commit is aborted.
+#
+# To enable this hook, rename this file to "prepare-commit-msg".
+
+# This hook includes three examples. The first one removes the
+# "# Please enter the commit message..." help message.
+#
+# The second includes the output of "git diff --name-status -r"
+# into the message, just before the "git status" output.  It is
+# commented because it doesn't cope with --amend or with squashed
+# commits.
+#
+# The third example adds a Signed-off-by line to the message, that can
+# still be edited.  This is rarely a good idea.
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+/usr/bin/perl -i.bak -ne 'print unless(m/^. Please enter the commit message/..m/^#$/)' "$COMMIT_MSG_FILE"
+
+# case "$COMMIT_SOURCE,$SHA1" in
+#  ,|template,)
+#    /usr/bin/perl -i.bak -pe '
+#       print "\n" . `git diff --cached --name-status -r`
+# 	 if /^#/ && $first++ == 0' "$COMMIT_MSG_FILE" ;;
+#  *) ;;
+# esac
+
+# SOB=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+# git interpret-trailers --in-place --trailer "$SOB" "$COMMIT_MSG_FILE"
+# if test -z "$COMMIT_SOURCE"
+# then
+#   /usr/bin/perl -i.bak -pe 'print "\n" if !$first_line++' "$COMMIT_MSG_FILE"
+# fi
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            "use strict";
+
+function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+
+function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var Declaration = require('../declaration');
+
+var utils = require('./grid-utils');
+
+var GridArea =
+/*#__PURE__*/
+function (_Declaration) {
+  _inheritsLoose(GridArea, _Declaration);
+
+  function GridArea() {
+    return _Declaration.apply(this, arguments) || this;
+  }
+
+  var _proto = GridArea.prototype;
+
+  /**
+   * Translate grid-area to separate -ms- prefixed properties
+   */
+  _proto.insert = function insert(decl, prefix, prefixes, result) {
+    if (prefix !== '-ms-') return _Declaration.prototype.insert.call(this, decl, prefix, prefixes);
+    var values = utils.parse(decl);
+
+    var _utils$translate = utils.translate(values, 0, 2),
+        rowStart = _utils$translate[0],
+        rowSpan = _utils$translate[1];
+
+    var _utils$translate2 = utils.translate(values, 1, 3),
+        columnStart = _utils$translate2[0],
+        columnSpan = _utils$translate2[1];
+
+    [['grid-row', rowStart], ['grid-row-span', rowSpan], ['grid-column', columnStart], ['grid-column-span', columnSpan]].forEach(function (_ref) {
+      var prop = _ref[0],
+          value = _ref[1];
+      utils.insertDecl(decl, prop, value);
+    });
+    utils.warnTemplateSelectorNotFound(decl, result);
+    utils.warnIfGridRowColumnExists(decl, result);
+    return undefined;
+  };
+
+  return GridArea;
+}(Declaration);
+
+_defineProperty(GridArea, "names", ['grid-area']);
+
+module.exports = GridArea;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            #!/bin/sh
+#
+# An example hook script to block unannotated tags from entering.
+# Called by "git receive-pack" with arguments: refname sha1-old sha1-new
+#
+# To enable this hook, rename this file to "update".
+#
+# Config
+# ------
+# hooks.allowunannotated
+#   This boolean sets whether unannotated tags will be allowed into the
+#   repository.  By default they won't be.
+# hooks.allowdeletetag
+#   This boolean sets whether deleting tags will be allowed in the
+#   repository.  By default they won't be.
+# hooks.allowmodifytag
+#   This boolean sets whether a tag may be modified after creation. By default
+#   it won't be.
+# hooks.allowdeletebranch
+#   This boolean sets whether deleting branches will be allowed in the
+#   repository.  By default they won't be.
+# hooks.denycreatebranch
+#   This boolean sets whether remotely creating branches will be denied
+#   in the repository.  By default this is allowed.
+#
+
+# --- Command line
+refname="$1"
+oldrev="$2"
+newrev="$3"
+
+# --- Safety check
+if [ -z "$GIT_DIR" ]; then
+	echo "Don't run this script from the command line." >&2
+	echo " (if you want, you could supply GIT_DIR then run" >&2
+	echo "  $0 <ref> <oldrev> <newrev>)" >&2
+	exit 1
+fi
+
+if [ -z "$refname" -o -z "$oldrev" -o -z "$newrev" ]; then
+	echo "usage: $0 <ref> <oldrev> <newrev>" >&2
+	exit 1
+fi
+
+# --- Config
+allowunannotated=$(git config --bool hooks.allowunannotated)
+allowdeletebranch=$(git config --bool hooks.allowdeletebranch)
+denycreatebranch=$(git config --bool hooks.denycreatebranch)
+allowdeletetag=$(git config --bool hooks.allowdeletetag)
+allowmodifytag=$(git config --bool hooks.allowmodifytag)
+
+# check for no description
+projectdesc=$(sed -e '1q' "$GIT_DIR/description")
+case "$projectdesc" in
+"Unnamed repository"* | "")
+	echo "*** Project description file hasn't been set" >&2
+	exit 1
+	;;
+esac
+
+# --- Check types
+# if $newrev is 0000...0000, it's a commit to delete a ref.
+zero="0000000000000000000000000000000000000000"
+if [ "$newrev" = "$zero" ]; then
+	newrev_type=delete
+else
+	newrev_type=$(git cat-file -t $newrev)
+fi
+
+case "$refname","$newrev_type" in
+	refs/tags/*,commit)
+		# un-annotated tag
+		short_refname=${refname##refs/tags/}
+		if [ "$allowunannotated" != "true" ]; then
+			echo "*** The un-annotated tag, $short_refname, is not allowed in this repository" >&2
+			echo "*** Use 'git tag [ -a | -s ]' for tags you want to propagate." >&2
+			exit 1
+		fi
+		;;
+	refs/tags/*,delete)
+		# delete tag
+		if [ "$allowdeletetag" != "true" ]; then
+			echo "*** Deleting a tag is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	refs/tags/*,tag)
+		# annotated tag
+		if [ "$allowmodifytag" != "true" ] && git rev-parse $refname > /dev/null 2>&1
+		then
+			echo "*** Tag '$refname' already exists." >&2
+			echo "*** Modifying a tag is not allowed in this repository." >&2
+			exit 1
+		fi
+		;;
+	refs/heads/*,commit)
+		# branch
+		if [ "$oldrev" = "$zero" -a "$denycreatebranch" = "true" ]; then
+			echo "*** Creating a branch is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	refs/heads/*,delete)
+		# delete branch
+		if [ "$allowdeletebranch" != "true" ]; then
+			echo "*** Deleting a branch is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	refs/remotes/*,commit)
+		# tracking branch
+		;;
+	refs/remotes/*,delete)
+		# delete tracking branch
+		if [ "$allowdeletebranch" != "true" ]; then
+			echo "*** Deleting a tracking branch is not allowed in this repository" >&2
+			exit 1
+		fi
+		;;
+	*)
+		# Anything else (is there anything else?)
+		echo "*** Update hook: unknown type of update to ref $refname of type $newrev_type" >&2
+		exit 1
+		;;
+esac
+
+# --- Finished
+exit 0
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      INDX( 	 ŠÜÙ           (   Ğ  è         ~   Õc             ¿½    h X     «½    ãOS'øÕ@8ÿâ£]Õ?sVS'øÕ·›!ìMdÔ                     F L E X - D ~ 1 . J S À½    p Z     «½    ÔÏYS'øÕ"^ÿâ£]Õ'~dS'øÕàª$ìMdÔ       '
+              f l e x - f l o w . j s       À½    h X     «½    ÔÏYS'øÕ"^ÿâ£]Õ'~dS'øÕàª$ìMdÔ       '
+              F L E X - F ~ 1 . J S Á½    p Z     «½    ÈfS'øÕgÓÿâ£]Õ.
+vS'øÕ=İ'ìMdÔ       ¦              f l e x - g r o w . j s       Á½    h X    «½    ÈfS'øÕgÓÿâ£]Õ.
+vS'øÕ=İ'ìMdÔ       ¦              F L E X - G ~ 1 . J S Â½    p ^     «½    :Ò}S'øÕ’! ã£]Õ ²‹S'øÕÃ*ìMdÔ       ı              f l e x - s h r i n k . j s   Å½    p Z     «½    Á‘’S'øÕ	™ ã£]Õ[šS'øÕŸ©-ìMdÔ                    f l e x - s p e c . j s       Â½    h X     «½    :Ò}S'øÕ’! ã£]Õ ²‹S'øÕÃ*ìMdÔ       ı              F L E X - S ~ 1 . J S Å½    h X     «½    Á‘’S'øÕ	™ ã£]Õ[šS'øÕŸ©-ìMdÔ                    F L E X - S  2 . J S È½    p Z     «½    Í"«S'øÕCã£]Õ&B¸S'øÕèİ0ìMdÔ                     f l e x - w r a p . j s       È½    h X     «½    Í"«S'øÕCã£]Õ&B¸S'øÕèİ0ìMdÔ                     F L E X - W ~ 1 . J S Ë½    ` P     «½    \ ¿S'øÕc\ã£]Õ÷ÍS'øÕ!3ìMdÔ       V	              f l e x . j s Í½    p \     «½    _hÕS'øÕƒªã£]ÕÉ¬äS'øÕ'‚6ìMdÔ       ‡              f u l l s c r e e n . j s     Í½    h X     «½    _hÕS'øÕƒªã£]ÕÉ¬äS'øÕ'‚6ìMdÔ       ‡             F U L L S C ~ 1 . J S Ñ½    h X     «½    çêêS'øÕ¸ã£]Õ­ÍT'øÕ“·9ìMdÔ @      1:              g r a d i e n t . j s Ô½    p Z     «½    Ö
+T'øÕè”ã£]ÕßT'øÕ4t<ìMdÔ       4              g r i d - a r e a . j s       Ô½    h X     «½    Ö
+T'øÕè”ã£]ÕßT'øÕ4t<ìMdÔ       4              G R I D - A ~ 1 . J S Ø½    € j     «½    Hù%T'øÕãã£]Õåï;T'øÕµ?ìMdÔ       I              g r i d - c o l u m n - a l i g n . j s                     «½    Hù%T'øÕãã£] åï;T'øÕµ?ìMdÔ       I              G R I D - C ~ 1 . J S İ½    h X     «½    ‰XBT'øÕ
+ã£]ÕÇFUT'øÕ†òAìMdÔ                     g r i d - e n d . j s ß½    x d     «½    ^ı[T'øÕ'1ã£]Õ{hiT'øÕ+,EìMdÔ       ,              g r i d - r o w - a l i g n . j s     á½    x f     «½    »npT'øÕMã£]Õö†T'øÕZHìMdÔ       Ã              g r i d - r o w - c o l u m n . j s   ã½    € j     «½    vï‡T'øÕrÍã£]Õ‡}™T'øÕrÑJìMdÔ        «              g r i d - r o w s -  o l u m n s . j s     ß½    h X     «½    ^ı[T'øÕ'1ã£]Õ{hiT'øÕ+,EìMdÔ       ,              G R I D - R ~ 1 . J S á½    h X     «½    »npT'øÕMã£]Õö†T'øÕZHìMdÔ       Ã              G R I D - R ~ 2 . J S ã½    h X     «½    vï‡T'øÕrÍã£]Õ‡}™T'øÕrÑJìMdÔ        «              G R I D - R ~ 3 . J S ä½    p \     «½    x£¢T'øÕ@ã£]Õö…°T'øÕùQìMdÔ       ô              g r i d - s t a r t . j s     ä½    h X     «½    x£¢T'øÕ@ã£]Õö…°T'øÕùQìMdÔ      ô              G R I D - S ~ 1 . J S å½    € n     «½    Y7¹T'øÕ¼ã£]Õ°,ÈT'øÕ'ùSìMdÔ                     g r i d - t e m p l a t e - a r e a s . j s   à½    x b     «½    ÇÒT'øÕoÜã£]ÕakâT'øÕ.´VìMdÔ       ö
+              g r i d - t e m p l a t e . j s      å½    h X     «½    Y7¹T'øÕ¼ã£]Õ°,ÈT'øÕ'ùSìMdÔ                     G R I D - T ~ 1 . J S à½    h X     «½    ÇÒT'øÕoÜã£]ÕakâT'øÕ.´VìMdÔ       ö
+              G R I D - T ~ 2 . J S ç½    p \    «½    ¬³íT'øÕSã£]ÕFU'øÕyã£]Õ €      %}              g r i d - u t i l s . j s     ç½    h X     «½    ¬³íT'øÕSã£]ÕFU'øÕyã£]Õ €      %}              G R I D - U ~ 1 . J S è½    x f     «½    ^U'øÕ Éã£]Õq$U'øÕn™YìMdÔ       c              i m a g e - r e n d e r i n g . j s   è½    h X     «½    ^U'øÕ Éã£]Õq$U'øÕn™YìMdÔ       c              I M A G E - ~ 1 . J S                                                                                      "use strict";
+
+function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+
+function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var Declaration = require('../declaration');
+
+var GridColumnAlign =
+/*#__PURE__*/
+function (_Declaration) {
+  _inheritsLoose(GridColumnAlign, _Declaration);
+
+  function GridColumnAlign() {
+    return _Declaration.apply(this, arguments) || this;
+  }
+
+  var _proto = GridColumnAlign.prototype;
+
+  /**
+   * Do not prefix flexbox values
+   */
+  _proto.check = function check(decl) {
+    return decl.value.indexOf('flex-') === -1 && decl.value !== 'baseline';
+  }
+  /**
+   * Change property name for IE
+   */
+  ;
+
+  _proto.prefixed = function prefixed(prop, prefix) {
+    return prefix + 'grid-column-align';
+  }
+  /**
+   * Change IE property back
+   */
+  ;
+
+  _proto.normalize = function normalize() {
+    return 'justify-self';
+  };
+
+  return GridColumnAlign;
+}(Declaration);
+
+_defineProperty(GridColumnAlign, "names", ['grid-column-align']);
+
+module.exports = GridColumnAlign;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       INDX( 	 ÇŒÙ            (   ¨  è       Õ                    4¾    ` N     Ã½    cß`T'øÕ×VPZ'øÕ9ZWZ'øÕ×VPZ'øÕğ      í              c o n f i g p Ä½    h X     Ã½    šS'øÕ}?”S'øÕ}?”S'øÕ}?”S'øÕP       I               d e s c r i p t i o n Ä½    h R     Ã½    šS'øÕ}?”S'øÕ}?”S'øÕ}?”S'øÕP       I               D 

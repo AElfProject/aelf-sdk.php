@@ -1,0 +1,32 @@
+"use strict";
+
+var postcss = require('postcss');
+
+var data = require('caniuse-lite').feature(require('caniuse-lite/data/features/css-featurequeries.js'));
+
+var Browsers = require('./browsers');
+
+var brackets = require('./brackets');
+
+var Value = require('./value');
+
+var utils = require('./utils');
+
+var supported = [];
+
+for (var browser in data.stats) {
+  var versions = data.stats[browser];
+
+  for (var version in versions) {
+    var support = versions[version];
+
+    if (/y/.test(support)) {
+      supported.push(browser + ' ' + version);
+    }
+  }
+}
+
+var Supports =
+/*#__PURE__*/
+function () {
+  function Supports(Prefixes, all)

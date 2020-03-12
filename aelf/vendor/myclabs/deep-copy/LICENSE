@@ -1,0 +1,35 @@
+<?php
+
+use PHPUnit\Framework\TestCase;
+use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
+
+class AelfTest extends TestCase
+{
+    public $Aelf;
+    public $private_key;
+    public $public_key;
+    public $address;
+    public $OPREATIONADDRESS;
+
+    public function setUp() {
+        $url = 'http://18.223.158.83:8000';
+
+        $this->Aelf = new Aelf($url);
+        $this->OPREATIONADDRESS ='18.223.158.83:7003';
+
+        $bitcoinECDSA = new BitcoinECDSA();
+        $this->private_key = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
+        $bitcoinECDSA->setPrivateKey($this->private_key);
+        $this->public_key = $bitcoinECDSA->getUncompressedPubKey();
+        $this->address= $this->Aelf->getAddressFromPrivateKey($this->private_key);
+
+    }
+
+
+    public function testgetChainStatus(){
+        $chain_status =$this->Aelf->getChainStatus();
+        print_r($chain_status);
+        $this->assertTrue($chain_status['BestChainHeight'] > 0);
+        $chain_id = $this->Aelf->getChainId();
+        print_r($chain_id);
+        $thi

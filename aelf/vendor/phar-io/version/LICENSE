@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BitWasp\Bitcoin\Block;
+
+use BitWasp\Bitcoin\Bloom\BloomFilter;
+use BitWasp\Bitcoin\Math\Math;
+use BitWasp\Bitcoin\Serializable;
+use BitWasp\Bitcoin\Serializer\Block\BlockHeaderSerializer;
+use BitWasp\Bitcoin\Serializer\Block\BlockSerializer;
+use BitWasp\Bitcoin\Serializer\Transaction\TransactionSerializer;
+use BitWasp\Bitcoin\Transaction\TransactionInterface;
+use BitWasp\Buffertools\BufferInterface;
+
+class Block extends Serializable implements BlockInterface
+{
+    /**
+     * @var Math
+     */
+    private $math;
+
+    /**
+     * @var BlockHeaderInterface
+     */
+    private $header;
+
+    /**
+     * @var TransactionInterface[]
+     */
+    private $transactions;
+
+    /**
+     * @var MerkleRoot
+     */
+    private $merkleRoot;
+
+    /**
+     * Block constructor.
+     * @param Math $math
+     * @param BlockHeaderInterface $header
+     * @param TransactionInterface[] ...$transactions
+     */
+    public function __construct(Math $math, BlockHeaderInterface $header, TransactionInterface ...$transactions)
+    {
+        $this->math = $math;
+        $this->header = $header;
+        $this->transactions = $transactions;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @see \BitWasp\Bitcoin\Block\BlockInterface::getHeader()
+     */
+    public function getHeader(): BlockHeaderInterface
+    {
+        return $this->header;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @see \BitWasp\Bitcoin\Block\BlockInterface::getMerkleRoot()
+     * @throws \BitWasp\Bitcoin\Exceptions\MerkleTreeEmpty
+     */
+    public function getMerkleRoot(): BufferInterface

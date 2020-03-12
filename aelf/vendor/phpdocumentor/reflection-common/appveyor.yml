@@ -1,0 +1,76 @@
+        $r = $v->sub($q->mul($u));
+            $x = $x2->sub($q->mul($x1));
+            $y = $y2->sub($q->mul($y2));
+
+            if( !$a1 && $r->cmp($aprxSqrt) < 0 )
+            {
+                $a0 = $prevR->neg();
+                $b0 = $x1;
+                $a1 = $r->neg();
+                $b1 = $x;
+            }
+            elseif($a1 && ++$i === 2)
+                break;
+
+            $prevR = $r;
+            $v = $u;
+            $u = $r;
+            $x2 = $x1;
+            $x1 = $x;
+            $y2 = $y1;
+            $y1 = $y;
+        }
+        $a2 = $r->neg();
+        $b2 = $x;
+
+        $len1 = $a1->sqr()->add($b1->sqr());
+        $len2 = $a2->sqr()->add($b2->sqr());
+        if( $len2->cmp($len1) >= 0 )
+        {
+            $a2 = $a0;
+            $b2 = $b0;
+        }
+
+        // Normalize signs
+        if( $a1->negative() )
+        {
+            $a1 = $a1->neg();
+            $b1 = $b1->neg();
+        }
+
+        if( $a2->negative() )
+        {
+            $a2 = $a2->neg();
+            $b2 = $b2->neg();
+        }
+
+        return array(
+            array( "a" => $a1, "b" => $b1 ),
+            array( "a" => $a2, "b" => $b2 ),
+        );
+    }
+
+    public function _endoSplit($k)
+    {
+        $basis = $this->endo["basis"];
+        $v1 = $basis[0];
+        $v2 = $basis[1];
+
+        $c1 = $v2["b"]->mul($k)->divRound($this->n);
+        $c2 = $v1["b"]->neg()->mul($k)->divRound($this->n);
+
+        $p1 = $c1->mul($v1["a"]);
+        $p2 = $c2->mul($v2["a"]);
+        $q1 = $c1->mul($v1["b"]);
+        $q2 = $c2->mul($v2["b"]);
+
+        //Calculate answer
+        $k1 = $k->sub($p1)->sub($p2);
+        $k2 = $q1->add($q2)->neg();
+
+        return array( "k1" => $k1, "k2" => $k2 );
+    }
+
+    public function pointFromX($x, $odd)
+    {
+      

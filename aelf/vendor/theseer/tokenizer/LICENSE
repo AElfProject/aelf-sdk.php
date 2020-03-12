@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BitWasp\Buffertools;
+
+class Buffertools
+{
+    /**
+     * @param int $decimal
+     * @return string
+     * @throws \Exception
+     */
+    public static function numToVarIntBin(int $decimal): string
+    {
+        if ($decimal < 0xfd) {
+            $bin = chr($decimal);
+        } elseif ($decimal <= 0xffff) {
+            // Uint16
+            $bin = pack("Cv", 0xfd, $decimal);
+        } elseif ($decimal <= 0xffffffff) {
+            // Uint32
+            $bin = pack("CV", 0xfe, $decimal);
+        } else {
+            // Todo, support for 64bit integers
+            throw new \Exception('numToVarInt(): Integer too large');
+        }
+
+        return $bin;
+    }
+
+    /**
+     * Convert a decimal number into a VarInt Buffer
+     *
+     * @param  integer $decimal
+     * @return BufferInterface
+     * @throws \Exception
+     */
+    public static function numToVarInt(int $decimal): BufferInterface
+    {
+        return new Buffer(static::numToVarIntBin($decimal));
+    }
+
+    /**
+     * Flip byte order of this binary string. Accepts a string or Buffer,
+     * and will return whatever type it was given.
+     *
+     * @param  string|BufferInterface $bytes
+     * @return string|BufferInterface
+     */
+    public static function flipBytes($bytes)
+    {
+        $isBuffer = $bytes instanceof BufferInterface;
+        if ($isBuffer) {
+            $bytes = $bytes->getBinary();
+        }
+
+        $flipped = implode('', array_reverse(str_split($bytes, 1)));
+        if ($isBuffer) {
+       

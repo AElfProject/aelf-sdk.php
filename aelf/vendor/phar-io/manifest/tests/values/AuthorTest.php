@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BitWasp\Bitcoin\Network;
+
+class NetworkFactory
+{
+    /**
+     * @return NetworkInterface
+     * @throws \Exception
+     */
+    public static function bitcoin(): NetworkInterface
+    {
+        return new Networks\Bitcoin();
+    }
+
+    /**
+     * @return NetworkInterface
+     * @throws \Exception
+     */
+    public static function bitcoinTestnet(): NetworkInterface
+    {
+        return new Networks\BitcoinTestnet();
+    }
+
+    /**
+     * @return NetworkInterface
+     * @throws \Exception
+     */
+    public static function bitcoinRegtest(): NetworkInterface
+    {
+        return new Networks\BitcoinRegtest();
+    }
+
+    /**
+     * @return NetworkInterface
+     */
+    public static function litecoin(): NetworkInterface
+    {
+        return new Networks\Litecoin();
+    }
+
+    /**
+     * @return Networks\LitecoinTestnet
+     */
+    public static function litecoinTestnet(): NetworkInterface
+    {
+        return new Networks\LitecoinTestnet();
+    }
+
+    /**
+     * @return Networks\Viacoin
+     */
+    public static function viacoin(): NetworkInterface
+    {
+        return new Networks\Viacoin();
+    }
+
+    /**
+     * @

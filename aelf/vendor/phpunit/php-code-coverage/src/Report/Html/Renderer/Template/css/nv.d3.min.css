@@ -1,0 +1,350 @@
+: 'Expected an any of instance of this class or to this class among his parents other than %2$s. Got: %s',
+            static::typeToString($value),
+            \implode(', ', \array_map(array('static', 'valueToString'), $classes))
+        ));
+    }
+
+    /**
+     * @psalm-assert empty $value
+     *
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function isEmpty($value, $message = '')
+    {
+        if (!empty($value)) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected an empty value. Got: %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @psalm-assert !empty $value
+     *
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function notEmpty($value, $message = '')
+    {
+        if (empty($value)) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a non-empty value. Got: %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @psalm-assert null $value
+     *
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function null($value, $message = '')
+    {
+        if (null !== $value) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected null. Got: %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @psalm-assert !null $value
+     *
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function notNull($value, $message = '')
+    {
+        if (null === $value) {
+            static::reportInvalidArgument(
+                $message ?: 'Expected a value other than null.'
+            );
+        }
+    }
+
+    /**
+     * @psalm-assert true $value
+     *
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function true($value, $message = '')
+    {
+        if (true !== $value) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value to be true. Got: %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @psalm-assert false $value
+     *
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function false($value, $message = '')
+    {
+        if (false !== $value) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value to be false. Got: %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @psalm-assert !false $value
+     *
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function notFalse($value, $message = '')
+    {
+        if (false === $value) {
+            static::reportInvalidArgument(
+                $message ?: 'Expected a value other than false.'
+            );
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function ip($value, $message = '')
+    {
+        if (false === \filter_var($value, \FILTER_VALIDATE_IP)) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value to be an IP. Got: %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function ipv4($value, $message = '')
+    {
+        if (false === \filter_var($value, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4)) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value to be an IPv4. Got: %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function ipv6($value, $message = '')
+    {
+        if (false === \filter_var($value, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value to be an IPv6. Got %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function email($value, $message = '')
+    {
+        if (false === \filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value to be a valid e-mail address. Got %s',
+                static::valueToString($value)
+            ));
+        }
+    }
+
+    /**
+     * Does non strict comparisons on the items, so ['3', 3] will not pass the assertion.
+     *
+     * @param array  $values
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function uniqueValues(array $values, $message = '')
+    {
+        $allValues = \count($values);
+        $uniqueValues = \count(\array_unique($values));
+
+        if ($allValues !== $uniqueValues) {
+            $difference = $allValues - $uniqueValues;
+
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected an array of unique values, but %s of them %s duplicated',
+                $difference,
+                (1 === $difference ? 'is' : 'are')
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $expect
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function eq($value, $expect, $message = '')
+    {
+        if ($expect != $value) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value equal to %2$s. Got: %s',
+                static::valueToString($value),
+                static::valueToString($expect)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $expect
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function notEq($value, $expect, $message = '')
+    {
+        if ($expect == $value) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a different value than %s.',
+                static::valueToString($expect)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $expect
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function same($value, $expect, $message = '')
+    {
+        if ($expect !== $value) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value identical to %2$s. Got: %s',
+                static::valueToString($value),
+                static::valueToString($expect)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $expect
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function notSame($value, $expect, $message = '')
+    {
+        if ($expect === $value) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value not identical to %s.',
+                static::valueToString($expect)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $limit
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function greaterThan($value, $limit, $message = '')
+    {
+        if ($value <= $limit) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value greater than %2$s. Got: %s',
+                static::valueToString($value),
+                static::valueToString($limit)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $limit
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function greaterThanEq($value, $limit, $message = '')
+    {
+        if ($value < $limit) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value greater than or equal to %2$s. Got: %s',
+                static::valueToString($value),
+                static::valueToString($limit)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $limit
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function lessThan($value, $limit, $message = '')
+    {
+        if ($value >= $limit) {
+            static::reportInvalidArgument(\sprintf(
+                $message ?: 'Expected a value less than %2$s. Got: %s',
+                static::valueToString($value),
+                static::valueToString($limit)
+            ));
+        }
+    }
+
+    /**
+     * @param mixed  $value
+     * @param mixed  $limit
+     * @param string $message
+     *
+     * @throws InvalidArgumentException
+     */
+    public static function lessThanEq($value, $limit, $

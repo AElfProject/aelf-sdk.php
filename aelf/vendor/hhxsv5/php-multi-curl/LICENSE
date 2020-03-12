@@ -1,0 +1,33 @@
+<?php
+/*
+ * This file is part of the PHPASN1 library.
+ *
+ * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace FG\ASN1;
+
+use DateInterval;
+use DateTime;
+use DateTimeZone;
+use Exception;
+
+abstract class AbstractTime extends ASNObject
+{
+    /** @var DateTime */
+    protected $value;
+
+    public function __construct($dateTime = null, $dateTimeZone = 'UTC')
+    {
+        if ($dateTime == null || is_string($dateTime)) {
+            $timeZone = new DateTimeZone($dateTimeZone);
+            $dateTimeObject = new DateTime($dateTime, $timeZone);
+            if ($dateTimeObject == false) {
+                $errorMessage = $this->getLastDateTimeErrors();
+                $className = Identifier::getName($this->getType());
+                throw new Exception(sprintf("Could not create %s from date time string '%s': %s", $className, $dateTime, $errorMessage));
+            }
+            $dateTime = $dateTimeObje

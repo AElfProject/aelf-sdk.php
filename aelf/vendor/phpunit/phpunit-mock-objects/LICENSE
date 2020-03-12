@@ -1,0 +1,41 @@
+<?php
+
+namespace BitWasp\Bitcoin\Mnemonic\Electrum\Wordlist;
+
+use BitWasp\Bitcoin\Mnemonic\Electrum\ElectrumWordListInterface;
+use BitWasp\Bitcoin\Mnemonic\WordList;
+
+class EnglishWordList extends WordList implements ElectrumWordListInterface
+{
+    /**
+     * @var array
+     */
+    private $wordsFlipped;
+
+    /**
+     * @return int
+     */
+    public function count(): int
+    {
+        return count($this->getWords());
+    }
+
+    /**
+     * @return array
+     */
+    public function getWords(): array
+    {
+        return array('like', 'just', 'love', 'know', 'never', 'want', 'time',
+            'out', 'there', 'make', 'look', 'eye', 'down', 'only', 'think',
+            'heart', 'back', 'then', 'into', 'about', 'more', 'away', 'still',
+            'them', 'take', 'thing', 'even', 'through', 'long', 'always',
+            'world', 'too', 'friend', 'tell', 'try', 'hand', 'thought', 'over',
+            'here', 'other', 'need', 'smile', 'again', 'much', 'cry', 'been',
+            'night', 'ever', 'little', 'said', 'end', 'some', 'those', 'around',
+            'mind', 'people', 'girl', 'leave', 'dream', 'left', 'turn', 'myself',
+            'give', 'nothing', 'really', 'off', 'before', 'something', 'find',
+            'walk', 'wish', 'good', 'once', 'place', 'ask', 'stop', 'keep',
+            'watch', 'seem', 'everything', 'wait', 'got', 'yet', 'made',
+            'remember', 'start', 'alone', 'run', 'hope', 'maybe', 'believe',
+            'body', 'hate', 'after', 'close', 'talk', 'stand', 'own', 'each',
+            'hurt', 'help', 'home'

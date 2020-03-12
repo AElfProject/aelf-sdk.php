@@ -1,0 +1,7004 @@
+ration;
+
+use Composer\Package\AliasPackage;
+
+
+
+
+
+
+class MarkAliasInstalledOperation extends SolverOperation
+{
+protected $package;
+
+
+
+
+
+
+
+public function __construct(AliasPackage $package, $reason = null)
+{
+parent::__construct($reason);
+
+$this->package = $package;
+}
+
+
+
+
+
+
+public function getPackage()
+{
+return $this->package;
+}
+
+
+
+
+
+
+public function getJobType()
+{
+return 'markAliasInstalled';
+}
+
+
+
+
+public function __toString()
+{
+return 'Marking '.$this->package->getPrettyName().' ('.$this->formatVersion($this->package).') as installed, alias of '.$this->package->getAliasOf()->getPrettyName().' ('.$this->formatVersion($this->package->getAliasOf()).')';
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver\Operation;
+
+use Composer\Package\PackageInterface;
+
+
+
+
+
+
+class InstallOperation extends SolverOperation
+{
+protected $package;
+
+
+
+
+
+
+
+public function __construct(PackageInterface $package, $reason = null)
+{
+parent::__construct($reason);
+
+$this->package = $package;
+}
+
+
+
+
+
+
+public function getPackage()
+{
+return $this->package;
+}
+
+
+
+
+
+
+public function getJobType()
+{
+return 'install';
+}
+
+
+
+
+public function __toString()
+{
+return 'Installing '.$this->package->getPrettyName().' ('.$this->formatVersion($this->package).')';
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver\Operation;
+
+use Composer\Package\Version\VersionParser;
+use Composer\Package\PackageInterface;
+
+
+
+
+
+
+abstract class SolverOperation implements OperationInterface
+{
+protected $reason;
+
+
+
+
+
+
+public function __construct($reason = null)
+{
+$this->reason = $reason;
+}
+
+
+
+
+
+
+public function getReason()
+{
+return $this->reason;
+}
+
+protected function formatVersion(PackageInterface $package)
+{
+return VersionParser::formatVersion($package);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver\Operation;
+
+use Composer\Package\AliasPackage;
+
+
+
+
+
+
+class MarkAliasUninstalledOperation extends SolverOperation
+{
+protected $package;
+
+
+
+
+
+
+
+public function __construct(AliasPackage $package, $reason = null)
+{
+parent::__construct($reason);
+
+$this->package = $package;
+}
+
+
+
+
+
+
+public function getPackage()
+{
+return $this->package;
+}
+
+
+
+
+
+
+public function getJobType()
+{
+return 'markAliasUninstalled';
+}
+
+
+
+
+public function __toString()
+{
+return 'Marking '.$this->package->getPrettyName().' ('.$this->formatVersion($this->package).') as uninstalled, alias of '.$this->package->getAliasOf()->getPrettyName().' ('.$this->formatVersion($this->package->getAliasOf()).')';
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver\Operation;
+
+
+
+
+
+
+interface OperationInterface
+{
+
+
+
+
+
+public function getJobType();
+
+
+
+
+
+
+public function getReason();
+
+
+
+
+
+
+public function __toString();
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+use Composer\Package\BasePackage;
+use Composer\Package\AliasPackage;
+use Composer\Package\Version\VersionParser;
+use Composer\Package\Link;
+use Composer\Package\LinkConstraint\LinkConstraintInterface;
+use Composer\Package\LinkConstraint\VersionConstraint;
+use Composer\Repository\RepositoryInterface;
+use Composer\Repository\CompositeRepository;
+use Composer\Repository\ComposerRepository;
+use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Repository\StreamableRepositoryInterface;
+use Composer\Repository\PlatformRepository;
+
+
+
+
+
+
+
+class Pool
+{
+const MATCH_NAME = -1;
+const MATCH_NONE = 0;
+const MATCH = 1;
+const MATCH_PROVIDE = 2;
+const MATCH_REPLACE = 3;
+
+protected $repositories = array();
+protected $providerRepos = array();
+protected $packages = array();
+protected $packageByName = array();
+protected $acceptableStabilities;
+protected $stabilityFlags;
+protected $versionParser;
+protected $providerCache = array();
+protected $id = 1;
+
+public function __construct($minimumStability = 'stable', array $stabilityFlags = array())
+{
+$stabilities = BasePackage::$stabilities;
+$this->versionParser = new VersionParser;
+$this->acceptableStabilities = array();
+foreach (BasePackage::$stabilities as $stability => $value) {
+if ($value <= BasePackage::$stabilities[$minimumStability]) {
+$this->acceptableStabilities[$stability] = $value;
+}
+}
+$this->stabilityFlags = $stabilityFlags;
+}
+
+
+
+
+
+
+
+public function addRepository(RepositoryInterface $repo, $rootAliases = array())
+{
+if ($repo instanceof CompositeRepository) {
+$repos = $repo->getRepositories();
+} else {
+$repos = array($repo);
+}
+
+foreach ($repos as $repo) {
+$this->repositories[] = $repo;
+
+$exempt = $repo instanceof PlatformRepository || $repo instanceof InstalledRepositoryInterface;
+
+if ($repo instanceof ComposerRepository && $repo->hasProviders()) {
+$this->providerRepos[] = $repo;
+$repo->setRootAliases($rootAliases);
+$repo->resetPackageIds();
+} elseif ($repo instanceof StreamableRepositoryInterface) {
+foreach ($repo->getMinimalPackages() as $package) {
+$name = $package['name'];
+$version = $package['version'];
+$stability = VersionParser::parseStability($version);
+
+
+ $names = array(
+$name => true,
+);
+if (isset($package['provide'])) {
+foreach ($package['provide'] as $target => $constraint) {
+$names[$target] = true;
+}
+}
+if (isset($package['replace'])) {
+foreach ($package['replace'] as $target => $constraint) {
+$names[$target] = true;
+}
+}
+$names = array_keys($names);
+
+if ($exempt || $this->isPackageAcceptable($names, $stability)) {
+$package['id'] = $this->id++;
+$this->packages[] = $package;
+
+foreach ($names as $provided) {
+$this->packageByName[$provided][$package['id']] = $this->packages[$this->id - 2];
+}
+
+
+ unset($rootAliasData);
+if (isset($rootAliases[$name][$version])) {
+$rootAliasData = $rootAliases[$name][$version];
+} elseif (isset($package['alias_normalized']) && isset($rootAliases[$name][$package['alias_normalized']])) {
+$rootAliasData = $rootAliases[$name][$package['alias_normalized']];
+}
+
+if (isset($rootAliasData)) {
+$alias = $package;
+unset($alias['raw']);
+$alias['version'] = $rootAliasData['alias_normalized'];
+$alias['alias'] = $rootAliasData['alias'];
+$alias['alias_of'] = $package['id'];
+$alias['id'] = $this->id++;
+$alias['root_alias'] = true;
+$this->packages[] = $alias;
+
+foreach ($names as $provided) {
+$this->packageByName[$provided][$alias['id']] = $this->packages[$this->id - 2];
+}
+}
+
+
+ if (isset($package['alias'])) {
+$alias = $package;
+unset($alias['raw']);
+$alias['version'] = $package['alias_normalized'];
+$alias['alias'] = $package['alias'];
+$alias['alias_of'] = $package['id'];
+$alias['id'] = $this->id++;
+$this->packages[] = $alias;
+
+foreach ($names as $provided) {
+$this->packageByName[$provided][$alias['id']] = $this->packages[$this->id - 2];
+}
+}
+}
+}
+} else {
+foreach ($repo->getPackages() as $package) {
+$names = $package->getNames();
+$stability = $package->getStability();
+if ($exempt || $this->isPackageAcceptable($names, $stability)) {
+$package->setId($this->id++);
+$this->packages[] = $package;
+
+foreach ($names as $provided) {
+$this->packageByName[$provided][] = $package;
+}
+
+
+ $name = $package->getName();
+if (isset($rootAliases[$name][$package->getVersion()])) {
+$alias = $rootAliases[$name][$package->getVersion()];
+if ($package instanceof AliasPackage) {
+$package = $package->getAliasOf();
+}
+$aliasPackage = new AliasPackage($package, $alias['alias_normalized'], $alias['alias']);
+$aliasPackage->setRootPackageAlias(true);
+$aliasPackage->setId($this->id++);
+
+$package->getRepository()->addPackage($aliasPackage);
+$this->packages[] = $aliasPackage;
+
+foreach ($aliasPackage->getNames() as $name) {
+$this->packageByName[$name][] = $aliasPackage;
+}
+}
+}
+}
+}
+}
+}
+
+public function getPriority(RepositoryInterface $repo)
+{
+$priority = array_search($repo, $this->repositories, true);
+
+if (false === $priority) {
+throw new \RuntimeException("Could not determine repository priority. The repository was not registered in the pool.");
+}
+
+return -$priority;
+}
+
+
+
+
+
+
+
+public function packageById($id)
+{
+return $this->ensurePackageIsLoaded($this->packages[$id - 1]);
+}
+
+
+
+
+
+
+
+
+
+public function whatProvides($name, LinkConstraintInterface $constraint = null)
+{
+if (isset($this->providerCache[$name][(string) $constraint])) {
+return $this->providerCache[$name][(string) $constraint];
+}
+
+return $this->providerCache[$name][(string) $constraint] = $this->computeWhatProvides($name, $constraint);
+}
+
+
+
+
+private function computeWhatProvides($name, $constraint)
+{
+$candidates = array();
+
+foreach ($this->providerRepos as $repo) {
+foreach ($repo->whatProvides($this, $name) as $candidate) {
+$candidates[] = $candidate;
+if ($candidate->getId() < 1) {
+$candidate->setId($this->id++);
+$this->packages[$this->id - 2] = $candidate;
+}
+}
+}
+
+if (isset($this->packageByName[$name])) {
+$candidates = array_merge($candidates, $this->packageByName[$name]);
+}
+
+if (null === $constraint) {
+foreach ($candidates as $key => $candidate) {
+$candidates[$key] = $this->ensurePackageIsLoaded($candidate);
+}
+
+return $candidates;
+}
+
+$matches = $provideMatches = array();
+$nameMatch = false;
+
+foreach ($candidates as $candidate) {
+switch ($this->match($candidate, $name, $constraint)) {
+case self::MATCH_NONE:
+break;
+
+case self::MATCH_NAME:
+$nameMatch = true;
+break;
+
+case self::MATCH:
+$nameMatch = true;
+$matches[] = $this->ensurePackageIsLoaded($candidate);
+break;
+
+case self::MATCH_PROVIDE:
+$provideMatches[] = $this->ensurePackageIsLoaded($candidate);
+break;
+
+case self::MATCH_REPLACE:
+$matches[] = $this->ensurePackageIsLoaded($candidate);
+break;
+
+default:
+throw new \UnexpectedValueException('Unexpected match type');
+}
+}
+
+
+ if ($nameMatch) {
+return $matches;
+}
+
+return array_merge($matches, $provideMatches);
+}
+
+public function literalToPackage($literal)
+{
+$packageId = abs($literal);
+
+return $this->packageById($packageId);
+}
+
+public function literalToString($literal)
+{
+return ($literal > 0 ? '+' : '-') . $this->literalToPackage($literal);
+}
+
+public function literalToPrettyString($literal, $installedMap)
+{
+$package = $this->literalToPackage($literal);
+
+if (isset($installedMap[$package->getId()])) {
+$prefix = ($literal > 0 ? 'keep' : 'remove');
+} else {
+$prefix = ($literal > 0 ? 'install' : 'don\'t install');
+}
+
+return $prefix.' '.$package->getPrettyString();
+}
+
+public function isPackageAcceptable($name, $stability)
+{
+foreach ((array) $name as $n) {
+
+ if (!isset($this->stabilityFlags[$n]) && isset($this->acceptableStabilities[$stability])) {
+return true;
+}
+
+
+ if (isset($this->stabilityFlags[$n]) && BasePackage::$stabilities[$stability] <= $this->stabilityFlags[$n]) {
+return true;
+}
+}
+
+return false;
+}
+
+private function ensurePackageIsLoaded($data)
+{
+if (is_array($data)) {
+if (isset($data['alias_of'])) {
+$aliasOf = $this->packageById($data['alias_of']);
+$package = $this->packages[$data['id'] - 1] = $data['repo']->loadAliasPackage($data, $aliasOf);
+$package->setRootPackageAlias(!empty($data['root_alias']));
+} else {
+$package = $this->packages[$data['id'] - 1] = $data['repo']->loadPackage($data);
+}
+
+foreach ($package->getNames() as $name) {
+$this->packageByName[$name][$data['id']] = $package;
+}
+$package->setId($data['id']);
+
+return $package;
+}
+
+return $data;
+}
+
+
+
+
+
+
+
+
+
+
+private function match($candidate, $name, LinkConstraintInterface $constraint)
+{
+
+ if (is_array($candidate)) {
+$candidateName = $candidate['name'];
+$candidateVersion = $candidate['version'];
+} else {
+
+ $candidateName = $candidate->getName();
+$candidateVersion = $candidate->getVersion();
+}
+
+if ($candidateName === $name) {
+return $constraint->matches(new VersionConstraint('==', $candidateVersion)) ? self::MATCH : self::MATCH_NAME;
+}
+
+if (is_array($candidate)) {
+$provides = isset($candidate['provide'])
+? $this->versionParser->parseLinks($candidateName, $candidateVersion, 'provides', $candidate['provide'])
+: array();
+$replaces = isset($candidate['replace'])
+? $this->versionParser->parseLinks($candidateName, $candidateVersion, 'replaces', $candidate['replace'])
+: array();
+} else {
+$provides = $candidate->getProvides();
+$replaces = $candidate->getReplaces();
+}
+
+
+ if (isset($replaces[0]) || isset($provides[0])) {
+foreach ($provides as $link) {
+if ($link->getTarget() === $name && $constraint->matches($link->getConstraint())) {
+return self::MATCH_PROVIDE;
+}
+}
+
+foreach ($replaces as $link) {
+if ($link->getTarget() === $name && $constraint->matches($link->getConstraint())) {
+return self::MATCH_REPLACE;
+}
+}
+
+return self::MATCH_NONE;
+}
+
+if (isset($provides[$name]) && $constraint->matches($provides[$name]->getConstraint())) {
+return self::MATCH_PROVIDE;
+}
+
+if (isset($replaces[$name]) && $constraint->matches($replaces[$name]->getConstraint())) {
+return self::MATCH_REPLACE;
+}
+
+return self::MATCH_NONE;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+
+
+
+class Rule
+{
+const RULE_INTERNAL_ALLOW_UPDATE = 1;
+const RULE_JOB_INSTALL = 2;
+const RULE_JOB_REMOVE = 3;
+const RULE_PACKAGE_CONFLICT = 6;
+const RULE_PACKAGE_REQUIRES = 7;
+const RULE_PACKAGE_OBSOLETES = 8;
+const RULE_INSTALLED_PACKAGE_OBSOLETES = 9;
+const RULE_PACKAGE_SAME_NAME = 10;
+const RULE_PACKAGE_IMPLICIT_OBSOLETES = 11;
+const RULE_LEARNED = 12;
+const RULE_PACKAGE_ALIAS = 13;
+
+protected $pool;
+
+protected $disabled;
+protected $literals;
+protected $type;
+protected $id;
+protected $reason;
+protected $reasonData;
+
+protected $job;
+
+protected $ruleHash;
+
+public function __construct(Pool $pool, array $literals, $reason, $reasonData, $job = null)
+{
+$this->pool = $pool;
+
+
+ sort($literals);
+
+$this->literals = $literals;
+$this->reason = $reason;
+$this->reasonData = $reasonData;
+
+$this->disabled = false;
+
+$this->job = $job;
+
+$this->type = -1;
+
+$this->ruleHash = substr(md5(implode(',', $this->literals)), 0, 5);
+}
+
+public function getHash()
+{
+return $this->ruleHash;
+}
+
+public function setId($id)
+{
+$this->id = $id;
+}
+
+public function getId()
+{
+return $this->id;
+}
+
+public function getJob()
+{
+return $this->job;
+}
+
+public function getReason()
+{
+return $this->reason;
+}
+
+public function getReasonData()
+{
+return $this->reasonData;
+}
+
+public function getRequiredPackage()
+{
+if ($this->reason === self::RULE_JOB_INSTALL) {
+return $this->reasonData;
+}
+
+if ($this->reason === self::RULE_PACKAGE_REQUIRES) {
+return $this->reasonData->getTarget();
+}
+}
+
+
+
+
+
+
+
+
+
+public function equals(Rule $rule)
+{
+if ($this->ruleHash !== $rule->ruleHash) {
+return false;
+}
+
+if (count($this->literals) != count($rule->literals)) {
+return false;
+}
+
+for ($i = 0, $n = count($this->literals); $i < $n; $i++) {
+if ($this->literals[$i] !== $rule->literals[$i]) {
+return false;
+}
+}
+
+return true;
+}
+
+public function setType($type)
+{
+$this->type = $type;
+}
+
+public function getType()
+{
+return $this->type;
+}
+
+public function disable()
+{
+$this->disabled = true;
+}
+
+public function enable()
+{
+$this->disabled = false;
+}
+
+public function isDisabled()
+{
+return $this->disabled;
+}
+
+public function isEnabled()
+{
+return !$this->disabled;
+}
+
+public function getLiterals()
+{
+return $this->literals;
+}
+
+public function isAssertion()
+{
+return 1 === count($this->literals);
+}
+
+public function getPrettyString(array $installedMap = array())
+{
+$ruleText = '';
+foreach ($this->literals as $i => $literal) {
+if ($i != 0) {
+$ruleText .= '|';
+}
+$ruleText .= $this->pool->literalToPrettyString($literal, $installedMap);
+}
+
+switch ($this->reason) {
+case self::RULE_INTERNAL_ALLOW_UPDATE:
+return $ruleText;
+
+case self::RULE_JOB_INSTALL:
+return "Install command rule ($ruleText)";
+
+case self::RULE_JOB_REMOVE:
+return "Remove command rule ($ruleText)";
+
+case self::RULE_PACKAGE_CONFLICT:
+$package1 = $this->pool->literalToPackage($this->literals[0]);
+$package2 = $this->pool->literalToPackage($this->literals[1]);
+
+return $package1->getPrettyString().' conflicts with '.$this->formatPackagesUnique(array($package2)).'.';
+
+case self::RULE_PACKAGE_REQUIRES:
+$literals = $this->literals;
+$sourceLiteral = array_shift($literals);
+$sourcePackage = $this->pool->literalToPackage($sourceLiteral);
+
+$requires = array();
+foreach ($literals as $literal) {
+$requires[] = $this->pool->literalToPackage($literal);
+}
+
+$text = $this->reasonData->getPrettyString($sourcePackage);
+if ($requires) {
+$text .= ' -> satisfiable by ' . $this->formatPackagesUnique($requires) . '.';
+} else {
+$targetName = $this->reasonData->getTarget();
+
+
+ if (0 === strpos($targetName, 'ext-')) {
+$ext = substr($targetName, 4);
+$error = extension_loaded($ext) ? 'has the wrong version ('.phpversion($ext).') installed' : 'is missing from your system';
+
+$text .= ' -> the requested PHP extension '.$ext.' '.$error.'.';
+} elseif (0 === strpos($targetName, 'lib-')) {
+
+ $lib = substr($targetName, 4);
+
+$text .= ' -> the requested linked library '.$lib.' has the wrong version installed or is missing from your system, make sure to have the extension providing it.';
+} else {
+$text .= ' -> no matching package found.';
+}
+}
+
+return $text;
+
+case self::RULE_PACKAGE_OBSOLETES:
+return $ruleText;
+case self::RULE_INSTALLED_PACKAGE_OBSOLETES:
+return $ruleText;
+case self::RULE_PACKAGE_SAME_NAME:
+return 'Can only install one of: ' . $this->formatPackagesUnique($this->literals) . '.';
+case self::RULE_PACKAGE_IMPLICIT_OBSOLETES:
+return $ruleText;
+case self::RULE_LEARNED:
+return 'Conclusion: '.$ruleText;
+case self::RULE_PACKAGE_ALIAS:
+return $ruleText;
+}
+}
+
+protected function formatPackagesUnique(array $packages)
+{
+$prepared = array();
+foreach ($packages as $package) {
+if (!is_object($package)) {
+$package = $this->pool->literalToPackage($package);
+}
+$prepared[$package->getName()]['name'] = $package->getPrettyName();
+$prepared[$package->getName()]['versions'][$package->getVersion()] = $package->getPrettyVersion();
+}
+foreach ($prepared as $name => $package) {
+$prepared[$name] = $package['name'].'['.implode(', ', $package['versions']).']';
+}
+
+return implode(', ', $prepared);
+}
+
+
+
+
+
+
+public function __toString()
+{
+$result = ($this->isDisabled()) ? 'disabled(' : '(';
+
+foreach ($this->literals as $i => $literal) {
+if ($i != 0) {
+$result .= '|';
+}
+$result .= $this->pool->literalToString($literal);
+}
+
+$result .= ')';
+
+return $result;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+use Composer\Package\PackageInterface;
+use Composer\Package\AliasPackage;
+
+
+
+
+class RuleSetGenerator
+{
+protected $policy;
+protected $pool;
+protected $rules;
+protected $jobs;
+protected $installedMap;
+
+public function __construct(PolicyInterface $policy, Pool $pool)
+{
+$this->policy = $policy;
+$this->pool = $pool;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+protected function createRequireRule(PackageInterface $package, array $providers, $reason, $reasonData = null)
+{
+$literals = array(-$package->getId());
+
+foreach ($providers as $provider) {
+
+ if ($provider === $package) {
+return null;
+}
+$literals[] = $provider->getId();
+}
+
+return new Rule($this->pool, $literals, $reason, $reasonData);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+protected function createInstallOneOfRule(array $packages, $reason, $job)
+{
+$literals = array();
+foreach ($packages as $package) {
+$literals[] = $package->getId();
+}
+
+return new Rule($this->pool, $literals, $reason, $job['packageName'], $job);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+protected function createRemoveRule(PackageInterface $package, $reason, $job)
+{
+return new Rule($this->pool, array(-$package->getId()), $reason, $job['packageName'], $job);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+protected function createConflictRule(PackageInterface $issuer, PackageInterface $provider, $reason, $reasonData = null)
+{
+
+ if ($issuer === $provider) {
+return null;
+}
+
+return new Rule($this->pool, array(-$issuer->getId(), -$provider->getId()), $reason, $reasonData);
+}
+
+
+
+
+
+
+
+
+
+
+private function addRule($type, Rule $newRule = null)
+{
+if (!$newRule || $this->rules->containsEqual($newRule)) {
+return;
+}
+
+$this->rules->add($newRule, $type);
+}
+
+protected function addRulesForPackage(PackageInterface $package)
+{
+$workQueue = new \SplQueue;
+$workQueue->enqueue($package);
+
+while (!$workQueue->isEmpty()) {
+$package = $workQueue->dequeue();
+if (isset($this->addedMap[$package->getId()])) {
+continue;
+}
+
+$this->addedMap[$package->getId()] = true;
+
+foreach ($package->getRequires() as $link) {
+$possibleRequires = $this->pool->whatProvides($link->getTarget(), $link->getConstraint());
+
+$this->addRule(RuleSet::TYPE_PACKAGE, $rule = $this->createRequireRule($package, $possibleRequires, Rule::RULE_PACKAGE_REQUIRES, $link));
+
+foreach ($possibleRequires as $require) {
+$workQueue->enqueue($require);
+}
+}
+
+foreach ($package->getConflicts() as $link) {
+$possibleConflicts = $this->pool->whatProvides($link->getTarget(), $link->getConstraint());
+
+foreach ($possibleConflicts as $conflict) {
+$this->addRule(RuleSet::TYPE_PACKAGE, $this->createConflictRule($package, $conflict, Rule::RULE_PACKAGE_CONFLICT, $link));
+}
+}
+
+
+ $isInstalled = (isset($this->installedMap[$package->getId()]));
+
+foreach ($package->getReplaces() as $link) {
+$obsoleteProviders = $this->pool->whatProvides($link->getTarget(), $link->getConstraint());
+
+foreach ($obsoleteProviders as $provider) {
+if ($provider === $package) {
+continue;
+}
+
+if (!$this->obsoleteImpossibleForAlias($package, $provider)) {
+$reason = ($isInstalled) ? Rule::RULE_INSTALLED_PACKAGE_OBSOLETES : Rule::RULE_PACKAGE_OBSOLETES;
+$this->addRule(RuleSet::TYPE_PACKAGE, $this->createConflictRule($package, $provider, $reason, $link));
+}
+}
+}
+
+$obsoleteProviders = $this->pool->whatProvides($package->getName(), null);
+
+foreach ($obsoleteProviders as $provider) {
+if ($provider === $package) {
+continue;
+}
+
+if (($package instanceof AliasPackage) && $package->getAliasOf() === $provider) {
+$this->addRule(RuleSet::TYPE_PACKAGE, $rule = $this->createRequireRule($package, array($provider), Rule::RULE_PACKAGE_ALIAS, $package));
+} elseif (!$this->obsoleteImpossibleForAlias($package, $provider)) {
+$reason = ($package->getName() == $provider->getName()) ? Rule::RULE_PACKAGE_SAME_NAME : Rule::RULE_PACKAGE_IMPLICIT_OBSOLETES;
+$this->addRule(RuleSet::TYPE_PACKAGE, $rule = $this->createConflictRule($package, $provider, $reason, $package));
+}
+}
+}
+}
+
+protected function obsoleteImpossibleForAlias($package, $provider)
+{
+$packageIsAlias = $package instanceof AliasPackage;
+$providerIsAlias = $provider instanceof AliasPackage;
+
+$impossible = (
+($packageIsAlias && $package->getAliasOf() === $provider) ||
+($providerIsAlias && $provider->getAliasOf() === $package) ||
+($packageIsAlias && $providerIsAlias && $provider->getAliasOf() === $package->getAliasOf())
+);
+
+return $impossible;
+}
+
+
+
+
+
+
+
+private function addRulesForUpdatePackages(PackageInterface $package)
+{
+$updates = $this->policy->findUpdatePackages($this->pool, $this->installedMap, $package);
+
+foreach ($updates as $update) {
+$this->addRulesForPackage($update);
+}
+}
+
+protected function addRulesForJobs()
+{
+foreach ($this->jobs as $job) {
+switch ($job['cmd']) {
+case 'install':
+if ($job['packages']) {
+foreach ($job['packages'] as $package) {
+if (!isset($this->installedMap[$package->getId()])) {
+$this->addRulesForPackage($package);
+}
+}
+
+$rule = $this->createInstallOneOfRule($job['packages'], Rule::RULE_JOB_INSTALL, $job);
+$this->addRule(RuleSet::TYPE_JOB, $rule);
+}
+break;
+case 'remove':
+
+ 
+ foreach ($job['packages'] as $package) {
+$rule = $this->createRemoveRule($package, Rule::RULE_JOB_REMOVE, $job);
+$this->addRule(RuleSet::TYPE_JOB, $rule);
+}
+break;
+}
+}
+}
+
+public function getRulesFor($jobs, $installedMap)
+{
+$this->jobs = $jobs;
+$this->rules = new RuleSet;
+$this->installedMap = $installedMap;
+
+foreach ($this->installedMap as $package) {
+$this->addRulesForPackage($package);
+$this->addRulesForUpdatePackages($package);
+}
+
+$this->addRulesForJobs();
+
+return $this->rules;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+
+
+
+class DebugSolver extends Solver
+{
+protected function printDecisionMap()
+{
+echo "\nDecisionMap: \n";
+foreach ($this->decisionMap as $packageId => $level) {
+if ($packageId === 0) {
+continue;
+}
+if ($level > 0) {
+echo '    +' . $this->pool->packageById($packageId)."\n";
+} elseif ($level < 0) {
+echo '    -' . $this->pool->packageById($packageId)."\n";
+} else {
+echo '    ?' . $this->pool->packageById($packageId)."\n";
+}
+}
+echo "\n";
+}
+
+protected function printDecisionQueue()
+{
+echo "DecisionQueue: \n";
+foreach ($this->decisionQueue as $i => $literal) {
+echo '    ' . $this->pool->literalToString($literal) . ' ' . $this->decisionQueueWhy[$i]." level ".$this->decisionMap[abs($literal)]."\n";
+}
+echo "\n";
+}
+
+protected function printWatches()
+{
+echo "\nWatches:\n";
+foreach ($this->watches as $literalId => $watch) {
+echo '  '.$this->literalFromId($literalId)."\n";
+$queue = array(array('    ', $watch));
+
+while (!empty($queue)) {
+list($indent, $watch) = array_pop($queue);
+
+echo $indent.$watch;
+
+if ($watch) {
+echo ' [id='.$watch->getId().',watch1='.$this->literalFromId($watch->watch1).',watch2='.$this->literalFromId($watch->watch2)."]";
+}
+
+echo "\n";
+
+if ($watch && ($watch->next1 == $watch || $watch->next2 == $watch)) {
+if ($watch->next1 == $watch) {
+echo $indent."    1 *RECURSION*";
+}
+if ($watch->next2 == $watch) {
+echo $indent."    2 *RECURSION*";
+}
+} elseif ($watch && ($watch->next1 || $watch->next2)) {
+$indent = str_replace(array('1', '2'), ' ', $indent);
+
+array_push($queue, array($indent.'    2 ', $watch->next2));
+array_push($queue, array($indent.'    1 ', $watch->next1));
+}
+}
+
+echo "\n";
+}
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+
+
+
+class RuleSetIterator implements \Iterator
+{
+protected $rules;
+protected $types;
+
+protected $currentOffset;
+protected $currentType;
+protected $currentTypeOffset;
+
+public function __construct(array $rules)
+{
+$this->rules = $rules;
+$this->types = array_keys($rules);
+sort($this->types);
+
+$this->rewind();
+}
+
+public function current()
+{
+return $this->rules[$this->currentType][$this->currentOffset];
+}
+
+public function key()
+{
+return $this->currentType;
+}
+
+public function next()
+{
+$this->currentOffset++;
+
+if (!isset($this->rules[$this->currentType])) {
+return;
+}
+
+if ($this->currentOffset >= sizeof($this->rules[$this->currentType])) {
+$this->currentOffset = 0;
+
+do {
+$this->currentTypeOffset++;
+
+if (!isset($this->types[$this->currentTypeOffset])) {
+$this->currentType = -1;
+break;
+}
+
+$this->currentType = $this->types[$this->currentTypeOffset];
+} while (isset($this->types[$this->currentTypeOffset]) && !sizeof($this->rules[$this->currentType]));
+}
+}
+
+public function rewind()
+{
+$this->currentOffset = 0;
+
+$this->currentTypeOffset = -1;
+$this->currentType = -1;
+
+do {
+$this->currentTypeOffset++;
+
+if (!isset($this->types[$this->currentTypeOffset])) {
+$this->currentType = -1;
+break;
+}
+
+$this->currentType = $this->types[$this->currentTypeOffset];
+} while (isset($this->types[$this->currentTypeOffset]) && !sizeof($this->rules[$this->currentType]));
+}
+
+public function valid()
+{
+return isset($this->rules[$this->currentType])
+&& isset($this->rules[$this->currentType][$this->currentOffset]);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+
+
+
+
+
+
+
+
+class RuleWatchChain extends \SplDoublyLinkedList
+{
+protected $offset = 0;
+
+
+
+
+
+
+public function seek($offset)
+{
+$this->rewind();
+for ($i = 0; $i < $offset; $i++, $this->next());
+}
+
+
+
+
+
+
+
+
+
+public function remove()
+{
+$offset = $this->key();
+$this->offsetUnset($offset);
+$this->seek($offset);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+use Composer\Repository\RepositoryInterface;
+
+
+
+
+class Solver
+{
+const BRANCH_LITERALS = 0;
+const BRANCH_LEVEL = 1;
+
+protected $policy;
+protected $pool;
+protected $installed;
+protected $rules;
+protected $ruleSetGenerator;
+protected $updateAll;
+
+protected $addedMap = array();
+protected $updateMap = array();
+protected $watchGraph;
+protected $decisions;
+protected $installedMap;
+
+protected $propagateIndex;
+protected $branches = array();
+protected $problems = array();
+protected $learnedPool = array();
+
+public function __construct(PolicyInterface $policy, Pool $pool, RepositoryInterface $installed)
+{
+$this->policy = $policy;
+$this->pool = $pool;
+$this->installed = $installed;
+$this->ruleSetGenerator = new RuleSetGenerator($policy, $pool);
+}
+
+
+ private function makeAssertionRuleDecisions()
+{
+$decisionStart = count($this->decisions) - 1;
+
+$rulesCount = count($this->rules);
+for ($ruleIndex = 0; $ruleIndex < $rulesCount; $ruleIndex++) {
+$rule = $this->rules->ruleById($ruleIndex);
+
+if (!$rule->isAssertion() || $rule->isDisabled()) {
+continue;
+}
+
+$literals = $rule->getLiterals();
+$literal = $literals[0];
+
+if (!$this->decisions->decided(abs($literal))) {
+$this->decisions->decide($literal, 1, $rule);
+continue;
+}
+
+if ($this->decisions->satisfy($literal)) {
+continue;
+}
+
+
+ if (RuleSet::TYPE_LEARNED === $rule->getType()) {
+$rule->disable();
+continue;
+}
+
+$conflict = $this->decisions->decisionRule($literal);
+
+if ($conflict && RuleSet::TYPE_PACKAGE === $conflict->getType()) {
+
+$problem = new Problem($this->pool);
+
+$problem->addRule($rule);
+$problem->addRule($conflict);
+$this->disableProblem($rule);
+$this->problems[] = $problem;
+continue;
+}
+
+
+ $problem = new Problem($this->pool);
+$problem->addRule($rule);
+$problem->addRule($conflict);
+
+
+ 
+ foreach ($this->rules->getIteratorFor(RuleSet::TYPE_JOB) as $assertRule) {
+if ($assertRule->isDisabled() || !$assertRule->isAssertion()) {
+continue;
+}
+
+$assertRuleLiterals = $assertRule->getLiterals();
+$assertRuleLiteral = $assertRuleLiterals[0];
+
+if (abs($literal) !== abs($assertRuleLiteral)) {
+continue;
+}
+
+$problem->addRule($assertRule);
+$this->disableProblem($assertRule);
+}
+$this->problems[] = $problem;
+
+$this->decisions->resetToOffset($decisionStart);
+$ruleIndex = -1;
+}
+}
+
+protected function setupInstalledMap()
+{
+$this->installedMap = array();
+foreach ($this->installed->getPackages() as $package) {
+$this->installedMap[$package->getId()] = $package;
+}
+
+foreach ($this->jobs as $job) {
+switch ($job['cmd']) {
+case 'update':
+foreach ($job['packages'] as $package) {
+if (isset($this->installedMap[$package->getId()])) {
+$this->updateMap[$package->getId()] = true;
+}
+}
+break;
+
+case 'update-all':
+foreach ($this->installedMap as $package) {
+$this->updateMap[$package->getId()] = true;
+}
+break;
+
+case 'install':
+if (!$job['packages']) {
+$problem = new Problem($this->pool);
+$problem->addRule(new Rule($this->pool, array(), null, null, $job));
+$this->problems[] = $problem;
+}
+break;
+}
+}
+}
+
+public function solve(Request $request)
+{
+$this->jobs = $request->getJobs();
+
+$this->setupInstalledMap();
+
+$this->decisions = new Decisions($this->pool);
+
+$this->rules = $this->ruleSetGenerator->getRulesFor($this->jobs, $this->installedMap);
+$this->watchGraph = new RuleWatchGraph;
+
+foreach ($this->rules as $rule) {
+$this->watchGraph->insert(new RuleWatchNode($rule));
+}
+
+
+$this->makeAssertionRuleDecisions();
+
+$this->runSat(true);
+
+
+ foreach ($this->installedMap as $packageId => $void) {
+if ($this->decisions->undecided($packageId)) {
+$this->decisions->decide(-$packageId, 1, null);
+}
+}
+
+if ($this->problems) {
+throw new SolverProblemsException($this->problems, $this->installedMap);
+}
+
+$transaction = new Transaction($this->policy, $this->pool, $this->installedMap, $this->decisions);
+
+return $transaction->getOperations();
+}
+
+protected function literalFromId($id)
+{
+$package = $this->pool->packageById(abs($id));
+
+return new Literal($package, $id > 0);
+}
+
+
+
+
+
+
+
+
+
+
+protected function propagate($level)
+{
+while ($this->decisions->validOffset($this->propagateIndex)) {
+$decision = $this->decisions->atOffset($this->propagateIndex);
+
+$conflict = $this->watchGraph->propagateLiteral(
+$decision[Decisions::DECISION_LITERAL],
+$level,
+$this->decisions
+);
+
+$this->propagateIndex++;
+
+if ($conflict) {
+return $conflict;
+}
+}
+
+return null;
+}
+
+
+
+
+private function revert($level)
+{
+while (!$this->decisions->isEmpty()) {
+$literal = $this->decisions->lastLiteral();
+
+if ($this->decisions->undecided($literal)) {
+break;
+}
+
+$decisionLevel = $this->decisions->decisionLevel($literal);
+
+if ($decisionLevel <= $level) {
+break;
+}
+
+$this->decisions->revertLast();
+$this->propagateIndex = count($this->decisions);
+}
+
+while (!empty($this->branches) && $this->branches[count($this->branches) - 1][self::BRANCH_LEVEL] >= $level) {
+array_pop($this->branches);
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+private function setPropagateLearn($level, $literal, $disableRules, Rule $rule)
+{
+$level++;
+
+$this->decisions->decide($literal, $level, $rule);
+
+while (true) {
+$rule = $this->propagate($level);
+
+if (!$rule) {
+break;
+}
+
+if ($level == 1) {
+return $this->analyzeUnsolvable($rule, $disableRules);
+}
+
+
+ list($learnLiteral, $newLevel, $newRule, $why) = $this->analyze($level, $rule);
+
+if ($newLevel <= 0 || $newLevel >= $level) {
+throw new SolverBugException(
+"Trying to revert to invalid level ".(int) $newLevel." from level ".(int) $level."."
+);
+} elseif (!$newRule) {
+throw new SolverBugException(
+"No rule was learned from analyzing $rule at level $level."
+);
+}
+
+$level = $newLevel;
+
+$this->revert($level);
+
+$this->rules->add($newRule, RuleSet::TYPE_LEARNED);
+
+$this->learnedWhy[$newRule->getId()] = $why;
+
+$ruleNode = new RuleWatchNode($newRule);
+$ruleNode->watch2OnHighest($this->decisions);
+$this->watchGraph->insert($ruleNode);
+
+$this->decisions->decide($learnLiteral, $level, $newRule);
+}
+
+return $level;
+}
+
+private function selectAndInstall($level, array $decisionQueue, $disableRules, Rule $rule)
+{
+
+ $literals = $this->policy->selectPreferedPackages($this->pool, $this->installedMap, $decisionQueue, $rule->getRequiredPackage());
+
+$selectedLiteral = array_shift($literals);
+
+
+ if (count($literals)) {
+$this->branches[] = array($literals, $level);
+}
+
+return $this->setPropagateLearn($level, $selectedLiteral, $disableRules, $rule);
+}
+
+protected function analyze($level, $rule)
+{
+$analyzedRule = $rule;
+$ruleLevel = 1;
+$num = 0;
+$l1num = 0;
+$seen = array();
+$learnedLiterals = array(null);
+
+$decisionId = count($this->decisions);
+
+$this->learnedPool[] = array();
+
+while (true) {
+$this->learnedPool[count($this->learnedPool) - 1][] = $rule;
+
+foreach ($rule->getLiterals() as $literal) {
+
+ if ($this->decisions->satisfy($literal)) {
+continue;
+}
+
+if (isset($seen[abs($literal)])) {
+continue;
+}
+$seen[abs($literal)] = true;
+
+$l = $this->decisions->decisionLevel($literal);
+
+if (1 === $l) {
+$l1num++;
+} elseif ($level === $l) {
+$num++;
+} else {
+
+ $learnedLiterals[] = $literal;
+
+if ($l > $ruleLevel) {
+$ruleLevel = $l;
+}
+}
+}
+
+$l1retry = true;
+while ($l1retry) {
+$l1retry = false;
+
+if (!$num && !--$l1num) {
+
+ break 2;
+}
+
+while (true) {
+if ($decisionId <= 0) {
+throw new SolverBugException(
+"Reached invalid decision id $decisionId while looking through $rule for a literal present in the analyzed rule $analyzedRule."
+);
+}
+
+$decisionId--;
+
+$decision = $this->decisions->atOffset($decisionId);
+$literal = $decision[Decisions::DECISION_LITERAL];
+
+if (isset($seen[abs($literal)])) {
+break;
+}
+}
+
+unset($seen[abs($literal)]);
+
+if ($num && 0 === --$num) {
+$learnedLiterals[0] = -abs($literal);
+
+if (!$l1num) {
+break 2;
+}
+
+foreach ($learnedLiterals as $i => $learnedLiteral) {
+if ($i !== 0) {
+unset($seen[abs($learnedLiteral)]);
+}
+}
+
+ $l1num++;
+$l1retry = true;
+}
+}
+
+$decision = $this->decisions->atOffset($decisionId);
+$rule = $decision[Decisions::DECISION_REASON];
+}
+
+$why = count($this->learnedPool) - 1;
+
+if (!$learnedLiterals[0]) {
+throw new SolverBugException(
+"Did not find a learnable literal in analyzed rule $analyzedRule."
+);
+}
+
+$newRule = new Rule($this->pool, $learnedLiterals, Rule::RULE_LEARNED, $why);
+
+return array($learnedLiterals[0], $ruleLevel, $newRule, $why);
+}
+
+private function analyzeUnsolvableRule($problem, $conflictRule)
+{
+$why = $conflictRule->getId();
+
+if ($conflictRule->getType() == RuleSet::TYPE_LEARNED) {
+$learnedWhy = $this->learnedWhy[$why];
+$problemRules = $this->learnedPool[$learnedWhy];
+
+foreach ($problemRules as $problemRule) {
+$this->analyzeUnsolvableRule($problem, $problemRule);
+}
+
+return;
+}
+
+if ($conflictRule->getType() == RuleSet::TYPE_PACKAGE) {
+
+ return;
+}
+
+$problem->nextSection();
+$problem->addRule($conflictRule);
+}
+
+private function analyzeUnsolvable($conflictRule, $disableRules)
+{
+$problem = new Problem($this->pool);
+$problem->addRule($conflictRule);
+
+$this->analyzeUnsolvableRule($problem, $conflictRule);
+
+$this->problems[] = $problem;
+
+$seen = array();
+$literals = $conflictRule->getLiterals();
+
+foreach ($literals as $literal) {
+
+ if ($this->decisions->satisfy($literal)) {
+continue;
+}
+$seen[abs($literal)] = true;
+}
+
+foreach ($this->decisions as $decision) {
+$literal = $decision[Decisions::DECISION_LITERAL];
+
+
+ if (!isset($seen[abs($literal)])) {
+continue;
+}
+
+$why = $decision[Decisions::DECISION_REASON];
+
+$problem->addRule($why);
+$this->analyzeUnsolvableRule($problem, $why);
+
+$literals = $why->getLiterals();
+
+foreach ($literals as $literal) {
+
+ if ($this->decisions->satisfy($literal)) {
+continue;
+}
+$seen[abs($literal)] = true;
+}
+}
+
+if ($disableRules) {
+foreach ($this->problems[count($this->problems) - 1] as $reason) {
+$this->disableProblem($reason['rule']);
+}
+
+$this->resetSolver();
+
+return 1;
+}
+
+return 0;
+}
+
+private function disableProblem($why)
+{
+$job = $why->getJob();
+
+if (!$job) {
+$why->disable();
+
+return;
+}
+
+
+ foreach ($this->rules as $rule) {
+if ($job === $rule->getJob()) {
+$rule->disable();
+}
+}
+}
+
+private function resetSolver()
+{
+$this->decisions->reset();
+
+$this->propagateIndex = 0;
+$this->branches = array();
+
+$this->enableDisableLearnedRules();
+$this->makeAssertionRuleDecisions();
+}
+
+
+
+
+
+
+
+
+private function enableDisableLearnedRules()
+{
+foreach ($this->rules->getIteratorFor(RuleSet::TYPE_LEARNED) as $rule) {
+$why = $this->learnedWhy[$rule->getId()];
+$problemRules = $this->learnedPool[$why];
+
+$foundDisabled = false;
+foreach ($problemRules as $problemRule) {
+if ($problemRule->isDisabled()) {
+$foundDisabled = true;
+break;
+}
+}
+
+if ($foundDisabled && $rule->isEnabled()) {
+$rule->disable();
+} elseif (!$foundDisabled && $rule->isDisabled()) {
+$rule->enable();
+}
+}
+}
+
+private function runSat($disableRules = true)
+{
+$this->propagateIndex = 0;
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+$decisionQueue = array();
+$decisionSupplementQueue = array();
+$disableRules = array();
+
+$level = 1;
+$systemLevel = $level + 1;
+$installedPos = 0;
+
+while (true) {
+
+if (1 === $level) {
+$conflictRule = $this->propagate($level);
+if (null !== $conflictRule) {
+if ($this->analyzeUnsolvable($conflictRule, $disableRules)) {
+continue;
+}
+
+return;
+}
+}
+
+
+ if ($level < $systemLevel) {
+$iterator = $this->rules->getIteratorFor(RuleSet::TYPE_JOB);
+foreach ($iterator as $rule) {
+if ($rule->isEnabled()) {
+$decisionQueue = array();
+$noneSatisfied = true;
+
+foreach ($rule->getLiterals() as $literal) {
+if ($this->decisions->satisfy($literal)) {
+$noneSatisfied = false;
+break;
+}
+if ($literal > 0 && $this->decisions->undecided($literal)) {
+$decisionQueue[] = $literal;
+}
+}
+
+if ($noneSatisfied && count($decisionQueue)) {
+
+ 
+ if (count($this->installed) != count($this->updateMap)) {
+$prunedQueue = array();
+foreach ($decisionQueue as $literal) {
+if (isset($this->installedMap[abs($literal)])) {
+$prunedQueue[] = $literal;
+if (isset($this->updateMap[abs($literal)])) {
+$prunedQueue = $decisionQueue;
+break;
+}
+}
+}
+$decisionQueue = $prunedQueue;
+}
+}
+
+if ($noneSatisfied && count($decisionQueue)) {
+
+$oLevel = $level;
+$level = $this->selectAndInstall($level, $decisionQueue, $disableRules, $rule);
+
+if (0 === $level) {
+return;
+}
+if ($level <= $oLevel) {
+break;
+}
+}
+}
+}
+
+$systemLevel = $level + 1;
+
+
+ $iterator->next();
+if ($iterator->valid()) {
+continue;
+}
+}
+
+if ($level < $systemLevel) {
+$systemLevel = $level;
+}
+
+for ($i = 0, $n = 0; $n < count($this->rules); $i++, $n++) {
+if ($i == count($this->rules)) {
+$i = 0;
+}
+
+$rule = $this->rules->ruleById($i);
+$literals = $rule->getLiterals();
+
+if ($rule->isDisabled()) {
+continue;
+}
+
+$decisionQueue = array();
+
+
+ 
+ 
+ 
+ 
+ 
+ foreach ($literals as $literal) {
+if ($literal <= 0) {
+if (!$this->decisions->decidedInstall(abs($literal))) {
+continue 2; 
+ }
+} else {
+if ($this->decisions->decidedInstall(abs($literal))) {
+continue 2; 
+ }
+if ($this->decisions->undecided(abs($literal))) {
+$decisionQueue[] = $literal;
+}
+}
+}
+
+
+ if (count($decisionQueue) < 2) {
+continue;
+}
+
+$oLevel = $level;
+$level = $this->selectAndInstall($level, $decisionQueue, $disableRules, $rule);
+
+if (0 === $level) {
+return;
+}
+
+
+ $n = -1;
+}
+
+if ($level < $systemLevel) {
+continue;
+}
+
+
+ if (count($this->branches)) {
+
+$lastLiteral = null;
+$lastLevel = null;
+$lastBranchIndex = 0;
+$lastBranchOffset = 0;
+$l = 0;
+
+for ($i = count($this->branches) - 1; $i >= 0; $i--) {
+list($literals, $l) = $this->branches[$i];
+
+foreach ($literals as $offset => $literal) {
+if ($literal && $literal > 0 && $this->decisions->decisionLevel($literal) > $l + 1) {
+$lastLiteral = $literal;
+$lastBranchIndex = $i;
+$lastBranchOffset = $offset;
+$lastLevel = $l;
+}
+}
+}
+
+if ($lastLiteral) {
+unset($this->branches[$lastBranchIndex][self::BRANCH_LITERALS][$lastBranchOffset]);
+array_values($this->branches[$lastBranchIndex][self::BRANCH_LITERALS]);
+
+$level = $lastLevel;
+$this->revert($level);
+
+$why = $this->decisions->lastReason();
+
+$oLevel = $level;
+$level = $this->setPropagateLearn($level, $lastLiteral, $disableRules, $why);
+
+if ($level == 0) {
+return;
+}
+
+continue;
+}
+}
+
+break;
+}
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+use Composer\Package\LinkConstraint\LinkConstraintInterface;
+
+
+
+
+class Request
+{
+protected $jobs;
+protected $pool;
+
+public function __construct(Pool $pool)
+{
+$this->pool = $pool;
+$this->jobs = array();
+}
+
+public function install($packageName, LinkConstraintInterface $constraint = null)
+{
+$this->addJob($packageName, 'install', $constraint);
+}
+
+public function update($packageName, LinkConstraintInterface $constraint = null)
+{
+$this->addJob($packageName, 'update', $constraint);
+}
+
+public function remove($packageName, LinkConstraintInterface $constraint = null)
+{
+$this->addJob($packageName, 'remove', $constraint);
+}
+
+protected function addJob($packageName, $cmd, LinkConstraintInterface $constraint = null)
+{
+$packageName = strtolower($packageName);
+$packages = $this->pool->whatProvides($packageName, $constraint);
+
+$this->jobs[] = array(
+'packages' => $packages,
+'cmd' => $cmd,
+'packageName' => $packageName,
+'constraint' => $constraint,
+);
+}
+
+public function updateAll()
+{
+$this->jobs[] = array('cmd' => 'update-all', 'packages' => array());
+}
+
+public function getJobs()
+{
+return $this->jobs;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+
+
+
+
+
+class Problem
+{
+
+
+
+
+protected $reasonSeen;
+
+
+
+
+
+protected $reasons = array();
+
+protected $section = 0;
+
+protected $pool;
+
+public function __construct(Pool $pool)
+{
+$this->pool = $pool;
+}
+
+
+
+
+
+
+public function addRule(Rule $rule)
+{
+$this->addReason($rule->getId(), array(
+'rule' => $rule,
+'job' => $rule->getJob(),
+));
+}
+
+
+
+
+
+
+public function getReasons()
+{
+return $this->reasons;
+}
+
+
+
+
+
+
+public function getPrettyString(array $installedMap = array())
+{
+$reasons = call_user_func_array('array_merge', array_reverse($this->reasons));
+
+if (count($reasons) === 1) {
+reset($reasons);
+$reason = current($reasons);
+
+$rule = $reason['rule'];
+$job = $reason['job'];
+
+if ($job && $job['cmd'] === 'install' && empty($job['packages'])) {
+
+ if (0 === stripos($job['packageName'], 'ext-')) {
+$ext = substr($job['packageName'], 4);
+$error = extension_loaded($ext) ? 'has the wrong version ('.phpversion($ext).') installed' : 'is missing from your system';
+
+return "\n    - The requested PHP extension ".$job['packageName'].$this->constraintToText($job['constraint']).' '.$error.'.';
+}
+
+
+ if (0 === stripos($job['packageName'], 'lib-')) {
+$lib = substr($job['packageName'], 4);
+
+return "\n    - The requested linked library ".$job['packageName'].$this->constraintToText($job['constraint']).' has the wrong version installed or is missing from your system, make sure to have the extension providing it.';
+}
+
+if (!preg_match('{^[A-Za-z0-9_./-]+$}', $job['packageName'])) {
+$illegalChars = preg_replace('{[A-Za-z0-9_./-]+}', '', $job['packageName']);
+
+return "\n    - The requested package ".$job['packageName'].' could not be found, it looks like its name is invalid, "'.$illegalChars.'" is not allowed in package names.';
+}
+
+if (!$this->pool->whatProvides($job['packageName'])) {
+return "\n    - The requested package ".$job['packageName'].' could not be found in any version, there may be a typo in the package name.';
+}
+
+return "\n    - The requested package ".$job['packageName'].$this->constraintToText($job['constraint']).' could not be found.';
+}
+}
+
+$messages = array();
+
+foreach ($reasons as $reason) {
+$rule = $reason['rule'];
+$job = $reason['job'];
+
+if ($job) {
+$messages[] = $this->jobToText($job);
+} elseif ($rule) {
+if ($rule instanceof Rule) {
+$messages[] = $rule->getPrettyString($installedMap);
+}
+}
+}
+
+return "\n    - ".implode("\n    - ", $messages);
+}
+
+
+
+
+
+
+
+protected function addReason($id, $reason)
+{
+if (!isset($this->reasonSeen[$id])) {
+$this->reasonSeen[$id] = true;
+$this->reasons[$this->section][] = $reason;
+}
+}
+
+public function nextSection()
+{
+$this->section++;
+}
+
+
+
+
+
+
+
+protected function jobToText($job)
+{
+switch ($job['cmd']) {
+case 'install':
+if (!$job['packages']) {
+return 'No package found to satisfy install request for '.$job['packageName'].$this->constraintToText($job['constraint']);
+}
+
+return 'Installation request for '.$job['packageName'].$this->constraintToText($job['constraint']).' -> satisfiable by '.$this->getPackageList($job['packages']).'.';
+case 'update':
+return 'Update request for '.$job['packageName'].$this->constraintToText($job['constraint']).'.';
+case 'remove':
+return 'Removal request for '.$job['packageName'].$this->constraintToText($job['constraint']).'';
+}
+
+return 'Job(cmd='.$job['cmd'].', target='.$job['packageName'].', packages=['.$this->getPackageList($job['packages']).'])';
+}
+
+protected function getPackageList($packages)
+{
+$prepared = array();
+foreach ($packages as $package) {
+$prepared[$package->getName()]['name'] = $package->getPrettyName();
+$prepared[$package->getName()]['versions'][$package->getVersion()] = $package->getPrettyVersion();
+}
+foreach ($prepared as $name => $package) {
+$prepared[$name] = $package['name'].'['.implode(', ', $package['versions']).']';
+}
+
+return implode(', ', $prepared);
+}
+
+
+
+
+
+
+
+protected function constraintToText($constraint)
+{
+return ($constraint) ? ' '.$constraint->getPrettyString() : '';
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\DependencyResolver;
+
+
+
+
+
+
+
+
+
+
+
+class RuleWatchGraph
+{
+protected $watchChains = array();
+
+
+
+
+
+
+
+
+
+
+
+
+
+public function insert(RuleWatchNode $node)
+{
+if ($node->getRule()->isAssertion()) {
+return;
+}
+
+foreach (array($node->watch1, $node->watch2) as $literal) {
+if (!isset($this->watchChains[$literal])) {
+$this->watchChains[$literal] = new RuleWatchChain;
+}
+
+$this->watchChains[$literal]->unshift($node);
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+public function propagateLiteral($decidedLiteral, $level, $decisions)
+{
+
+ 
+ 
+ $literal = -$decidedLiteral;
+
+if (!isset($this->watchChains[$literal])) {
+return null;
+}
+
+$chain = $this->watchChains[$literal];
+
+$chain->rewind();
+while ($chain->valid()) {
+$node = $chain->current();
+$otherWatch = $node->getOtherWatch($literal);
+
+if (!$node->getRule()->isDisabled() && !$decisions->satisfy($otherWatch)) {
+$ruleLiterals = $node->getRule()->getLiterals();
+
+$alternativeLiterals = array_filter($ruleLiterals, function ($ruleLiteral) use ($literal, $otherWatch, $decisions) {
+return $literal !== $ruleLiteral &&
+$otherWatch !== $ruleLiteral &&
+!$decisions->conflict($ruleLiteral);
+});
+
+if ($alternativeLiterals) {
+reset($alternativeLiterals);
+$this->moveWatch($literal, current($alternativeLiterals), $node);
+continue;
+}
+
+if ($decisions->conflict($otherWatch)) {
+return $node->getRule();
+}
+
+$decisions->decide($otherWatch, $level, $node->getRule());
+}
+
+$chain->next();
+}
+
+return null;
+}
+
+
+
+
+
+
+
+
+
+
+protected function moveWatch($fromLiteral, $toLiteral, $node)
+{
+if (!isset($this->watchChains[$toLiteral])) {
+$this->watchChains[$toLiteral] = new RuleWatchChain;
+}
+
+$node->moveWatch($fromLiteral, $toLiteral);
+$this->watchChains[$fromLiteral]->remove();
+$this->watchChains[$toLiteral]->unshift($node);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Config;
+
+
+
+
+
+
+
+interface ConfigSourceInterface
+{
+
+
+
+
+
+
+public function addRepository($name, $config);
+
+
+
+
+
+
+public function removeRepository($name);
+
+
+
+
+
+
+
+public function addConfigSetting($name, $value);
+
+
+
+
+
+
+public function removeConfigSetting($name);
+
+
+
+
+
+
+
+
+public function addLink($type, $name, $value);
+
+
+
+
+
+
+
+public function removeLink($type, $name);
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Config;
+
+use Composer\Json\JsonFile;
+use Composer\Json\JsonManipulator;
+
+
+
+
+
+
+
+class JsonConfigSource implements ConfigSourceInterface
+{
+private $file;
+private $manipulator;
+
+
+
+
+
+
+public function __construct(JsonFile $file)
+{
+$this->file = $file;
+}
+
+
+
+
+public function addRepository($name, $config)
+{
+$this->manipulateJson('addRepository', $name, $config, function (&$config, $repo, $repoConfig) {
+$config['repositories'][$repo] = $repoConfig;
+});
+}
+
+
+
+
+public function removeRepository($name)
+{
+$this->manipulateJson('removeRepository', $name, function (&$config, $repo) {
+unset($config['repositories'][$repo]);
+});
+}
+
+
+
+
+public function addConfigSetting($name, $value)
+{
+$this->manipulateJson('addConfigSetting', $name, $value, function (&$config, $key, $val) {
+$config['config'][$key] = $val;
+});
+}
+
+
+
+
+public function removeConfigSetting($name)
+{
+$this->manipulateJson('removeConfigSetting', $name, function (&$config, $key) {
+unset($config['config'][$key]);
+});
+}
+
+
+
+
+public function addLink($type, $name, $value)
+{
+$this->manipulateJson('addLink', $type, $name, $value, function (&$config, $type, $name, $value) {
+$config[$type][$name] = $value;
+});
+}
+
+
+
+
+public function removeLink($type, $name)
+{
+$this->manipulateJson('removeSubNode', $type, $name, function (&$config, $type, $name) {
+unset($config[$type][$name]);
+});
+}
+
+protected function manipulateJson($method, $args, $fallback)
+{
+$args = func_get_args();
+
+ array_shift($args);
+$fallback = array_pop($args);
+
+if ($this->file->exists()) {
+$contents = file_get_contents($this->file->getPath());
+} else {
+$contents = "{\n    \"config\": {\n    }\n}\n";
+}
+$manipulator = new JsonManipulator($contents);
+
+$newFile = !$this->file->exists();
+
+
+ if (call_user_func_array(array($manipulator, $method), $args)) {
+file_put_contents($this->file->getPath(), $manipulator->getContents());
+} else {
+
+ $config = $this->file->read();
+array_unshift($args, $config);
+call_user_func_array($fallback, $args);
+$this->file->write($config);
+}
+
+if ($newFile) {
+chmod($this->file->getPath(), 0600);
+}
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer;
+
+use Composer\Config\JsonConfigSource;
+use Composer\Json\JsonFile;
+use Composer\IO\IOInterface;
+use Composer\Package\Archiver;
+use Composer\Repository\ComposerRepository;
+use Composer\Repository\RepositoryManager;
+use Composer\Util\ProcessExecutor;
+use Composer\Util\RemoteFilesystem;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
+use Composer\Script\EventDispatcher;
+use Composer\Autoload\AutoloadGenerator;
+
+
+
+
+
+
+
+
+class Factory
+{
+
+
+
+public static function createConfig()
+{
+
+ $home = getenv('COMPOSER_HOME');
+$cacheDir = getenv('COMPOSER_CACHE_DIR');
+if (!$home) {
+if (defined('PHP_WINDOWS_VERSION_MAJOR')) {
+if (!getenv('APPDATA')) {
+throw new \RuntimeException('The APPDATA or COMPOSER_HOME environment variable must be set for composer to run correctly');
+}
+$home = strtr(getenv('APPDATA'), '\\', '/') . '/Composer';
+} else {
+if (!getenv('HOME')) {
+throw new \RuntimeException('The HOME or COMPOSER_HOME environment variable must be set for composer to run correctly');
+}
+$home = rtrim(getenv('HOME'), '/') . '/.composer';
+}
+}
+if (!$cacheDir) {
+if (defined('PHP_WINDOWS_VERSION_MAJOR')) {
+if ($cacheDir = getenv('LOCALAPPDATA')) {
+$cacheDir .= '/Composer';
+} else {
+$cacheDir = getenv('APPDATA') . '/Composer/cache';
+}
+$cacheDir = strtr($cacheDir, '\\', '/');
+} else {
+$cacheDir = $home.'/cache';
+}
+}
+
+
+ 
+ 
+ foreach (array($home, $cacheDir) as $dir) {
+if (!file_exists($dir . '/.htaccess')) {
+if (!is_dir($dir)) {
+@mkdir($dir, 0777, true);
+}
+@file_put_contents($dir . '/.htaccess', 'Deny from all');
+}
+}
+
+$config = new Config();
+
+
+ $config->merge(array('config' => array('home' => $home, 'cache-dir' => $cacheDir)));
+
+$file = new JsonFile($home.'/config.json');
+if ($file->exists()) {
+$config->merge($file->read());
+}
+$config->setConfigSource(new JsonConfigSource($file));
+
+
+ $legacyPaths = array(
+'cache-repo-dir' => array('/cache' => '/http*', '/cache.svn' => '/*', '/cache.github' => '/*'),
+'cache-vcs-dir' => array('/cache.git' => '/*', '/cache.hg' => '/*'),
+'cache-files-dir' => array('/cache.files' => '/*'),
+);
+foreach ($legacyPaths as $key => $oldPaths) {
+foreach ($oldPaths as $oldPath => $match) {
+$dir = $config->get($key);
+if ('/cache.github' === $oldPath) {
+$dir .= '/github.com';
+}
+$oldPath = $config->get('home').$oldPath;
+$oldPathMatch = $oldPath . $match;
+if (is_dir($oldPath) && $dir !== $oldPath) {
+if (!is_dir($dir)) {
+if (!@mkdir($dir, 0777, true)) {
+continue;
+}
+}
+if (is_array($children = glob($oldPathMatch))) {
+foreach ($children as $child) {
+@rename($child, $dir.'/'.basename($child));
+}
+}
+@rmdir($oldPath);
+}
+}
+}
+
+return $config;
+}
+
+public static function getComposerFile()
+{
+return trim(getenv('COMPOSER')) ?: 'composer.json';
+}
+
+public static function createAdditionalStyles()
+{
+return array(
+'highlight' => new OutputFormatterStyle('red'),
+'warning' => new OutputFormatterStyle('black', 'yellow'),
+);
+}
+
+public static function createDefaultRepositories(IOInterface $io = null, Config $config = null, RepositoryManager $rm = null)
+{
+$repos = array();
+
+if (!$config) {
+$config = static::createConfig();
+}
+if (!$rm) {
+if (!$io) {
+throw new \InvalidArgumentException('This function requires either an IOInterface or a RepositoryManager');
+}
+$factory = new static;
+$rm = $factory->createRepositoryManager($io, $config);
+}
+
+foreach ($config->getRepositories() as $index => $repo) {
+if (!is_array($repo)) {
+throw new \UnexpectedValueException('Repository '.$index.' ('.json_encode($repo).') should be an array, '.gettype($repo).' given');
+}
+if (!isset($repo['type'])) {
+throw new \UnexpectedValueException('Repository '.$index.' ('.json_encode($repo).') must have a type defined');
+}
+$name = is_int($index) && isset($repo['url']) ? preg_replace('{^https?://}i', '', $repo['url']) : $index;
+while (isset($repos[$name])) {
+$name .= '2';
+}
+$repos[$name] = $rm->createRepository($repo['type'], $repo);
+}
+
+return $repos;
+}
+
+
+
+
+
+
+
+
+
+
+public function createComposer(IOInterface $io, $localConfig = null)
+{
+
+ if (null === $localConfig) {
+$localConfig = static::getComposerFile();
+}
+
+if (is_string($localConfig)) {
+$composerFile = $localConfig;
+$file = new JsonFile($localConfig, new RemoteFilesystem($io));
+
+if (!$file->exists()) {
+if ($localConfig === 'composer.json') {
+$message = 'Composer could not find a composer.json file in '.getcwd();
+} else {
+$message = 'Composer could not find the config file: '.$localConfig;
+}
+$instructions = 'To initialize a project, please create a composer.json file as described in the http://getcomposer.org/ "Getting Started" section';
+throw new \InvalidArgumentException($message.PHP_EOL.$instructions);
+}
+
+$file->validateSchema(JsonFile::LAX_SCHEMA);
+$localConfig = $file->read();
+}
+
+
+ $config = static::createConfig();
+$config->merge($localConfig);
+
+
+ if ($tokens = $config->get('github-oauth')) {
+foreach ($tokens as $domain => $token) {
+if (!preg_match('{^[a-z0-9]+$}', $token)) {
+throw new \UnexpectedValueException('Your github oauth token for '.$domain.' contains invalid characters: "'.$token.'"');
+}
+$io->setAuthentication($domain, $token, 'x-oauth-basic');
+}
+}
+
+$vendorDir = $config->get('vendor-dir');
+$binDir = $config->get('bin-dir');
+
+
+ ProcessExecutor::setTimeout((int) $config->get('process-timeout'));
+
+
+ $rm = $this->createRepositoryManager($io, $config);
+
+
+ $this->addLocalRepository($rm, $vendorDir);
+
+
+ $loader = new Package\Loader\RootPackageLoader($rm, $config);
+$package = $loader->load($localConfig);
+
+
+ $dm = $this->createDownloadManager($io, $config);
+
+
+ $im = $this->createInstallationManager();
+
+
+ $composer = new Composer();
+$composer->setConfig($config);
+$composer->setPackage($package);
+$composer->setRepositoryManager($rm);
+$composer->setDownloadManager($dm);
+$composer->setInstallationManager($im);
+
+
+ $dispatcher = new EventDispatcher($composer, $io);
+$composer->setEventDispatcher($dispatcher);
+
+
+ $generator = new AutoloadGenerator($dispatcher);
+$composer->setAutoloadGenerator($generator);
+
+
+ $this->createDefaultInstallers($im, $composer, $io);
+
+
+ $this->purgePackages($rm, $im);
+
+
+ if (isset($composerFile)) {
+$lockFile = "json" === pathinfo($composerFile, PATHINFO_EXTENSION)
+? substr($composerFile, 0, -4).'lock'
+: $composerFile . '.lock';
+$locker = new Package\Locker(new JsonFile($lockFile, new RemoteFilesystem($io)), $rm, $im, md5_file($composerFile));
+$composer->setLocker($locker);
+}
+
+return $composer;
+}
+
+
+
+
+
+
+protected function createRepositoryManager(IOInterface $io, Config $config)
+{
+$rm = new RepositoryManager($io, $config);
+$rm->setRepositoryClass('composer', 'Composer\Repository\ComposerRepository');
+$rm->setRepositoryClass('vcs', 'Composer\Repository\VcsRepository');
+$rm->setRepositoryClass('package', 'Composer\Repository\PackageRepository');
+$rm->setRepositoryClass('pear', 'Composer\Repository\PearRepository');
+$rm->setRepositoryClass('git', 'Composer\Repository\VcsRepository');
+$rm->setRepositoryClass('svn', 'Composer\Repository\VcsRepository');
+$rm->setRepositoryClass('hg', 'Composer\Repository\VcsRepository');
+$rm->setRepositoryClass('artifact', 'Composer\Repository\ArtifactRepository');
+
+return $rm;
+}
+
+
+
+
+
+protected function addLocalRepository(RepositoryManager $rm, $vendorDir)
+{
+$rm->setLocalRepository(new Repository\InstalledFilesystemRepository(new JsonFile($vendorDir.'/composer/installed.json')));
+}
+
+
+
+
+
+
+public function createDownloadManager(IOInterface $io, Config $config)
+{
+$cache = null;
+if ($config->get('cache-files-ttl') > 0) {
+$cache = new Cache($io, $config->get('cache-files-dir'), 'a-z0-9_./');
+}
+
+$dm = new Downloader\DownloadManager();
+$dm->setDownloader('git', new Downloader\GitDownloader($io, $config));
+$dm->setDownloader('svn', new Downloader\SvnDownloader($io, $config));
+$dm->setDownloader('hg', new Downloader\HgDownloader($io, $config));
+$dm->setDownloader('zip', new Downloader\ZipDownloader($io, $config, $cache));
+$dm->setDownloader('tar', new Downloader\TarDownloader($io, $config, $cache));
+$dm->setDownloader('phar', new Downloader\PharDownloader($io, $config, $cache));
+$dm->setDownloader('file', new Downloader\FileDownloader($io, $config, $cache));
+
+return $dm;
+}
+
+
+
+
+
+
+
+public function createArchiveManager(Config $config, Downloader\DownloadManager $dm = null)
+{
+if (null === $dm) {
+$dm = $this->createDownloadManager(new IO\NullIO(), $config);
+}
+
+$am = new Archiver\ArchiveManager($dm);
+$am->addArchiver(new Archiver\PharArchiver);
+
+return $am;
+}
+
+
+
+
+protected function createInstallationManager()
+{
+return new Installer\InstallationManager();
+}
+
+
+
+
+
+
+protected function createDefaultInstallers(Installer\InstallationManager $im, Composer $composer, IOInterface $io)
+{
+$im->addInstaller(new Installer\LibraryInstaller($io, $composer, null));
+$im->addInstaller(new Installer\PearInstaller($io, $composer, 'pear-library'));
+$im->addInstaller(new Installer\InstallerInstaller($io, $composer));
+$im->addInstaller(new Installer\MetapackageInstaller($io));
+}
+
+
+
+
+
+protected function purgePackages(Repository\RepositoryManager $rm, Installer\InstallationManager $im)
+{
+$repo = $rm->getLocalRepository();
+foreach ($repo->getPackages() as $package) {
+if (!$im->isPackageInstalled($repo, $package)) {
+$repo->removePackage($package);
+}
+}
+}
+
+
+
+
+
+
+
+public static function create(IOInterface $io, $config = null)
+{
+$factory = new static();
+
+return $factory->createComposer($io, $config);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
+
+
+
+
+class Filesystem
+{
+private $processExecutor;
+
+public function __construct(ProcessExecutor $executor = null)
+{
+$this->processExecutor = $executor ?: new ProcessExecutor();
+}
+
+public function remove($file)
+{
+if (is_dir($file)) {
+return $this->removeDirectory($file);
+}
+
+if (file_exists($file)) {
+return unlink($file);
+}
+
+return false;
+}
+
+
+
+
+
+
+
+
+
+
+public function removeDirectory($directory)
+{
+if (!is_dir($directory)) {
+return true;
+}
+
+if (!function_exists('proc_open')) {
+return $this->removeDirectoryPhp($directory);
+}
+
+if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+$cmd = sprintf('rmdir /S /Q %s', escapeshellarg(realpath($directory)));
+} else {
+$cmd = sprintf('rm -rf %s', escapeshellarg($directory));
+}
+
+$result = $this->getProcess()->execute($cmd, $output) === 0;
+
+
+ clearstatcache();
+
+return $result && !is_dir($directory);
+}
+
+
+
+
+
+
+
+
+
+
+
+public function removeDirectoryPhp($directory)
+{
+$it = new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS);
+$ri = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+
+foreach ($ri as $file) {
+if ($file->isDir()) {
+rmdir($file->getPathname());
+} else {
+unlink($file->getPathname());
+}
+}
+
+return rmdir($directory);
+}
+
+public function ensureDirectoryExists($directory)
+{
+if (!is_dir($directory)) {
+if (file_exists($directory)) {
+throw new \RuntimeException(
+$directory.' exists and is not a directory.'
+);
+}
+if (!@mkdir($directory, 0777, true)) {
+throw new \RuntimeException(
+$directory.' does not exist and could not be created.'
+);
+}
+}
+}
+
+
+
+
+
+
+
+
+
+
+public function copyThenRemove($source, $target)
+{
+$it = new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS);
+$ri = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::SELF_FIRST);
+
+if (!file_exists($target)) {
+mkdir($target, 0777, true);
+}
+
+foreach ($ri as $file) {
+$targetPath = $target . DIRECTORY_SEPARATOR . $ri->getSubPathName();
+if ($file->isDir()) {
+mkdir($targetPath);
+} else {
+copy($file->getPathname(), $targetPath);
+}
+}
+
+$this->removeDirectoryPhp($source);
+}
+
+public function rename($source, $target)
+{
+if (true === @rename($source, $target)) {
+return;
+}
+
+if (!function_exists('proc_open')) {
+return $this->copyThenRemove($source, $target);
+}
+
+if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+
+ $command = sprintf('xcopy %s %s /E /I /Q', escapeshellarg($source), escapeshellarg($target));
+$result = $this->processExecutor->execute($command, $output);
+
+
+ clearstatcache();
+
+if (0 === $result) {
+$this->remove($source);
+
+return;
+}
+
+return $this->copyThenRemove($source, $target);
+} else {
+
+ 
+ $command = sprintf('mv %s %s', escapeshellarg($source), escapeshellarg($target));
+$result = $this->processExecutor->execute($command, $output);
+
+
+ clearstatcache();
+
+if (0 === $result) {
+return;
+}
+}
+
+throw new \RuntimeException(sprintf('Could not rename "%s" to "%s".', $source, $target));
+}
+
+
+
+
+
+
+
+
+
+public function findShortestPath($from, $to, $directories = false)
+{
+if (!$this->isAbsolutePath($from) || !$this->isAbsolutePath($to)) {
+throw new \InvalidArgumentException(sprintf('$from (%s) and $to (%s) must be absolute paths.', $from, $to));
+}
+
+$from = lcfirst($this->normalizePath($from));
+$to = lcfirst($this->normalizePath($to));
+
+if ($directories) {
+$from .= '/dummy_file';
+}
+
+if (dirname($from) === dirname($to)) {
+return './'.basename($to);
+}
+
+$commonPath = $to;
+while (strpos($from, $commonPath) !== 0 && '/' !== $commonPath && !preg_match('{^[a-z]:/?$}i', $commonPath) && '.' !== $commonPath) {
+$commonPath = strtr(dirname($commonPath), '\\', '/');
+}
+
+if (0 !== strpos($from, $commonPath) || '/' === $commonPath || '.' === $commonPath) {
+return $to;
+}
+
+$commonPath = rtrim($commonPath, '/') . '/';
+$sourcePathDepth = substr_count(substr($from, strlen($commonPath)), '/');
+$commonPathCode = str_repeat('../', $sourcePathDepth);
+
+return ($commonPathCode . substr($to, strlen($commonPath))) ?: './';
+}
+
+
+
+
+
+
+
+
+
+public function findShortestPathCode($from, $to, $directories = false)
+{
+if (!$this->isAbsolutePath($from) || !$this->isAbsolutePath($to)) {
+throw new \InvalidArgumentException(sprintf('$from (%s) and $to (%s) must be absolute paths.', $from, $to));
+}
+
+$from = lcfirst($this->normalizePath($from));
+$to = lcfirst($this->normalizePath($to));
+
+if ($from === $to) {
+return $directories ? '__DIR__' : '__FILE__';
+}
+
+$commonPath = $to;
+while (strpos($from, $commonPath) !== 0 && '/' !== $commonPath && !preg_match('{^[a-z]:/?$}i', $commonPath) && '.' !== $commonPath) {
+$commonPath = strtr(dirname($commonPath), '\\', '/');
+}
+
+if (0 !== strpos($from, $commonPath) || '/' === $commonPath || '.' === $commonPath) {
+return var_export($to, true);
+}
+
+$commonPath = rtrim($commonPath, '/') . '/';
+if (strpos($to, $from.'/') === 0) {
+return '__DIR__ . '.var_export(substr($to, strlen($from)), true);
+}
+$sourcePathDepth = substr_count(substr($from, strlen($commonPath)), '/') + $directories;
+$commonPathCode = str_repeat('dirname(', $sourcePathDepth).'__DIR__'.str_repeat(')', $sourcePathDepth);
+$relTarget = substr($to, strlen($commonPath));
+
+return $commonPathCode . (strlen($relTarget) ? '.' . var_export('/' . $relTarget, true) : '');
+}
+
+
+
+
+
+
+
+public function isAbsolutePath($path)
+{
+return substr($path, 0, 1) === '/' || substr($path, 1, 1) === ':';
+}
+
+
+
+
+
+
+
+
+public function size($path)
+{
+if (!file_exists($path)) {
+throw new \RuntimeException("$path does not exist.");
+}
+if (is_dir($path)) {
+return $this->directorySize($path);
+}
+
+return filesize($path);
+}
+
+
+
+
+
+
+
+
+public function normalizePath($path)
+{
+$parts = array();
+$path = strtr($path, '\\', '/');
+$prefix = '';
+$absolute = false;
+
+if (preg_match('{^([0-9a-z]+:(?://(?:[a-z]:)?)?)}i', $path, $match)) {
+$prefix = $match[1];
+$path = substr($path, strlen($prefix));
+}
+
+if (substr($path, 0, 1) === '/') {
+$absolute = true;
+$path = substr($path, 1);
+}
+
+$up = false;
+foreach (explode('/', $path) as $chunk) {
+if ('..' === $chunk && ($absolute || $up)) {
+array_pop($parts);
+$up = !(empty($parts) || '..' === end($parts));
+} elseif ('.' !== $chunk && '' !== $chunk) {
+$parts[] = $chunk;
+$up = '..' !== $chunk;
+}
+}
+
+return $prefix.($absolute ? '/' : '').implode('/', $parts);
+}
+
+protected function directorySize($directory)
+{
+$it = new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS);
+$ri = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+
+$size = 0;
+foreach ($ri as $file) {
+if ($file->isFile()) {
+$size += $file->getSize();
+}
+}
+
+return $size;
+}
+
+protected function getProcess()
+{
+return new ProcessExecutor;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+use Composer\IO\IOInterface;
+use Composer\Config;
+use Composer\Downloader\TransportException;
+use Composer\Json\JsonFile;
+
+
+
+
+class GitHub
+{
+protected $io;
+protected $config;
+protected $process;
+protected $remoteFilesystem;
+
+
+
+
+
+
+
+
+
+public function __construct(IOInterface $io, Config $config, ProcessExecutor $process = null, RemoteFilesystem $remoteFilesystem = null)
+{
+$this->io = $io;
+$this->config = $config;
+$this->process = $process ?: new ProcessExecutor;
+$this->remoteFilesystem = $remoteFilesystem ?: new RemoteFilesystem($io);
+}
+
+
+
+
+
+
+
+public function authorizeOAuth($originUrl)
+{
+if ('github.com' !== $originUrl) {
+return false;
+}
+
+
+ if (0 === $this->process->execute('git config github.accesstoken', $output)) {
+$this->io->setAuthentication($originUrl, trim($output), 'x-oauth-basic');
+
+return true;
+}
+
+return false;
+}
+
+
+
+
+
+
+
+
+public function authorizeOAuthInteractively($originUrl, $message = null)
+{
+$attemptCounter = 0;
+
+if ($message) {
+$this->io->write($message);
+}
+$this->io->write('The credentials will be swapped for an OAuth token stored in '.$this->config->get('home').'/config.json, your password will not be stored');
+$this->io->write('To revoke access to this token you can visit https://github.com/settings/applications');
+while ($attemptCounter++ < 5) {
+try {
+$username = $this->io->ask('Username: ');
+$password = $this->io->askAndHideAnswer('Password: ');
+$this->io->setAuthentication($originUrl, $username, $password);
+
+
+ $appName = 'Composer';
+if (0 === $this->process->execute('hostname', $output)) {
+$appName .= ' on ' . trim($output);
+}
+
+$contents = JsonFile::parseJson($this->remoteFilesystem->getContents($originUrl, 'https://api.github.com/authorizations', false, array(
+'http' => array(
+'method' => 'POST',
+'follow_location' => false,
+'header' => "Content-Type: application/json\r\n",
+'content' => json_encode(array(
+'scopes' => array('repo'),
+'note' => $appName,
+'note_url' => 'https://getcomposer.org/',
+)),
+)
+)));
+} catch (TransportException $e) {
+if (in_array($e->getCode(), array(403, 401))) {
+$this->io->write('Invalid credentials.');
+continue;
+}
+
+throw $e;
+}
+
+$this->io->setAuthentication($originUrl, $contents['token'], 'x-oauth-basic');
+
+
+ $githubTokens = $this->config->get('github-oauth') ?: array();
+$githubTokens[$originUrl] = $contents['token'];
+$this->config->getConfigSource()->addConfigSetting('github-oauth', $githubTokens);
+
+return true;
+}
+
+throw new \RuntimeException("Invalid GitHub credentials 5 times in a row, aborting.");
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+use Symfony\Component\Process\Process;
+use Composer\IO\IOInterface;
+
+
+
+
+class ProcessExecutor
+{
+protected static $timeout = 300;
+
+protected $captureOutput;
+protected $errorOutput;
+protected $io;
+
+public function __construct(IOInterface $io = null)
+{
+$this->io = $io;
+}
+
+
+
+
+
+
+
+
+
+
+public function execute($command, &$output = null, $cwd = null)
+{
+$this->captureOutput = count(func_get_args()) > 1;
+$this->errorOutput = null;
+$process = new Process($command, $cwd, null, null, static::getTimeout());
+
+if ($this->io && $this->io->isDebug()) {
+$safeCommand = preg_replace('{(://[^:/\s]+:)[^@\s/]+}i', '$1****', $command);
+$this->io->write('Executing command ('.($cwd ?: 'CWD').'): '.$safeCommand);
+}
+
+$callback = is_callable($output) ? $output : array($this, 'outputHandler');
+$process->run($callback);
+
+if ($this->captureOutput && !is_callable($output)) {
+$output = $process->getOutput();
+}
+
+$this->errorOutput = $process->getErrorOutput();
+
+return $process->getExitCode();
+}
+
+public function splitLines($output)
+{
+return ((string) $output === '') ? array() : preg_split('{\r?\n}', $output);
+}
+
+
+
+
+
+
+public function getErrorOutput()
+{
+return $this->errorOutput;
+}
+
+public function outputHandler($type, $buffer)
+{
+if ($this->captureOutput) {
+return;
+}
+
+echo $buffer;
+}
+
+public static function getTimeout()
+{
+return static::$timeout;
+}
+
+public static function setTimeout($timeout)
+{
+static::$timeout = $timeout;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+use Composer\Composer;
+use Composer\IO\IOInterface;
+use Composer\Downloader\TransportException;
+
+
+
+
+
+class RemoteFilesystem
+{
+private $io;
+private $firstCall;
+private $bytesMax;
+private $originUrl;
+private $fileUrl;
+private $fileName;
+private $retry;
+private $progress;
+private $lastProgress;
+private $options;
+
+
+
+
+
+
+
+public function __construct(IOInterface $io, $options = array())
+{
+$this->io = $io;
+$this->options = $options;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+public function copy($originUrl, $fileUrl, $fileName, $progress = true, $options = array())
+{
+return $this->get($originUrl, $fileUrl, $options, $fileName, $progress);
+}
+
+
+
+
+
+
+
+
+
+
+
+public function getContents($originUrl, $fileUrl, $progress = true, $options = array())
+{
+return $this->get($originUrl, $fileUrl, $options, null, $progress);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+protected function get($originUrl, $fileUrl, $additionalOptions = array(), $fileName = null, $progress = true)
+{
+$this->bytesMax = 0;
+$this->originUrl = $originUrl;
+$this->fileUrl = $fileUrl;
+$this->fileName = $fileName;
+$this->progress = $progress;
+$this->lastProgress = null;
+
+$options = $this->getOptionsForUrl($originUrl, $additionalOptions);
+if ($this->io->isDebug()) {
+$this->io->write('Downloading '.$fileUrl);
+}
+if (isset($options['github-token'])) {
+$fileUrl .= (false === strpos($fileUrl, '?') ? '?' : '&') . 'access_token='.$options['github-token'];
+unset($options['github-token']);
+}
+$ctx = StreamContextFactory::getContext($options, array('notification' => array($this, 'callbackGet')));
+
+if ($this->progress) {
+$this->io->write("    Downloading: <comment>connection...</comment>", false);
+}
+
+$errorMessage = '';
+$errorCode = 0;
+$result = false;
+set_error_handler(function ($code, $msg) use (&$errorMessage) {
+if ($errorMessage) {
+$errorMessage .= "\n";
+}
+$errorMessage .= preg_replace('{^file_get_contents\(.*?\): }', '', $msg);
+});
+try {
+$result = file_get_contents($fileUrl, false, $ctx);
+} catch (\Exception $e) {
+if ($e instanceof TransportException && !empty($http_response_header[0])) {
+$e->setHeaders($http_response_header);
+}
+}
+if ($errorMessage && !ini_get('allow_url_fopen')) {
+$errorMessage = 'allow_url_fopen must be enabled in php.ini ('.$errorMessage.')';
+}
+restore_error_handler();
+if (isset($e) && !$this->retry) {
+throw $e;
+}
+
+
+ if (!empty($http_response_header[0]) && preg_match('{^HTTP/\S+ ([45]\d\d)}i', $http_response_header[0], $match)) {
+$result = false;
+$errorCode = $match[1];
+}
+
+
+ if ($result && extension_loaded('zlib') && substr($fileUrl, 0, 4) === 'http') {
+$decode = false;
+foreach ($http_response_header as $header) {
+if (preg_match('{^content-encoding: *gzip *$}i', $header)) {
+$decode = true;
+continue;
+} elseif (preg_match('{^HTTP/}i', $header)) {
+$decode = false;
+}
+}
+
+if ($decode) {
+if (version_compare(PHP_VERSION, '5.4.0', '>=')) {
+$result = zlib_decode($result);
+} else {
+
+ $result = file_get_contents('compress.zlib://data:application/octet-stream;base64,'.base64_encode($result));
+}
+}
+}
+
+if ($this->progress) {
+$this->io->overwrite("    Downloading: <comment>100%</comment>");
+}
+
+
+ if (false !== $result && null !== $fileName) {
+if ('' === $result) {
+throw new TransportException('"'.$this->fileUrl.'" appears broken, and returned an empty 200 response');
+}
+
+$errorMessage = '';
+set_error_handler(function ($code, $msg) use (&$errorMessage) {
+if ($errorMessage) {
+$errorMessage .= "\n";
+}
+$errorMessage .= preg_replace('{^file_put_contents\(.*?\): }', '', $msg);
+});
+$result = (bool) file_put_contents($fileName, $result);
+restore_error_handler();
+if (false === $result) {
+throw new TransportException('The "'.$this->fileUrl.'" file could not be written to '.$fileName.': '.$errorMessage);
+}
+}
+
+if ($this->retry) {
+$this->retry = false;
+
+return $this->get($this->originUrl, $this->fileUrl, $additionalOptions, $this->fileName, $this->progress);
+}
+
+if (false === $result) {
+$e = new TransportException('The "'.$this->fileUrl.'" file could not be downloaded: '.$errorMessage, $errorCode);
+if (!empty($http_response_header[0])) {
+$e->setHeaders($http_response_header);
+}
+
+throw $e;
+}
+
+return $result;
+}
+
+
+
+
+
+
+
+
+
+
+
+protected function callbackGet($notificationCode, $severity, $message, $messageCode, $bytesTransferred, $bytesMax)
+{
+switch ($notificationCode) {
+case STREAM_NOTIFY_FAILURE:
+case STREAM_NOTIFY_AUTH_REQUIRED:
+if (401 === $messageCode) {
+if (!$this->io->isInteractive()) {
+$message = "The '" . $this->fileUrl . "' URL required authentication.\nYou must be using the interactive console";
+
+throw new TransportException($message, 401);
+}
+
+$this->io->overwrite('    Authentication required (<info>'.parse_url($this->fileUrl, PHP_URL_HOST).'</info>):');
+$username = $this->io->ask('      Username: ');
+$password = $this->io->askAndHideAnswer('      Password: ');
+$this->io->setAuthentication($this->originUrl, $username, $password);
+
+$this->retry = true;
+throw new TransportException('RETRY');
+break;
+}
+
+if ($notificationCode === STREAM_NOTIFY_AUTH_REQUIRED) {
+break;
+}
+
+throw new TransportException('The "'.$this->fileUrl.'" file could not be downloaded ('.trim($message).')', $messageCode);
+
+case STREAM_NOTIFY_AUTH_RESULT:
+if (403 === $messageCode) {
+$message = "The '" . $this->fileUrl . "' URL could not be accessed: " . $message;
+
+throw new TransportException($message, 403);
+}
+break;
+
+case STREAM_NOTIFY_FILE_SIZE_IS:
+if ($this->bytesMax < $bytesMax) {
+$this->bytesMax = $bytesMax;
+}
+break;
+
+case STREAM_NOTIFY_PROGRESS:
+if ($this->bytesMax > 0 && $this->progress) {
+$progression = 0;
+
+if ($this->bytesMax > 0) {
+$progression = round($bytesTransferred / $this->bytesMax * 100);
+}
+
+if ((0 === $progression % 5) && $progression !== $this->lastProgress) {
+$this->lastProgress = $progression;
+$this->io->overwrite("    Downloading: <comment>$progression%</comment>", false);
+}
+}
+break;
+
+default:
+break;
+}
+}
+
+protected function getOptionsForUrl($originUrl, $additionalOptions)
+{
+$headers = array(
+sprintf(
+'User-Agent: Composer/%s (%s; %s; PHP %s.%s.%s)',
+Composer::VERSION === '82fc3b3eb3ef89fb61f385b50bd029b1df7fab4e' ? 'source' : Composer::VERSION,
+php_uname('s'),
+php_uname('r'),
+PHP_MAJOR_VERSION,
+PHP_MINOR_VERSION,
+PHP_RELEASE_VERSION
+)
+);
+
+if (extension_loaded('zlib')) {
+$headers[] = 'Accept-Encoding: gzip';
+}
+
+$options = array_replace_recursive($this->options, $additionalOptions);
+
+if ($this->io->hasAuthentication($originUrl)) {
+$auth = $this->io->getAuthentication($originUrl);
+if ('github.com' === $originUrl && 'x-oauth-basic' === $auth['password']) {
+$options['github-token'] = $auth['username'];
+} else {
+$authStr = base64_encode($auth['username'] . ':' . $auth['password']);
+$headers[] = 'Authorization: Basic '.$authStr;
+}
+}
+
+if (isset($options['http']['header']) && !is_array($options['http']['header'])) {
+$options['http']['header'] = explode("\r\n", trim($options['http']['header'], "\r\n"));
+}
+foreach ($headers as $header) {
+$options['http']['header'][] = $header;
+}
+
+return $options;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+
+
+
+
+
+
+final class StreamContextFactory
+{
+
+
+
+
+
+
+
+
+public static function getContext(array $defaultOptions = array(), array $defaultParams = array())
+{
+$options = array('http' => array(
+
+ 'follow_location' => 1,
+'max_redirects' => 20,
+));
+
+
+ if (!empty($_SERVER['HTTP_PROXY']) || !empty($_SERVER['http_proxy'])) {
+
+ $proxy = parse_url(!empty($_SERVER['http_proxy']) ? $_SERVER['http_proxy'] : $_SERVER['HTTP_PROXY']);
+}
+
+if (!empty($proxy)) {
+$proxyURL = isset($proxy['scheme']) ? $proxy['scheme'] . '://' : '';
+$proxyURL .= isset($proxy['host']) ? $proxy['host'] : '';
+
+if (isset($proxy['port'])) {
+$proxyURL .= ":" . $proxy['port'];
+} elseif ('http://' == substr($proxyURL, 0, 7)) {
+$proxyURL .= ":80";
+} elseif ('https://' == substr($proxyURL, 0, 8)) {
+$proxyURL .= ":443";
+}
+
+
+ $proxyURL = str_replace(array('http://', 'https://'), array('tcp://', 'ssl://'), $proxyURL);
+
+if (0 === strpos($proxyURL, 'ssl:') && !extension_loaded('openssl')) {
+throw new \RuntimeException('You must enable the openssl extension to use a proxy over https');
+}
+
+$options['http']['proxy'] = $proxyURL;
+
+
+ $reqFullUriEnv = getenv('HTTP_PROXY_REQUEST_FULLURI');
+if ($reqFullUriEnv === false || $reqFullUriEnv === '' || (strtolower($reqFullUriEnv) !== 'false' && (bool) $reqFullUriEnv)) {
+$options['http']['request_fulluri'] = true;
+}
+
+if (isset($proxy['user'])) {
+$auth = $proxy['user'];
+if (isset($proxy['pass'])) {
+$auth .= ':' . $proxy['pass'];
+}
+$auth = base64_encode($auth);
+
+
+ if (isset($defaultOptions['http']['header'])) {
+if (is_string($defaultOptions['http']['header'])) {
+$defaultOptions['http']['header'] = array($defaultOptions['http']['header']);
+}
+$defaultOptions['http']['header'][] = "Proxy-Authorization: Basic {$auth}";
+} else {
+$options['http']['header'] = array("Proxy-Authorization: Basic {$auth}");
+}
+}
+}
+
+$options = array_replace_recursive($options, $defaultOptions);
+
+if (isset($options['http']['header'])) {
+$options['http']['header'] = self::fixHttpHeaderField($options['http']['header']);
+}
+
+return stream_context_create($options, $defaultParams);
+}
+
+
+
+
+
+
+
+
+
+
+
+private static function fixHttpHeaderField($header)
+{
+if (!is_array($header)) {
+$header = explode("\r\n", $header);
+}
+uasort($header, function ($el) {
+return preg_match('{^content-type}i', $el) ? 1 : -1;
+});
+
+return $header;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+use Composer\Package\Loader\ArrayLoader;
+use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Package\Loader\InvalidPackageException;
+use Composer\Json\JsonValidationException;
+use Composer\IO\IOInterface;
+use Composer\Json\JsonFile;
+
+
+
+
+
+
+
+class ConfigValidator
+{
+private $io;
+
+public function __construct(IOInterface $io)
+{
+$this->io = $io;
+}
+
+
+
+
+
+
+
+
+public function validate($file)
+{
+$errors = array();
+$publishErrors = array();
+$warnings = array();
+
+
+ $laxValid = false;
+$valid = false;
+try {
+$json = new JsonFile($file, new RemoteFilesystem($this->io));
+$manifest = $json->read();
+
+$json->validateSchema(JsonFile::LAX_SCHEMA);
+$laxValid = true;
+$json->validateSchema();
+$valid = true;
+} catch (JsonValidationException $e) {
+foreach ($e->getErrors() as $message) {
+if ($laxValid) {
+$publishErrors[] = $message;
+} else {
+$errors[] = $message;
+}
+}
+} catch (\Exception $e) {
+$errors[] = $e->getMessage();
+
+return array($errors, $publishErrors, $warnings);
+}
+
+
+ if (!empty($manifest['license'])) {
+
+ if (is_array($manifest['license'])) {
+foreach ($manifest['license'] as $key => $license) {
+if ('proprietary' === $license) {
+unset($manifest['license'][$key]);
+}
+}
+}
+
+$licenseValidator = new SpdxLicenseIdentifier();
+if ('proprietary' !== $manifest['license'] && array() !== $manifest['license'] && !$licenseValidator->validate($manifest['license'])) {
+$warnings[] = sprintf(
+'License %s is not a valid SPDX license identifier, see http://www.spdx.org/licenses/ if you use an open license.'
+."\nIf the software is closed-source, you may use \"proprietary\" as license.",
+json_encode($manifest['license'])
+);
+}
+} else {
+$warnings[] = 'No license specified, it is recommended to do so. For closed-source software you may use "proprietary" as license.';
+}
+
+if (!empty($manifest['name']) && preg_match('{[A-Z]}', $manifest['name'])) {
+$suggestName = preg_replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $manifest['name']);
+$suggestName = strtolower($suggestName);
+
+$warnings[] = sprintf(
+'Name "%s" does not match the best practice (e.g. lower-cased/with-dashes). We suggest using "%s" instead. As such you will not be able to submit it to Packagist.',
+$manifest['name'],
+$suggestName
+);
+}
+
+try {
+$loader = new ValidatingArrayLoader(new ArrayLoader());
+if (!isset($manifest['version'])) {
+$manifest['version'] = '1.0.0';
+}
+if (!isset($manifest['name'])) {
+$manifest['name'] = 'dummy/dummy';
+}
+$loader->load($manifest);
+} catch (InvalidPackageException $e) {
+$errors = array_merge($errors, $e->getErrors());
+}
+
+$warnings = array_merge($warnings, $loader->getWarnings());
+
+return array($errors, $publishErrors, $warnings);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+
+
+
+
+
+class ErrorHandler
+{
+
+
+
+
+
+
+
+
+
+
+
+public static function handle($level, $message, $file, $line)
+{
+
+ if (!error_reporting()) {
+return;
+}
+
+if (ini_get('xdebug.scream')) {
+$message .= "\n\nWarning: You have xdebug.scream enabled, the warning above may be".
+"\na legitimately suppressed error that you were not supposed to see.";
+}
+
+throw new \ErrorException($message, 0, $level, $file, $line);
+}
+
+
+
+
+
+
+public static function register()
+{
+set_error_handler(array(__CLASS__, 'handle'));
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+use Composer\Json\JsonFile;
+
+
+
+
+
+
+
+class SpdxLicenseIdentifier
+{
+
+
+
+private $identifiers;
+
+public function __construct()
+{
+$this->initIdentifiers();
+}
+
+
+
+
+
+
+
+public function validate($license)
+{
+if (is_array($license)) {
+$count = count($license);
+if ($count !== count(array_filter($license, 'is_string'))) {
+throw new \InvalidArgumentException('Array of strings expected.');
+}
+$license = $count > 1 ? '('.implode(' or ', $license).')' : (string) reset($license);
+}
+if (!is_string($license)) {
+throw new \InvalidArgumentException(sprintf(
+'Array or String expected, %s given.', gettype($license)
+));
+}
+
+return $this->isValidLicenseString($license);
+}
+
+
+
+
+private function initIdentifiers()
+{
+$jsonFile = new JsonFile(__DIR__ . '/../../../res/spdx-identifier.json');
+$this->identifiers = $jsonFile->read();
+}
+
+
+
+
+
+
+private function isValidLicenseIdentifier($identifier)
+{
+return in_array($identifier, $this->identifiers);
+}
+
+
+
+
+
+
+
+private function isValidLicenseString($license)
+{
+$tokens = array(
+'po' => '\(',
+'pc' => '\)',
+'op' => '(?:or|and)',
+'lix' => '(?:NONE|NOASSERTION)',
+'lir' => 'LicenseRef-\d+',
+'lic' => '[-+_.a-zA-Z0-9]{3,}',
+'ws' => '\s+',
+'_' => '.',
+);
+
+$next = function () use ($license, $tokens) {
+static $offset = 0;
+
+if ($offset >= strlen($license)) {
+return null;
+}
+
+foreach ($tokens as $name => $token) {
+if (false === $r = preg_match('{' . $token . '}', $license, $matches, PREG_OFFSET_CAPTURE, $offset)) {
+throw new \RuntimeException('Pattern for token %s failed (regex error).', $name);
+}
+if ($r === 0) {
+continue;
+}
+if ($matches[0][1] !== $offset) {
+continue;
+}
+$offset += strlen($matches[0][0]);
+
+return array($name, $matches[0][0]);
+}
+
+throw new \RuntimeException('At least the last pattern needs to match, but it did not (dot-match-all is missing?).');
+};
+
+$open = 0;
+$require = 1;
+$lastop = null;
+
+while (list($token, $string) = $next()) {
+switch ($token) {
+case 'po':
+if ($open || !$require) {
+return false;
+}
+$open = 1;
+break;
+case 'pc':
+if ($open !== 1 || $require || !$lastop) {
+return false;
+}
+$open = 2;
+break;
+case 'op':
+if ($require || !$open) {
+return false;
+}
+$lastop || $lastop = $string;
+if ($lastop !== $string) {
+return false;
+}
+$require = 1;
+break;
+case 'lix':
+if ($open) {
+return false;
+}
+goto lir;
+case 'lic':
+if (!$this->isValidLicenseIdentifier($string)) {
+return false;
+}
+
+ case 'lir':
+lir:
+if (!$require) {
+return false;
+}
+$require = 0;
+break;
+case 'ws':
+break;
+case '_':
+return false;
+default:
+throw new \RuntimeException(sprintf('Unparsed token: %s.', print_r($token, true)));
+}
+}
+
+return !($open % 2 || $require);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Util;
+
+use Composer\IO\IOInterface;
+
+
+
+
+
+class Svn
+{
+
+
+
+protected $credentials;
+
+
+
+
+protected $hasAuth;
+
+
+
+
+protected $io;
+
+
+
+
+protected $url;
+
+
+
+
+protected $cacheCredentials = true;
+
+
+
+
+protected $process;
+
+
+
+
+
+
+public function __construct($url, IOInterface $io, ProcessExecutor $process = null)
+{
+$this->url = $url;
+$this->io = $io;
+$this->process = $process ?: new ProcessExecutor;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+public function execute($command, $url, $cwd = null, $path = null, $verbose = false)
+{
+$svnCommand = $this->getCommand($command, $url, $path);
+$output = null;
+$io = $this->io;
+$handler = function ($type, $buffer) use (&$output, $io, $verbose) {
+if ($type !== 'out') {
+return;
+}
+$output .= $buffer;
+if ($verbose) {
+$io->write($buffer, false);
+}
+};
+$status = $this->process->execute($svnCommand, $handler, $cwd);
+if (0 === $status) {
+return $output;
+}
+
+if (empty($output)) {
+$output = $this->process->getErrorOutput();
+}
+
+
+ if (false === stripos($output, 'Could not authenticate to server:')) {
+throw new \RuntimeException($output);
+}
+
+
+ if (!$this->io->isInteractive()) {
+throw new \RuntimeException(
+'can not ask for authentication in non interactive mode ('.$output.')'
+);
+}
+
+
+ 
+
+
+ if (!$this->hasAuth()) {
+$this->doAuthDance();
+
+
+ return $this->execute($command, $url, $cwd, $path, $verbose);
+}
+
+throw new \RuntimeException(
+'wrong credentials provided ('.$output.')'
+);
+}
+
+
+
+
+
+
+protected function doAuthDance()
+{
+$this->io->write("The Subversion server ({$this->url}) requested credentials:");
+
+$this->hasAuth = true;
+$this->credentials['username'] = $this->io->ask("Username: ");
+$this->credentials['password'] = $this->io->askAndHideAnswer("Password: ");
+
+$this->cacheCredentials = $this->io->askConfirmation("Should Subversion cache these credentials? (yes/no) ", true);
+
+return $this;
+}
+
+
+
+
+
+
+
+
+
+
+protected function getCommand($cmd, $url, $path = null)
+{
+$cmd = sprintf('%s %s%s %s',
+$cmd,
+'--non-interactive ',
+$this->getCredentialString(),
+escapeshellarg($url)
+);
+
+if ($path) {
+$cmd .= ' ' . escapeshellarg($path);
+}
+
+return $cmd;
+}
+
+
+
+
+
+
+
+
+protected function getCredentialString()
+{
+if (!$this->hasAuth()) {
+return '';
+}
+
+return sprintf(
+' %s--username %s --password %s ',
+$this->getAuthCache(),
+escapeshellarg($this->getUsername()),
+escapeshellarg($this->getPassword())
+);
+}
+
+
+
+
+
+
+
+protected function getPassword()
+{
+if ($this->credentials === null) {
+throw new \LogicException("No svn auth detected.");
+}
+
+return isset($this->credentials['password']) ? $this->credentials['password'] : '';
+}
+
+
+
+
+
+
+
+protected function getUsername()
+{
+if ($this->credentials === null) {
+throw new \LogicException("No svn auth detected.");
+}
+
+return $this->credentials['username'];
+}
+
+
+
+
+
+
+protected function hasAuth()
+{
+if (null !== $this->hasAuth) {
+return $this->hasAuth;
+}
+
+$uri = parse_url($this->url);
+if (empty($uri['user'])) {
+return $this->hasAuth = false;
+}
+
+$this->credentials['username'] = $uri['user'];
+if (!empty($uri['pass'])) {
+$this->credentials['password'] = $uri['pass'];
+}
+
+return $this->hasAuth = true;
+}
+
+
+
+
+
+
+protected function getAuthCache()
+{
+return $this->cacheCredentials ? '' : '--no-auth-cache ';
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer;
+
+use Composer\Package\RootPackageInterface;
+use Composer\Package\Locker;
+use Composer\Repository\RepositoryManager;
+use Composer\Installer\InstallationManager;
+use Composer\Downloader\DownloadManager;
+use Composer\Script\EventDispatcher;
+use Composer\Autoload\AutoloadGenerator;
+
+
+
+
+
+class Composer
+{
+const VERSION = '82fc3b3eb3ef89fb61f385b50bd029b1df7fab4e';
+
+
+
+
+private $package;
+
+
+
+
+private $locker;
+
+
+
+
+private $repositoryManager;
+
+
+
+
+private $downloadManager;
+
+
+
+
+private $installationManager;
+
+
+
+
+private $config;
+
+
+
+
+private $eventDispatcher;
+
+
+
+
+private $autoloadGenerator;
+
+
+
+
+
+public function setPackage(RootPackageInterface $package)
+{
+$this->package = $package;
+}
+
+
+
+
+public function getPackage()
+{
+return $this->package;
+}
+
+
+
+
+public function setConfig(Config $config)
+{
+$this->config = $config;
+}
+
+
+
+
+public function getConfig()
+{
+return $this->config;
+}
+
+
+
+
+public function setLocker(Locker $locker)
+{
+$this->locker = $locker;
+}
+
+
+
+
+public function getLocker()
+{
+return $this->locker;
+}
+
+
+
+
+public function setRepositoryManager(RepositoryManager $manager)
+{
+$this->repositoryManager = $manager;
+}
+
+
+
+
+public function getRepositoryManager()
+{
+return $this->repositoryManager;
+}
+
+
+
+
+public function setDownloadManager(DownloadManager $manager)
+{
+$this->downloadManager = $manager;
+}
+
+
+
+
+public function getDownloadManager()
+{
+return $this->downloadManager;
+}
+
+
+
+
+public function setInstallationManager(InstallationManager $manager)
+{
+$this->installationManager = $manager;
+}
+
+
+
+
+public function getInstallationManager()
+{
+return $this->installationManager;
+}
+
+
+
+
+public function setEventDispatcher(EventDispatcher $eventDispatcher)
+{
+$this->eventDispatcher = $eventDispatcher;
+}
+
+
+
+
+public function getEventDispatcher()
+{
+return $this->eventDispatcher;
+}
+
+
+
+
+public function setAutoloadGenerator(AutoloadGenerator $autoloadGenerator)
+{
+$this->autoloadGenerator = $autoloadGenerator;
+}
+
+
+
+
+public function getAutoloadGenerator()
+{
+return $this->autoloadGenerator;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Json;
+
+
+
+
+class JsonManipulator
+{
+private static $RECURSE_BLOCKS = '(?:[^{}]*|\{(?:[^{}]*|\{(?:[^{}]*|\{(?:[^{}]*|\{[^{}]*\})*\})*\})*\})*';
+
+private $contents;
+private $newline;
+private $indent;
+
+public function __construct($contents)
+{
+$contents = trim($contents);
+if (!preg_match('#^\{(.*)\}$#s', $contents)) {
+throw new \InvalidArgumentException('The json file must be an object ({})');
+}
+$this->newline = false !== strpos($contents, "\r\n") ? "\r\n": "\n";
+$this->contents = $contents === '{}' ? '{' . $this->newline . '}' : $contents;
+$this->detectIndenting();
+}
+
+public function getContents()
+{
+return $this->contents . $this->newline;
+}
+
+public function addLink($type, $package, $constraint)
+{
+
+ if (!preg_match('#"'.$type.'":\s*\{#', $this->contents)) {
+$this->addMainKey($type, $this->format(array($package => $constraint)));
+
+return true;
+}
+
+$linksRegex = '#("'.$type.'":\s*\{)([^}]+)(\})#s';
+if (!preg_match($linksRegex, $this->contents, $match)) {
+return false;
+}
+
+$links = $match[2];
+$packageRegex = str_replace('/', '\\\\?/', preg_quote($package));
+
+
+ if (preg_match('{"'.$packageRegex.'"\s*:}i', $links)) {
+$links = preg_replace('{"'.$packageRegex.'"(\s*:\s*)"[^"]+"}i', addcslashes(JsonFile::encode($package).'${1}"'.$constraint.'"', '\\'), $links);
+} elseif (preg_match('#[^\s](\s*)$#', $links, $match)) {
+
+ $links = preg_replace(
+'#'.$match[1].'$#',
+addcslashes(',' . $this->newline . $this->indent . $this->indent . JsonFile::encode($package).': '.JsonFile::encode($constraint) . $match[1], '\\'),
+$links
+);
+} else {
+
+ $links = $this->newline . $this->indent . $this->indent . JsonFile::encode($package).': '.JsonFile::encode($constraint) . $links;
+}
+
+$this->contents = preg_replace($linksRegex, addcslashes('${1}'.$links.'$3', '\\'), $this->contents);
+
+return true;
+}
+
+public function addRepository($name, $config)
+{
+return $this->addSubNode('repositories', $name, $config);
+}
+
+public function removeRepository($name)
+{
+return $this->removeSubNode('repositories', $name);
+}
+
+public function addConfigSetting($name, $value)
+{
+return $this->addSubNode('config', $name, $value);
+}
+
+public function removeConfigSetting($name)
+{
+return $this->removeSubNode('config', $name);
+}
+
+public function addSubNode($mainNode, $name, $value)
+{
+
+ if (!preg_match('#"'.$mainNode.'":\s*\{#', $this->contents)) {
+$this->addMainKey(''.$mainNode.'', $this->format(array($name => $value)));
+
+return true;
+}
+
+$subName = null;
+if (false !== strpos($name, '.')) {
+list($name, $subName) = explode('.', $name, 2);
+}
+
+
+ $nodeRegex = '#("'.$mainNode.'":\s*\{)('.self::$RECURSE_BLOCKS.')(\})#s';
+if (!preg_match($nodeRegex, $this->contents, $match)) {
+return false;
+}
+
+$children = $match[2];
+
+
+ if (!json_decode('{'.$children.'}')) {
+return false;
+}
+
+$that = $this;
+
+
+ if (preg_match('{("'.preg_quote($name).'"\s*:\s*)([0-9.]+|null|true|false|"[^"]+"|\[[^\]]*\]|\{'.self::$RECURSE_BLOCKS.'\})(,?)}', $children, $matches)) {
+$children = preg_replace_callback('{("'.preg_quote($name).'"\s*:\s*)([0-9.]+|null|true|false|"[^"]+"|\[[^\]]*\]|\{'.self::$RECURSE_BLOCKS.'\})(,?)}', function ($matches) use ($name, $subName, $value, $that) {
+if ($subName !== null) {
+$curVal = json_decode($matches[2], true);
+$curVal[$subName] = $value;
+$value = $curVal;
+}
+
+return $matches[1] . $that->format($value, 1) . $matches[3];
+}, $children);
+} elseif (preg_match('#[^\s](\s*)$#', $children, $match)) {
+if ($subName !== null) {
+$value = array($subName => $value);
+}
+
+
+ $children = preg_replace(
+'#'.$match[1].'$#',
+addcslashes(',' . $this->newline . $this->indent . $this->indent . JsonFile::encode($name).': '.$this->format($value, 1) . $match[1], '\\'),
+$children
+);
+} else {
+if ($subName !== null) {
+$value = array($subName => $value);
+}
+
+
+ $children = $this->newline . $this->indent . $this->indent . JsonFile::encode($name).': '.$this->format($value, 1) . $children;
+}
+
+$this->contents = preg_replace($nodeRegex, addcslashes('${1}'.$children.'$3', '\\'), $this->contents);
+
+return true;
+}
+
+public function removeSubNode($mainNode, $name)
+{
+
+ if (!preg_match('#"'.$mainNode.'":\s*\{#', $this->contents)) {
+return true;
+}
+
+
+ if (preg_match('#"'.$mainNode.'":\s*\{\s*\}#s', $this->contents)) {
+return true;
+}
+
+
+ $nodeRegex = '#("'.$mainNode.'":\s*\{)('.self::$RECURSE_BLOCKS.')(\})#s';
+if (!preg_match($nodeRegex, $this->contents, $match)) {
+return false;
+}
+
+$children = $match[2];
+
+
+ if (!json_decode('{'.$children.'}')) {
+return false;
+}
+
+$subName = null;
+if (false !== strpos($name, '.')) {
+list($name, $subName) = explode('.', $name, 2);
+}
+
+
+ if (preg_match('{"'.preg_quote($name).'"\s*:}i', $children)) {
+
+ if (preg_match_all('{"'.preg_quote($name).'"\s*:\s*(?:[0-9.]+|null|true|false|"[^"]+"|\[[^\]]*\]|\{'.self::$RECURSE_BLOCKS.'\})}', $children, $matches)) {
+$bestMatch = '';
+foreach ($matches[0] as $match) {
+if (strlen($bestMatch) < strlen($match)) {
+$bestMatch = $match;
+}
+}
+$childrenClean = preg_replace('{,\s*'.preg_quote($bestMatch).'}i', '', $children, -1, $count);
+if (1 !== $count) {
+$childrenClean = preg_replace('{'.preg_quote($bestMatch).'\s*,?\s*}i', '', $childrenClean, -1, $count);
+if (1 !== $count) {
+return false;
+}
+}
+}
+}
+
+
+ if (!trim($childrenClean)) {
+$this->contents = preg_replace($nodeRegex, '$1'.$this->newline.$this->indent.'}', $this->contents);
+
+
+ if ($subName !== null) {
+$curVal = json_decode('{'.$children.'}', true);
+unset($curVal[$name][$subName]);
+$this->addSubNode($mainNode, $name, $curVal[$name]);
+}
+
+return true;
+}
+
+$that = $this;
+$this->contents = preg_replace_callback($nodeRegex, function ($matches) use ($that, $name, $subName, $childrenClean) {
+if ($subName !== null) {
+$curVal = json_decode('{'.$matches[2].'}', true);
+unset($curVal[$name][$subName]);
+$childrenClean = substr($that->format($curVal, 0), 1, -1);
+}
+
+return $matches[1] . $childrenClean . $matches[3];
+}, $this->contents);
+
+return true;
+}
+
+public function addMainKey($key, $content)
+{
+if (preg_match('#[^{\s](\s*)\}$#', $this->contents, $match)) {
+$this->contents = preg_replace(
+'#'.$match[1].'\}$#',
+addcslashes(',' . $this->newline . $this->indent . JsonFile::encode($key). ': '. $content . $this->newline . '}', '\\'),
+$this->contents
+);
+} else {
+$this->contents = preg_replace(
+'#\}$#',
+addcslashes($this->indent . JsonFile::encode($key). ': '.$content . $this->newline . '}', '\\'),
+$this->contents
+);
+}
+}
+
+public function format($data, $depth = 0)
+{
+if (is_array($data)) {
+reset($data);
+
+if (is_numeric(key($data))) {
+foreach ($data as $key => $val) {
+$data[$key] = $this->format($val, $depth + 1);
+}
+
+return '['.implode(', ', $data).']';
+}
+
+$out = '{' . $this->newline;
+$elems = array();
+foreach ($data as $key => $val) {
+$elems[] = str_repeat($this->indent, $depth + 2) . JsonFile::encode($key). ': '.$this->format($val, $depth + 1);
+}
+
+return $out . implode(','.$this->newline, $elems) . $this->newline . str_repeat($this->indent, $depth + 1) . '}';
+}
+
+return JsonFile::encode($data);
+}
+
+protected function detectIndenting()
+{
+if (preg_match('{^(\s+)"}m', $this->contents, $match)) {
+$this->indent = $match[1];
+} else {
+$this->indent = '    ';
+}
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Json;
+
+use Composer\Composer;
+use JsonSchema\Validator;
+use Seld\JsonLint\JsonParser;
+use Seld\JsonLint\ParsingException;
+use Composer\Util\RemoteFilesystem;
+use Composer\Downloader\TransportException;
+
+
+
+
+
+
+
+class JsonFile
+{
+const LAX_SCHEMA = 1;
+const STRICT_SCHEMA = 2;
+
+const JSON_UNESCAPED_SLASHES = 64;
+const JSON_PRETTY_PRINT = 128;
+const JSON_UNESCAPED_UNICODE = 256;
+
+private $path;
+private $rfs;
+
+
+
+
+
+
+
+public function __construct($path, RemoteFilesystem $rfs = null)
+{
+$this->path = $path;
+
+if (null === $rfs && preg_match('{^https?://}i', $path)) {
+throw new \InvalidArgumentException('http urls require a RemoteFilesystem instance to be passed');
+}
+$this->rfs = $rfs;
+}
+
+
+
+
+public function getPath()
+{
+return $this->path;
+}
+
+
+
+
+
+
+public function exists()
+{
+return is_file($this->path);
+}
+
+
+
+
+
+
+public function read()
+{
+try {
+if ($this->rfs) {
+$json = $this->rfs->getContents($this->path, $this->path, false);
+} else {
+$json = file_get_contents($this->path);
+}
+} catch (TransportException $e) {
+throw new \RuntimeException($e->getMessage(), 0, $e);
+} catch (\Exception $e) {
+throw new \RuntimeException('Could not read '.$this->path."\n\n".$e->getMessage());
+}
+
+return static::parseJson($json, $this->path);
+}
+
+
+
+
+
+
+
+public function write(array $hash, $options = 448)
+{
+$dir = dirname($this->path);
+if (!is_dir($dir)) {
+if (file_exists($dir)) {
+throw new \UnexpectedValueException(
+$dir.' exists and is not a directory.'
+);
+}
+if (!@mkdir($dir, 0777, true)) {
+throw new \UnexpectedValueException(
+$dir.' does not exist and could not be created.'
+);
+}
+}
+file_put_contents($this->path, static::encode($hash, $options). ($options & self::JSON_PRETTY_PRINT ? "\n" : ''));
+}
+
+
+
+
+
+
+
+
+public function validateSchema($schema = self::STRICT_SCHEMA)
+{
+$content = file_get_contents($this->path);
+$data = json_decode($content);
+
+if (null === $data && 'null' !== $content) {
+self::validateSyntax($content, $this->path);
+}
+
+$schemaFile = __DIR__ . '/../../../res/composer-schema.json';
+$schemaData = json_decode(file_get_contents($schemaFile));
+
+if ($schema === self::LAX_SCHEMA) {
+$schemaData->additionalProperties = true;
+$schemaData->properties->name->required = false;
+$schemaData->properties->description->required = false;
+}
+
+$validator = new Validator();
+$validator->check($data, $schemaData);
+
+
+
+if (!$validator->isValid()) {
+$errors = array();
+foreach ((array) $validator->getErrors() as $error) {
+$errors[] = ($error['property'] ? $error['property'].' : ' : '').$error['message'];
+}
+throw new JsonValidationException('"'.$this->path.'" does not match the expected JSON schema', $errors);
+}
+
+return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+public static function encode($data, $options = 448)
+{
+if (version_compare(PHP_VERSION, '5.4', '>=')) {
+return json_encode($data, $options);
+}
+
+$json = json_encode($data);
+
+$prettyPrint = (bool) ($options & self::JSON_PRETTY_PRINT);
+$unescapeUnicode = (bool) ($options & self::JSON_UNESCAPED_UNICODE);
+$unescapeSlashes = (bool) ($options & self::JSON_UNESCAPED_SLASHES);
+
+if (!$prettyPrint && !$unescapeUnicode && !$unescapeSlashes) {
+return $json;
+}
+
+$result = '';
+$pos = 0;
+$strLen = strlen($json);
+$indentStr = '    ';
+$newLine = "\n";
+$outOfQuotes = true;
+$buffer = '';
+$noescape = true;
+
+for ($i = 0; $i < $strLen; $i++) {
+
+ $char = substr($json, $i, 1);
+
+
+ if ('"' === $char && $noescape) {
+$outOfQuotes = !$outOfQuotes;
+}
+
+if (!$outOfQuotes) {
+$buffer .= $char;
+$noescape = '\\' === $char ? !$noescape : true;
+continue;
+} elseif ('' !== $buffer) {
+if ($unescapeSlashes) {
+$buffer = str_replace('\\/', '/', $buffer);
+}
+
+if ($unescapeUnicode && function_exists('mb_convert_encoding')) {
+
+ $buffer = preg_replace_callback('/\\\\u([0-9a-f]{4})/i', function($match) {
+return mb_convert_encoding(pack('H*', $match[1]), 'UTF-8', 'UCS-2BE');
+}, $buffer);
+}
+
+$result .= $buffer.$char;
+$buffer = '';
+continue;
+}
+
+if (':' === $char) {
+
+ $char .= ' ';
+} elseif (('}' === $char || ']' === $char)) {
+$pos--;
+$prevChar = substr($json, $i - 1, 1);
+
+if ('{' !== $prevChar && '[' !== $prevChar) {
+
+ 
+ $result .= $newLine;
+for ($j = 0; $j < $pos; $j++) {
+$result .= $indentStr;
+}
+} else {
+
+ $result = rtrim($result)."\n\n".$indentStr;
+}
+}
+
+$result .= $char;
+
+
+ 
+ if (',' === $char || '{' === $char || '[' === $char) {
+$result .= $newLine;
+
+if ('{' === $char || '[' === $char) {
+$pos++;
+}
+
+for ($j = 0; $j < $pos; $j++) {
+$result .= $indentStr;
+}
+}
+}
+
+return $result;
+}
+
+
+
+
+
+
+
+
+
+public static function parseJson($json, $file = null)
+{
+$data = json_decode($json, true);
+if (null === $data && JSON_ERROR_NONE !== json_last_error()) {
+self::validateSyntax($json, $file);
+}
+
+return $data;
+}
+
+
+
+
+
+
+
+
+
+
+protected static function validateSyntax($json, $file = null)
+{
+$parser = new JsonParser();
+$result = $parser->lint($json);
+if (null === $result) {
+if (defined('JSON_ERROR_UTF8') && JSON_ERROR_UTF8 === json_last_error()) {
+throw new \UnexpectedValueException('"'.$file.'" is not UTF-8, could not parse as JSON');
+}
+
+return true;
+}
+
+throw new ParsingException('"'.$file.'" does not contain valid JSON'."\n".$result->getMessage(), $result->getDetails());
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Json;
+
+use Exception;
+
+
+
+
+class JsonValidationException extends Exception
+{
+protected $errors;
+
+public function __construct($message, $errors = array())
+{
+$this->errors = $errors;
+parent::__construct($message);
+}
+
+public function getErrors()
+{
+return $this->errors;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer;
+
+use Composer\Config\ConfigSourceInterface;
+
+
+
+
+class Config
+{
+public static $defaultConfig = array(
+'process-timeout' => 300,
+'use-include-path' => false,
+'preferred-install' => 'auto',
+'notify-on-install' => true,
+'github-protocols' => array('git', 'https', 'http'),
+'vendor-dir' => 'vendor',
+'bin-dir' => '{$vendor-dir}/bin',
+'cache-dir' => '{$home}/cache',
+'cache-files-dir' => '{$cache-dir}/files',
+'cache-repo-dir' => '{$cache-dir}/repo',
+'cache-vcs-dir' => '{$cache-dir}/vcs',
+'cache-ttl' => 15552000, 
+ 'cache-files-ttl' => null, 
+ 'cache-files-maxsize' => '300MiB',
+'discard-changes' => false,
+);
+
+public static $defaultRepositories = array(
+'packagist' => array(
+'type' => 'composer',
+'url' => 'https?://packagist.org',
+'allow_ssl_downgrade' => true,
+)
+);
+
+private $config;
+private $repositories;
+private $configSource;
+
+public function __construct()
+{
+
+ $this->config = static::$defaultConfig;
+$this->repositories = static::$defaultRepositories;
+}
+
+public function setConfigSource(ConfigSourceInterface $source)
+{
+$this->configSource = $source;
+}
+
+public function getConfigSource()
+{
+return $this->configSource;
+}
+
+
+
+
+
+
+public function merge(array $config)
+{
+
+ if (!empty($config['config']) && is_array($config['config'])) {
+foreach ($config['config'] as $key => $val) {
+if (in_array($key, array('github-oauth')) && isset($this->config[$key])) {
+$this->config[$key] = array_merge($this->config[$key], $val);
+} else {
+$this->config[$key] = $val;
+}
+}
+}
+
+if (!empty($config['repositories']) && is_array($config['repositories'])) {
+$this->repositories = array_reverse($this->repositories, true);
+$newRepos = array_reverse($config['repositories'], true);
+foreach ($newRepos as $name => $repository) {
+
+ if (false === $repository) {
+unset($this->repositories[$name]);
+continue;
+}
+
+
+ if (1 === count($repository) && false === current($repository)) {
+unset($this->repositories[key($repository)]);
+continue;
+}
+
+
+ if (is_int($name)) {
+$this->repositories[] = $repository;
+} else {
+$this->repositories[$name] = $repository;
+}
+}
+$this->repositories = array_reverse($this->repositories, true);
+}
+}
+
+
+
+
+public function getRepositories()
+{
+return $this->repositories;
+}
+
+
+
+
+
+
+
+public function get($key)
+{
+switch ($key) {
+case 'vendor-dir':
+case 'bin-dir':
+case 'process-timeout':
+case 'cache-dir':
+case 'cache-files-dir':
+case 'cache-repo-dir':
+case 'cache-vcs-dir':
+
+ $env = 'COMPOSER_' . strtoupper(strtr($key, '-', '_'));
+
+return rtrim($this->process(getenv($env) ?: $this->config[$key]), '/\\');
+
+case 'cache-ttl':
+return (int) $this->config[$key];
+
+case 'cache-files-maxsize':
+if (!preg_match('/^\s*([0-9.]+)\s*(?:([kmg])(?:i?b)?)?\s*$/i', $this->config[$key], $matches)) {
+throw new \RuntimeException(
+"Could not parse the value of 'cache-files-maxsize': {$this->config[$key]}"
+);
+}
+$size = $matches[1];
+if (isset($matches[2])) {
+switch (strtolower($matches[2])) {
+case 'g':
+$size *= 1024;
+
+ case 'm':
+$size *= 1024;
+
+ case 'k':
+$size *= 1024;
+break;
+}
+}
+
+return $size;
+
+case 'cache-files-ttl':
+if (isset($this->config[$key])) {
+return (int) $this->config[$key];
+}
+
+return (int) $this->config['cache-ttl'];
+
+case 'home':
+return rtrim($this->process($this->config[$key]), '/\\');
+
+case 'discard-changes':
+if ($env = getenv('COMPOSER_DISCARD_CHANGES')) {
+if (!in_array($env, array('stash', 'true', 'false', '1', '0'), true)) {
+throw new \RuntimeException(
+"Invalid value for COMPOSER_DISCARD_CHANGES: {$env}. Expected 1, 0, true, false or stash"
+);
+}
+if ('stash' === $env) {
+return 'stash';
+}
+
+
+ return $env !== 'false' && (bool) $env;
+}
+
+if (!in_array($this->config[$key], array(true, false, 'stash'), true)) {
+throw new \RuntimeException(
+"Invalid value for 'discard-changes': {$this->config[$key]}. Expected true, false or stash"
+);
+}
+
+return $this->config[$key];
+
+default:
+if (!isset($this->config[$key])) {
+return null;
+}
+
+return $this->process($this->config[$key]);
+}
+}
+
+public function all()
+{
+$all = array(
+'repositories' => $this->getRepositories(),
+);
+foreach (array_keys($this->config) as $key) {
+$all['config'][$key] = $this->get($key);
+}
+
+return $all;
+}
+
+public function raw()
+{
+return array(
+'repositories' => $this->getRepositories(),
+'config' => $this->config,
+);
+}
+
+
+
+
+
+
+
+public function has($key)
+{
+return array_key_exists($key, $this->config);
+}
+
+
+
+
+
+
+
+private function process($value)
+{
+$config = $this;
+
+if (!is_string($value)) {
+return $value;
+}
+
+return preg_replace_callback('#\{\$(.+)\}#', function ($match) use ($config) {
+return $config->get($match[1]);
+}, $value);
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Script;
+
+use Composer\Composer;
+use Composer\IO\IOInterface;
+
+
+
+
+
+
+class Event
+{
+
+
+
+private $name;
+
+
+
+
+private $composer;
+
+
+
+
+private $io;
+
+
+
+
+private $devMode;
+
+
+
+
+
+
+
+
+
+public function __construct($name, Composer $composer, IOInterface $io, $devMode = false)
+{
+$this->name = $name;
+$this->composer = $composer;
+$this->io = $io;
+$this->devMode = $devMode;
+}
+
+
+
+
+
+
+public function getName()
+{
+return $this->name;
+}
+
+
+
+
+
+
+public function getComposer()
+{
+return $this->composer;
+}
+
+
+
+
+
+
+public function getIO()
+{
+return $this->io;
+}
+
+
+
+
+
+
+public function isDevMode()
+{
+return $this->devMode;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Script;
+
+
+
+
+
+
+
+class ScriptEvents
+{
+
+
+
+
+
+
+
+const PRE_INSTALL_CMD = 'pre-install-cmd';
+
+
+
+
+
+
+
+
+const POST_INSTALL_CMD = 'post-install-cmd';
+
+
+
+
+
+
+
+
+const PRE_UPDATE_CMD = 'pre-update-cmd';
+
+
+
+
+
+
+
+
+const POST_UPDATE_CMD = 'post-update-cmd';
+
+
+
+
+
+
+
+
+const PRE_PACKAGE_INSTALL = 'pre-package-install';
+
+
+
+
+
+
+
+
+const POST_PACKAGE_INSTALL = 'post-package-install';
+
+
+
+
+
+
+
+
+const PRE_PACKAGE_UPDATE = 'pre-package-update';
+
+
+
+
+
+
+
+
+const POST_PACKAGE_UPDATE = 'post-package-update';
+
+
+
+
+
+
+
+
+const PRE_PACKAGE_UNINSTALL = 'pre-package-uninstall';
+
+
+
+
+
+
+
+
+const POST_PACKAGE_UNINSTALL = 'post-package-uninstall';
+
+
+
+
+
+
+
+
+const PRE_AUTOLOAD_DUMP = 'pre-autoload-dump';
+
+
+
+
+
+
+
+
+const POST_AUTOLOAD_DUMP = 'post-autoload-dump';
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Script;
+
+use Composer\Composer;
+
+
+
+
+
+
+class CommandEvent extends Event
+{
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Script;
+
+use Composer\Composer;
+use Composer\IO\IOInterface;
+use Composer\DependencyResolver\Operation\OperationInterface;
+
+
+
+
+
+
+class PackageEvent extends Event
+{
+
+
+
+private $operation;
+
+
+
+
+
+
+
+
+
+
+public function __construct($name, Composer $composer, IOInterface $io, $devMode, OperationInterface $operation)
+{
+parent::__construct($name, $composer, $io, $devMode);
+$this->operation = $operation;
+}
+
+
+
+
+
+
+public function getOperation()
+{
+return $this->operation;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Script;
+
+use Composer\Autoload\AutoloadGenerator;
+use Composer\IO\IOInterface;
+use Composer\Composer;
+use Composer\DependencyResolver\Operation\OperationInterface;
+use Composer\Util\ProcessExecutor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+class EventDispatcher
+{
+protected $composer;
+protected $io;
+protected $loader;
+protected $process;
+
+
+
+
+
+
+
+
+public function __construct(Composer $composer, IOInterface $io, ProcessExecutor $process = null)
+{
+$this->composer = $composer;
+$this->io = $io;
+$this->process = $process ?: new ProcessExecutor();
+}
+
+
+
+
+
+
+
+public function dispatch($eventName, Event $event = null)
+{
+if (null == $event) {
+$event = new Event($eventName, $this->composer, $this->io);
+}
+
+$this->doDispatch($event);
+}
+
+
+
+
+
+
+
+
+public function dispatchPackageEvent($eventName, $devMode, OperationInterface $operation)
+{
+$this->doDispatch(new PackageEvent($eventName, $this->composer, $this->io, $devMode, $operation));
+}
+
+
+
+
+
+
+
+public function dispatchCommandEvent($eventName, $devMode)
+{
+$this->doDispatch(new CommandEvent($eventName, $this->composer, $this->io, $devMode));
+}
+
+
+
+
+
+
+protected function doDispatch(Event $event)
+{
+$listeners = $this->getListeners($event);
+
+foreach ($listeners as $callable) {
+if ($this->isPhpScript($callable)) {
+$className = substr($callable, 0, strpos($callable, '::'));
+$methodName = substr($callable, strpos($callable, '::') + 2);
+
+if (!class_exists($className)) {
+$this->io->write('<warning>Class '.$className.' is not autoloadable, can not call '.$event->getName().' script</warning>');
+continue;
+}
+if (!is_callable($callable)) {
+$this->io->write('<warning>Method '.$callable.' is not callable, can not call '.$event->getName().' script</warning>');
+continue;
+}
+
+try {
+$this->executeEventPhpScript($className, $methodName, $event);
+} catch (\Exception $e) {
+$message = "Script %s handling the %s event terminated with an exception";
+$this->io->write('<error>'.sprintf($message, $callable, $event->getName()).'</error>');
+throw $e;
+}
+} else {
+if (0 !== $this->process->execute($callable)) {
+$event->getIO()->write(sprintf('<error>Script %s handling the %s event returned with an error: %s</error>', $callable, $event->getName(), $this->process->getErrorOutput()));
+}
+}
+}
+}
+
+
+
+
+
+
+protected function executeEventPhpScript($className, $methodName, Event $event)
+{
+$className::$methodName($event);
+}
+
+
+
+
+
+protected function getListeners(Event $event)
+{
+$package = $this->composer->getPackage();
+$scripts = $package->getScripts();
+
+if (empty($scripts[$event->getName()])) {
+return array();
+}
+
+if ($this->loader) {
+$this->loader->unregister();
+}
+
+$generator = $this->composer->getAutoloadGenerator();
+$packages = $this->composer->getRepositoryManager()->getLocalRepository()->getCanonicalPackages();
+$packageMap = $generator->buildPackageMap($this->composer->getInstallationManager(), $package, $packages);
+$map = $generator->parseAutoloads($packageMap, $package);
+$this->loader = $generator->createLoader($map);
+$this->loader->register();
+
+return $scripts[$event->getName()];
+}
+
+
+
+
+
+
+
+protected function isPhpScript($callable)
+{
+return false === strpos($callable, ' ') && false !== strpos($callable, '::');
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Installer;
+
+use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Package\PackageInterface;
+
+
+
+
+
+
+
+
+class NoopInstaller implements InstallerInterface
+{
+
+
+
+public function supports($packageType)
+{
+return true;
+}
+
+
+
+
+public function isInstalled(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+return $repo->hasPackage($package);
+}
+
+
+
+
+public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+if (!$repo->hasPackage($package)) {
+$repo->addPackage(clone $package);
+}
+}
+
+
+
+
+public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
+{
+if (!$repo->hasPackage($initial)) {
+throw new \InvalidArgumentException('Package is not installed: '.$initial);
+}
+
+$repo->removePackage($initial);
+if (!$repo->hasPackage($target)) {
+$repo->addPackage(clone $target);
+}
+}
+
+
+
+
+public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+if (!$repo->hasPackage($package)) {
+
+ return;
+throw new \InvalidArgumentException('Package is not installed: '.$package);
+}
+$repo->removePackage($package);
+}
+
+
+
+
+public function getInstallPath(PackageInterface $package)
+{
+$targetDir = $package->getTargetDir();
+
+return $package->getPrettyName() . ($targetDir ? '/'.$targetDir : '');
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Installer;
+
+use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Package\PackageInterface;
+
+
+
+
+
+
+class MetapackageInstaller implements InstallerInterface
+{
+
+
+
+public function supports($packageType)
+{
+return $packageType === 'metapackage';
+}
+
+
+
+
+public function isInstalled(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+return $repo->hasPackage($package);
+}
+
+
+
+
+public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+$repo->addPackage(clone $package);
+}
+
+
+
+
+public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
+{
+if (!$repo->hasPackage($initial)) {
+throw new \InvalidArgumentException('Package is not installed: '.$initial);
+}
+
+$repo->removePackage($initial);
+$repo->addPackage(clone $target);
+}
+
+
+
+
+public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+if (!$repo->hasPackage($package)) {
+
+ return;
+throw new \InvalidArgumentException('Package is not installed: '.$package);
+}
+
+$repo->removePackage($package);
+}
+
+
+
+
+public function getInstallPath(PackageInterface $package)
+{
+return '';
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Installer;
+
+use Composer\IO\IOInterface;
+use Composer\Composer;
+use Composer\Downloader\PearPackageExtractor;
+use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Package\PackageInterface;
+
+
+
+
+
+
+
+class PearInstaller extends LibraryInstaller
+{
+
+
+
+
+
+
+
+public function __construct(IOInterface $io, Composer $composer, $type = 'pear-library')
+{
+parent::__construct($io, $composer, $type);
+}
+
+
+
+
+public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
+{
+$this->uninstall($repo, $initial);
+$this->install($repo, $target);
+}
+
+protected function installCode(PackageInterface $package)
+{
+parent::installCode($package);
+parent::initializeBinDir();
+
+$isWindows = defined('PHP_WINDOWS_VERSION_BUILD');
+$php_bin = $this->binDir . ($isWindows ? '/composer-php.bat' : '/composer-php');
+
+if (!$isWindows) {
+$php_bin = '/usr/bin/env ' . $php_bin;
+}
+
+$installPath = $this->getInstallPath($package);
+$vars = array(
+'os' => $isWindows ? 'windows' : 'linux',
+'php_bin' => $php_bin,
+'pear_php' => $installPath,
+'php_dir' => $installPath,
+'bin_dir' => $installPath . '/bin',
+'data_dir' => $installPath . '/data',
+'version' => $package->getPrettyVersion(),
+);
+
+$packageArchive = $this->getInstallPath($package).'/'.pathinfo($package->getDistUrl(), PATHINFO_BASENAME);
+$pearExtractor = new PearPackageExtractor($packageArchive);
+$pearExtractor->extractTo($this->getInstallPath($package), array('php' => '/', 'script' => '/bin', 'data' => '/data'), $vars);
+
+if ($this->io->isVerbose()) {
+$this->io->write('    Cleaning up');
+}
+unlink($packageArchive);
+}
+
+protected function getBinaries(PackageInterface $package)
+{
+$binariesPath = $this->getInstallPath($package) . '/bin/';
+$binaries = array();
+if (file_exists($binariesPath)) {
+foreach (new \FilesystemIterator($binariesPath, \FilesystemIterator::KEY_AS_FILENAME | \FilesystemIterator::CURRENT_AS_FILEINFO) as $fileName => $value) {
+if (!$value->isDir()) {
+$binaries[] = 'bin/'.$fileName;
+}
+}
+}
+
+return $binaries;
+}
+
+protected function initializeBinDir()
+{
+parent::initializeBinDir();
+file_put_contents($this->binDir.'/composer-php', $this->generateUnixyPhpProxyCode());
+chmod($this->binDir.'/composer-php', 0777);
+file_put_contents($this->binDir.'/composer-php.bat', $this->generateWindowsPhpProxyCode());
+chmod($this->binDir.'/composer-php.bat', 0777);
+}
+
+protected function generateWindowsProxyCode($bin, $link)
+{
+$binPath = $this->filesystem->findShortestPath($link, $bin);
+if ('.bat' === substr($bin, -4)) {
+$caller = 'call';
+} else {
+$handle = fopen($bin, 'r');
+$line = fgets($handle);
+fclose($handle);
+if (preg_match('{^#!/(?:usr/bin/env )?(?:[^/]+/)*(.+)$}m', $line, $match)) {
+$caller = trim($match[1]);
+} else {
+$caller = 'php';
+}
+
+if ($caller === 'php') {
+return "@echo off\r\n".
+"pushd .\r\n".
+"cd %~dp0\r\n".
+"set PHP_PROXY=%CD%\\composer-php.bat\r\n".
+"cd ".escapeshellarg(dirname($binPath))."\r\n".
+"set BIN_TARGET=%CD%\\".basename($binPath)."\r\n".
+"popd\r\n".
+"%PHP_PROXY% \"%BIN_TARGET%\" %*\r\n";
+}
+}
+
+return "@echo off\r\n".
+"pushd .\r\n".
+"cd %~dp0\r\n".
+"cd ".escapeshellarg(dirname($binPath))."\r\n".
+"set BIN_TARGET=%CD%\\".basename($binPath)."\r\n".
+"popd\r\n".
+$caller." \"%BIN_TARGET%\" %*\r\n";
+}
+
+private function generateWindowsPhpProxyCode()
+{
+$binToVendor = $this->filesystem->findShortestPath($this->binDir, $this->vendorDir, true);
+
+return
+"@echo off\r\n" .
+"setlocal enabledelayedexpansion\r\n" .
+"set BIN_DIR=%~dp0\r\n" .
+"set VENDOR_DIR=%BIN_DIR%\\".$binToVendor."\r\n" .
+"set DIRS=.\r\n" .
+"FOR /D %%V IN (%VENDOR_DIR%\\*) DO (\r\n" .
+"    FOR /D %%P IN (%%V\\*) DO (\r\n" .
+"        set DIRS=!DIRS!;%%~fP\r\n" .
+"    )\r\n" .
+")\r\n" .
+"php.exe -d include_path=!DIRS! %*\r\n";
+}
+
+private function generateUnixyPhpProxyCode()
+{
+$binToVendor = $this->filesystem->findShortestPath($this->binDir, $this->vendorDir, true);
+
+return
+"#!/usr/bin/env sh\n".
+"SRC_DIR=`pwd`\n".
+"BIN_DIR=`dirname $0`\n".
+"VENDOR_DIR=\$BIN_DIR/".escapeshellarg($binToVendor)."\n".
+"DIRS=\"\"\n".
+"for vendor in \$VENDOR_DIR/*; do\n".
+"    if [ -d \"\$vendor\" ]; then\n".
+"        for package in \$vendor/*; do\n".
+"            if [ -d \"\$package\" ]; then\n".
+"                DIRS=\"\${DIRS}:\${package}\"\n".
+"            fi\n".
+"        done\n".
+"    fi\n".
+"done\n".
+"php -d include_path=\".\$DIRS\" $@\n";
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Installer;
+
+use Composer\Package\PackageInterface;
+use Composer\Downloader\DownloadManager;
+use Composer\Repository\InstalledRepositoryInterface;
+
+
+
+
+
+
+
+class ProjectInstaller implements InstallerInterface
+{
+private $installPath;
+private $downloadManager;
+
+public function __construct($installPath, DownloadManager $dm)
+{
+$this->installPath = rtrim(strtr($installPath, '\\', '/'), '/').'/';
+$this->downloadManager = $dm;
+}
+
+
+
+
+
+
+
+public function supports($packageType)
+{
+return true;
+}
+
+
+
+
+public function isInstalled(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+return false;
+}
+
+
+
+
+public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+$installPath = $this->installPath;
+if (file_exists($installPath) && (count(glob($installPath.'*')) || (count(glob($installPath.'.*')) > 2))) {
+throw new \InvalidArgumentException("Project directory $installPath is not empty.");
+}
+if (!is_dir($installPath)) {
+mkdir($installPath, 0777, true);
+}
+$this->downloadManager->download($package, $installPath);
+}
+
+
+
+
+public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
+{
+throw new \InvalidArgumentException("not supported");
+}
+
+
+
+
+public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
+{
+throw new \InvalidArgumentException("not supported");
+}
+
+
+
+
+
+
+
+public function getInstallPath(PackageInterface $package)
+{
+return $this->installPath;
+}
+}
+<?php
+
+
+
+
+
+
+
+
+
+
+
+namespace Composer\Installer;
+
+use Composer\Composer;
+use Composer\IO\IOInterface;
+use Composer\Downloader\DownloadManager;
+use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Package\PackageInterface;
+use Composer\Util\Filesystem;
+
+
+
+
+
+
+
+class LibraryInstaller implements InstallerInterface
+{
+protected $composer;
+protected $vendorDir;
+protected $binDir;
+protected $downloadManager;
+protected $io;
+protected $type;
+protected $filesystem;
+
+
+
+
+
+
+
+
+public function __construct(IOInterface $io, Composer $composer, $type = 'library

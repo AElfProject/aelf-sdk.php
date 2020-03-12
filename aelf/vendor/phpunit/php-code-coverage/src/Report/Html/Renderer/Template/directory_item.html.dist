@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BitWasp\Bitcoin\Transaction\Bip69;
+
+use BitWasp\Bitcoin\Script\ScriptWitnessInterface;
+use BitWasp\Bitcoin\Transaction\Mutator\TxMutator;
+use BitWasp\Bitcoin\Transaction\TransactionInputInterface;
+use BitWasp\Bitcoin\Transaction\TransactionInterface;
+use BitWasp\Bitcoin\Transaction\TransactionOutputInterface;
+
+class Bip69
+{
+    /**
+     * @param TransactionInputInterface[] $vTxin
+     * @return TransactionInputInterface[]
+     */
+    public function sortInputs(array $vTxin): array
+    {
+        usort($vTxin, [$this, 'compareInputs']);
+        return $vTxin;
+    }
+
+    /**
+     * @param TransactionInputInterface $vin1
+     * @param TransactionInputInterface $vin2
+     * @return int
+     */
+    public function compareInputs(TransactionInputInterface $vin1, TransactionIn
