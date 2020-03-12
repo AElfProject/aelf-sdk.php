@@ -1,32 +1,37 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generateClassFromWsdl('GoogleSearch.wsdl', 'GoogleSearch')
+--SKIPIF--
 <?php
+if (!extension_loaded('soap')) echo 'skip: SOAP extension is required';
+?>
+--FILE--
+<?php
+require __DIR__ . '/../../vendor/autoload.php';
 
-declare(strict_types=1);
+$generator = new PHPUnit_Framework_MockObject_Generator;
 
-namespace BitWasp\Bitcoin\Key\Factory;
-
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\EcSerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PrivateKeySerializerInterface;
-use BitWasp\Bitcoin\Crypto\Random\Random;
-use BitWasp\Bitcoin\Network\NetworkInterface;
-use BitWasp\Bitcoin\Serializer\Key\PrivateKey\WifPrivateKeySerializer;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class PrivateKeyFactory
+print $generator->generateClassFromWsdl(
+    __DIR__ . '/../_fixture/GoogleSearch.wsdl',
+    'GoogleSearch'
+);
+?>
+--EXPECTF--
+class GoogleSearch extends \SoapClient
 {
-    /**
-     * @var PrivateKeySerializerInterface
-     */
-    private $privSerializer;
+    public function __construct($wsdl, array $options)
+    {
+        parent::__construct('%s/GoogleSearch.wsdl', $options);
+    }
 
-    /**
-     * @var WifPrivateKeySerializer
-     */
-    private $wifSerializer;
+    public function doGoogleSearch($key, $q, $start, $maxResults, $filter, $restrict, $safeSearch, $lr, $ie, $oe)
+    {
+    }
 
-    /**
-     * PrivateKeyFactory constructor.
-     * @param EcAdapterInterface $ecAdapt
+    public function doGetCachedPage($key, $url)
+    {
+    }
+
+    public function doSpellingSuggestion($key, $phrase)
+    {
+    }
+}

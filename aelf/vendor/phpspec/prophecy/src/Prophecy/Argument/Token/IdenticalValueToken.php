@@ -1,34 +1,74 @@
-# Base58 Encoding and Decoding Library for PHP
+<?php
 
-[![Build Status](https://travis-ci.org/stephen-hill/base58php.png)](https://travis-ci.org/stephen-hill/base58php)
-[![Packagist Release](http://img.shields.io/packagist/v/stephenhill/base58.svg)](https://packagist.org/packages/stephenhill/base58)
-[![MIT License](http://img.shields.io/packagist/l/stephenhill/base58.svg)](https://github.com/stephen-hill/base58php/blob/master/license)
-[![Flattr this](https://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=stephen-hill&url=https%3A%2F%2Fgithub.com%2Fstephen-hill%2Fbase58php)
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-## Long Term Support
+namespace Prophecy\Argument\Token;
 
-Each major version of this library will be supported for 5 years after it's initial release. Support will be provided for security and bug fixes.
+use Prophecy\Util\StringUtil;
 
-Version 1 will therefore be supported until the 11th September 2019.
+/**
+ * Identical value token.
+ *
+ * @author Florian Voutzinos <florian@voutzinos.com>
+ */
+class IdenticalValueToken implements TokenInterface
+{
+    private $value;
+    private $string;
+    private $util;
 
-## Background
+    /**
+     * Initializes token.
+     *
+     * @param mixed      $value
+     * @param StringUtil $util
+     */
+    public function __construct($value, StringUtil $util = null)
+    {
+        $this->value = $value;
+        $this->util  = $util ?: new StringUtil();
+    }
 
-I wanted a replacement for Base64 encoded strings and the [Base58 encoding used by Bitcoin](https://en.bitcoin.it/wiki/Base58Check_encoding) looked ideal. I looked around for an existing PHP library which would directly convert a string into Base58 but I couldn't find one, or at least one that worked correctly and was also well tested.
+    /**
+     * Scores 11 if argument matches preset value.
+     *
+     * @param $argument
+     *
+     * @return bool|int
+     */
+    public function scoreArgument($argument)
+    {
+        return $argument === $this->value ? 11 : false;
+    }
 
-So I decided to create a library with the following goals:
+    /**
+     * Returns false.
+     *
+     * @return bool
+     */
+    public function isLast()
+    {
+        return false;
+    }
 
-- Encode/Decode PHP Strings
-- Simple and easy to use
-- Fully Tested
-- Available via Composer
+    /**
+     * Returns string representation for token.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        if (null === $this->string) {
+            $this->string = sprintf('identical(%s)', $this->util->stringify($this->value));
+        }
 
-## Requirements
-
-This library has the following requirements:
-
-- PHP => 5.3
-- BC Math Extension
-
-## Installation
-
-I r
+        return $this->string;
+    }
+}

@@ -1,66 +1,70 @@
- than 32 bits, discard the high order bits.
-     * @param $var.
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+use PHPUnit\Framework\Constraint\Constraint;
+use PHPUnit\Framework\Constraint\IsEqual;
+use PHPUnit\Util\InvalidArgumentHelper;
+
+/**
+ * Invocation matcher which looks for a specific method name in the invocations.
+ *
+ * Checks the method name all incoming invocations, the name is checked against
+ * the defined constraint $constraint. If the constraint is met it will return
+ * true in matches().
+ */
+class PHPUnit_Framework_MockObject_Matcher_MethodName extends PHPUnit_Framework_MockObject_Matcher_StatelessInvocation
+{
+    /**
+     * @var Constraint
      */
-    public function readVarint32(&$var)
+    protected $constraint;
+
+    /**
+     * @param  Constraint|string
+     *
+     * @throws Constraint
+     */
+    public function __construct($constraint)
     {
-        if (!$this->readVarint64($var)) {
-            return false;
-        }
-
-        if (PHP_INT_SIZE == 4) {
-            $var = bcmod($var, 4294967296);
-        } else {
-            $var &= 0xFFFFFFFF;
-        }
-
-        // Convert large uint32 to int32.
-        if ($var > 0x7FFFFFFF) {
-            if (PHP_INT_SIZE === 8) {
-                $var = $var | (0xFFFFFFFF << 32);
-            } else {
-                $var = bcsub($var, 4294967296);
+        if (!$constraint instanceof Constraint) {
+            if (!is_string($constraint)) {
+                throw InvalidArgumentHelper::factory(1, 'string');
             }
+
+            $constraint = new IsEqual(
+                $constraint,
+                0,
+                10,
+                false,
+                true
+            );
         }
 
-        $var = intval($var);
-        return true;
+        $this->constraint = $constraint;
     }
 
     /**
-     * Read Uint64 into $var. Advance buffer with consumed bytes.
-     * @param $var.
+     * @return string
      */
-    public function readVarint64(&$var)
+    public function toString()
     {
-        $count = 0;
+        return 'method name ' . $this->constraint->toString();
+    }
 
-        if (PHP_INT_SIZE == 4) {
-            $high = 0;
-            $low = 0;
-            $b = 0;
-
-            do {
-                if ($this->current === $this->buffer_end) {
-                    return false;
-                }
-                if ($count === self::MAX_VARINT_BYTES) {
-                    return false;
-                }
-                $b = ord($this->buffer[$this->current]);
-                $bits = 7 * $count;
-                if ($bits >= 32) {
-                    $high |= (($b & 0x7F) << ($bits - 32));
-                } else if ($bits > 25){
-                    // $bits is 28 in this case.
-                    $low |= (($b & 0x7F) << 28);
-                    $high = ($b & 0x7F) >> 4;
-                } else {
-                    $low |= (($b & 0x7F) << $bits);
-                }
-
-                $this->advance(1);
-                $count += 1;
-            } while ($b & 0x80);
-
-            $var = GPBUtil::combineInt32ToInt64($high, $low);
-            if (bccomp
+    /**
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation
+     *
+     * @return bool
+     */
+    public function matches(PHPUnit_Framework_MockObject_Invocation $invocation)
+    {
+        return $this->constraint->evaluate($invocation->methodName, '', true);
+    }
+}

@@ -1,75 +1,79 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('NS\Foo', array(), 'MockFoo', true)
+--FILE--
 <?php
+namespace NS;
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Serializer\Transaction;
-
-use BitWasp\Bitcoin\Script\Opcodes;
-use BitWasp\Bitcoin\Script\Script;
-use BitWasp\Bitcoin\Serializer\Types;
-use BitWasp\Bitcoin\Transaction\TransactionOutput;
-use BitWasp\Bitcoin\Transaction\TransactionOutputInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Parser;
-
-class TransactionOutputSerializer
+class Foo
 {
-    /**
-     * @var \BitWasp\Buffertools\Types\Uint64
-     */
-    private $uint64le;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\VarString
-     */
-    private $varstring;
-
-    /**
-     * @var Opcodes
-     */
-    private $opcodes;
-
-    /**
-     * TransactionOutputSerializer constructor.
-     * @param Opcodes|null $opcodes
-     */
-    public function __construct(Opcodes $opcodes = null)
+    public function __clone()
     {
-        $this->uint64le = Types::uint64le();
-        $this->varstring = Types::varstring();
-        $this->opcodes = $opcodes ?: new Opcodes();
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new \PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'NS\Foo',
+    array(),
+    'MockFoo',
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends NS\Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = [];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+        parent::__clone();
     }
 
-    /**
-     * @param TransactionOutputInterface $output
-     * @return BufferInterface
-     */
-    public function serialize(TransactionOutputInterface $output): BufferInterface
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
     {
-        return new Buffer(
-            $this->uint64le->write($output->getValue()) .
-            $this->varstring->write($output->getScript()->getBuffer())
-        );
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
     }
 
-    /**
-     * @param Parser $parser
-     * @return TransactionOutputInterface
-     * @throws \BitWasp\Buffertools\Exceptions\ParserOutOfRange
-     */
-    public function fromParser(Parser $parser): TransactionOutputInterface
+    public function method()
     {
-        return new TransactionOutput(
-            (int) $this->uint64le->read($parser),
-            new Script($this->varstring->read($parser), $this->opcodes)
-        );
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
     }
 
-    /**
-     * @param BufferInterface $string
-     * @return TransactionOutputInterface
-     * @throws \BitWasp\Buffertools\Exceptions\ParserOutOfRange
-     */
-    public function parse(BufferInterface $string): TransactionOutputInterface
-   
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

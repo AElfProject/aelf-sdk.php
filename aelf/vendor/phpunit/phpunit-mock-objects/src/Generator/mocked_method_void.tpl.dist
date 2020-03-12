@@ -1,7 +1,20 @@
-"use strict";
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+    {modifier} function {reference}{method_name}({arguments_decl}){return_delim}{return_type}
+    {{deprecation}
+        $arguments = array({arguments_call});
+        $count     = func_num_args();
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+        if ($count > {arguments_count}) {
+            $_arguments = func_get_args();
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, wr
+            for ($i = {arguments_count}; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
+        }
+
+        $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                '{class_name}', '{method_name}', $arguments, '{return_type}', $this, {clone_arguments}
+            )
+        );
+    }

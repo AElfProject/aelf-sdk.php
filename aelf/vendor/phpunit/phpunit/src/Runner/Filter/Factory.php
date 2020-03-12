@@ -1,52 +1,55 @@
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Runner\Filter;
 
-declare(strict_types=1);
+use FilterIterator;
+use InvalidArgumentException;
+use Iterator;
+use PHPUnit\Framework\TestSuite;
+use ReflectionClass;
 
-namespace BitWasp\Buffertools\Types;
-
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\ByteOrder;
-use BitWasp\Buffertools\Parser;
-
-abstract class AbstractSignedInt extends AbstractType implements SignedIntInterface
+class Factory
 {
     /**
-     * @param int $byteOrder
+     * @var array
      */
-    public function __construct(int $byteOrder = ByteOrder::BE)
+    private $filters = [];
+
+    /**
+     * @param ReflectionClass $filter
+     * @param mixed           $args
+     */
+    public function addFilter(ReflectionClass $filter, $args)
     {
-        parent::__construct($byteOrder);
+        if (!$filter->isSubclassOf(\RecursiveFilterIterator::class)) {
+            throw new InvalidArgumentException(
+                \sprintf(
+                    'Class "%s" does not extend RecursiveFilterIterator',
+                    $filter->name
+                )
+            );
+        }
+
+        $this->filters[] = [$filter, $args];
     }
 
     /**
-     * @param int|string $integer
-     * @return string
+     * @return FilterIterator
      */
-    public function writeBits($integer): string
+    public function factory(Iterator $iterator, TestSuite $suite)
     {
-        return str_pad(
-            gmp_strval(gmp_init($integer, 10), 2),
-            $this->getBitSize(),
-            '0',
-            STR_PAD_LEFT
-        );
+        foreach ($this->filters as $filter) {
+            list($class, $args) = $filter;
+            $iterator           = $class->newInstance($iterator, $args, $suite);
+        }
+
+        return $iterator;
     }
-
-    /**
-     * @param Parser $parser
-     * @return int|string
-     * @throws \BitWasp\Buffertools\Exceptions\ParserOutOfRange
-     * @throws \Exception
-     */
-    public function readBits(Parser $parser)
-    {
-        $bitSize = $this->getBitSize();
-        $byteSize = $bitSize / 8;
-
-        $bytes = $parser->readBytes($byteSize);
-        $bytes = $this->isBigEndian() ? $bytes : $bytes->flip();
-        $chars = $bytes->getBinary();
-
-        $offsetIndex = 0;
-        $isNegative = (ord($chars[$offsetIndex]) & 0x80) != 0x00;
-        $number = gmp_init(ord($chars[$offsetIndex++])
+}

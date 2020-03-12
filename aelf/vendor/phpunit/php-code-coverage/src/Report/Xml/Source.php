@@ -1,37 +1,45 @@
-s($array) !== \array_filter(\array_keys($array), '\is_string')
-        ) {
-            static::reportInvalidArgument(
-                $message ?: 'Expected map - associative array with string keys.'
-            );
-        }
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace SebastianBergmann\CodeCoverage\Report\Xml;
+
+use TheSeer\Tokenizer\NamespaceUri;
+use TheSeer\Tokenizer\Tokenizer;
+use TheSeer\Tokenizer\XMLSerializer;
+
+class Source
+{
+    /** @var \DOMElement */
+    private $context;
+
+    /**
+     * @param \DOMElement $context
+     */
+    public function __construct(\DOMElement $context)
+    {
+        $this->context = $context;
     }
 
     /**
-     * @param mixed  $array
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
+     * @param string $source
      */
-    public static function isNonEmptyMap($array, $message = '')
+    public function setSourceCode(string $source)
     {
-        static::isMap($array, $message);
-        static::notEmpty($array, $message);
+        $context = $this->context;
+
+        $tokens = (new Tokenizer())->parse($source);
+        $srcDom = (new XMLSerializer(new NamespaceUri($context->namespaceURI)))->toDom($tokens);
+
+        $context->parentNode->replaceChild(
+            $context->ownerDocument->importNode($srcDom->documentElement, true),
+            $context
+        );
     }
-
-    /**
-     * @param mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function uuid($value, $message = '')
-    {
-        $value = \str_replace(array('urn:', 'uuid:', '{', '}'), '', $value);
-
-        // The nil UUID is special form of UUID that is specified to have all
-        // 128 bits set to zero.
-        if ('00000000-0000-0000-0000-000000000000' === $value) {
-            return;
-        }
-
-        if (!\preg_match('/^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+}

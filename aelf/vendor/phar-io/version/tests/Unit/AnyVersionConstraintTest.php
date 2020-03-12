@@ -1,46 +1,41 @@
 <?php
-
-declare(strict_types=1);
-
-/**
- * This file is part of phpDocumentor.
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * @link      http://phpdoc.org
  */
 
-namespace phpDocumentor\Reflection\DocBlock\Tags;
+namespace PharIo\Version;
 
-use phpDocumentor\Reflection\Type;
-use function in_array;
-use function strlen;
-use function substr;
-use function trim;
+use PHPUnit\Framework\TestCase;
 
-abstract class TagWithType extends BaseTag
-{
-    /** @var ?Type */
-    protected $type;
-
-    /**
-     * Returns the type section of the variable.
-     */
-    public function getType() : ?Type
-    {
-        return $this->type;
+/**
+ * @covers PharIo\Version\AnyVersionConstraint
+ */
+class AnyVersionConstraintTest extends TestCase {
+    public function versionProvider() {
+        return [
+            [new Version('1.0.2')],
+            [new Version('4.8')],
+            [new Version('0.1.1-dev')]
+        ];
     }
 
     /**
-     * @return string[]
+     * @dataProvider versionProvider
+     *
+     * @param Version $version
      */
-    protected static function extractTypeFromBody(string $body) : array
-    {
-        $type         = '';
-        $nestingLevel = 0;
-        for ($i = 0, $iMax = strlen($body); $i < $iMax; $i++) {
-            $character = $body[$i];
+    public function testReturnsTrue(Version $version) {
+        $constraint = new AnyVersionConstraint;
 
-            if ($nestingLevel === 0 && trim($character) === '') {
-         
+        $this->assertTrue($constraint->complies($version));
+    }
+
+    public function testAsString() {
+        $this->assertSame('*', (new AnyVersionConstraint())->asString());
+    }
+}

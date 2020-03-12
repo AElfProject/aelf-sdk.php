@@ -1,22 +1,29 @@
-checksig->isVerify()) {
-                    $stack->push($value ? new Buffer("\x01") : new Buffer());
-                }
+<?php
+class ParentClassWithPrivateAttributes
+{
+    private static $privateStaticParentAttribute = 'foo';
+    private $privateParentAttribute              = 'bar';
+}
 
-                if (!$expectFalse) {
-                    $checksig->setSignature(0, $this->txSigSerializer->parse($vchSig));
-                }
-            }
+class ParentClassWithProtectedAttributes extends ParentClassWithPrivateAttributes
+{
+    protected static $protectedStaticParentAttribute = 'foo';
+    protected $protectedParentAttribute              = 'bar';
+}
 
-            $checksig->setKey(0, $this->parseStepPublicKey($checksig->getSolution()));
-        } else if (ScriptType::MULTISIG === $checksig->getType()) {
-            /** @var Multisig $info */
-            $info = $checksig->getInfo();
-            $keyBuffers = $info->getKeyBuffers();
-            foreach ($keyBuffers as $idx => $keyBuf) {
-                $checksig->setKey($idx, $this->parseStepPublicKey($keyBuf));
-            }
+class ClassWithNonPublicAttributes extends ParentClassWithProtectedAttributes
+{
+    public static $publicStaticAttribute       = 'foo';
+    protected static $protectedStaticAttribute = 'bar';
+    protected static $privateStaticAttribute   = 'baz';
 
-            $value = false;
-            if ($this->padUnsignedMultisigs) {
-                // Multisig padding is only used for partially signed transactions,
-                // never fully signed. It is recognized by a scriptSig with $keyCount+1
+    public $publicAttribute       = 'foo';
+    public $foo                   = 1;
+    public $bar                   = 2;
+    protected $protectedAttribute = 'bar';
+    protected $privateAttribute   = 'baz';
+
+    public $publicArray       = ['foo'];
+    protected $protectedArray = ['bar'];
+    protected $privateArray   = ['baz'];
+}

@@ -1,53 +1,66 @@
-LSE otherwise. Besides the blank character this also includes tab, vertical tab, line feed, carriage return and form feed characters.
-     *
-     * @see https://php.net/ctype-space
-     *
-     * @param string|int $text
-     *
-     * @return bool
-     */
-    public static function ctype_space($text)
-    {
-        $text = self::convert_int_to_char_for_ctype($text);
+<?php
 
-        return \is_string($text) && '' !== $text && !preg_match('/[^\s]/', $text);
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\Types;
+
+use phpDocumentor\Reflection\Fqsen;
+use phpDocumentor\Reflection\Type;
+
+/**
+ * Represents a collection type as described in the PSR-5, the PHPDoc Standard.
+ *
+ * A collection can be represented in two forms:
+ *
+ * 1. `ACollectionObject<aValueType>`
+ * 2. `ACollectionObject<aValueType,aKeyType>`
+ *
+ * - ACollectionObject can be 'array' or an object that can act as an array
+ * - aValueType and aKeyType can be any type expression
+ */
+final class Collection extends AbstractList
+{
+    /** @var Fqsen|null */
+    private $fqsen;
+
+    /**
+     * Initializes this representation of an array with the given Type or Fqsen.
+     */
+    public function __construct(?Fqsen $fqsen, Type $valueType, ?Type $keyType = null)
+    {
+        parent::__construct($valueType, $keyType);
+
+        $this->fqsen = $fqsen;
     }
 
     /**
-     * Returns TRUE if every character in text is an uppercase letter.
-     *
-     * @see https://php.net/ctype-upper
-     *
-     * @param string|int $text
-     *
-     * @return bool
+     * Returns the FQSEN associated with this object.
      */
-    public static function ctype_upper($text)
+    public function getFqsen() : ?Fqsen
     {
-        $text = self::convert_int_to_char_for_ctype($text);
-
-        return \is_string($text) && '' !== $text && !preg_match('/[^A-Z]/', $text);
+        return $this->fqsen;
     }
 
     /**
-     * Returns TRUE if every character in text is a hexadecimal 'digit', that is a decimal digit or a character from [A-Fa-f] , FALSE otherwise.
-     *
-     * @see https://php.net/ctype-xdigit
-     *
-     * @param string|int $text
-     *
-     * @return bool
+     * Returns a rendered output of the Type as it would be used in a DocBlock.
      */
-    public static function ctype_xdigit($text)
+    public function __toString() : string
     {
-        $text = self::convert_int_to_char_for_ctype($text);
+        $objectType = (string) ($this->fqsen ?? 'object');
 
-        return \is_string($text) && '' !== $text && !preg_match('/[^A-Fa-f0-9]/', $text);
+        if ($this->keyType === null) {
+            return $objectType . '<' . $this->valueType . '>';
+        }
+
+        return $objectType . '<' . $this->keyType . ',' . $this->valueType . '>';
     }
-
-    /**
-     * Converts integers to their char versions according to normal ctype behaviour, if needed.
-     *
-     * If an integer between -128 and 255 inclusive is provided,
-     * it is interpreted as the ASCII value of a single character
-     * (negative values have 256 added in order to allow characters in
+}

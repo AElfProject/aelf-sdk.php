@@ -1,73 +1,71 @@
-ferInterface
+<?php
+
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\DocBlock\Tags;
+
+use phpDocumentor\Reflection\DocBlock\Description;
+use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
+use phpDocumentor\Reflection\Types\Context as TypeContext;
+use Webmozart\Assert\Assert;
+use function preg_split;
+
+/**
+ * Reflection class for a @link tag in a Docblock.
+ */
+final class Link extends BaseTag implements Factory\StaticMethod
+{
+    /** @var string */
+    protected $name = 'link';
+
+    /** @var string */
+    private $link;
+
+    /**
+     * Initializes a link to a URL.
      */
-    private function decodeNullData(array $decoded)
+    public function __construct(string $link, ?Description $description = null)
     {
-        if (count($decoded) !== 2) {
-            return false;
-        }
+        $this->link        = $link;
+        $this->description = $description;
+    }
 
-        if ($decoded[0]->getOp() === Opcodes::OP_RETURN && $decoded[1]->isPush()) {
-            return $decoded[1]->getData();
-        }
+    public static function create(
+        string $body,
+        ?DescriptionFactory $descriptionFactory = null,
+        ?TypeContext $context = null
+    ) : self {
+        Assert::notNull($descriptionFactory);
 
-        return false;
+        $parts = preg_split('/\s+/Su', $body, 2);
+        Assert::isArray($parts);
+        $description = isset($parts[1]) ? $descriptionFactory->create($parts[1], $context) : null;
+
+        return new static($parts[0], $description);
     }
 
     /**
-     * @param ScriptInterface $script
-     * @return bool
+     * Gets the link
      */
-    public function isNullData(ScriptInterface $script): bool
+    public function getLink() : string
     {
-        try {
-            return $this->decodeNullData($script->getScriptParser()->decode()) !== false;
-        } catch (\Exception $e) {
-        }
-
-        return false;
+        return $this->link;
     }
 
     /**
-     * @param array $decoded
-     * @return bool|BufferInterface
+     * Returns a string representation for this tag.
      */
-    private function decodeWitnessCoinbaseCommitment(array $decoded)
+    public function __toString() : string
     {
-        if (count($decoded) !== 2) {
-            return false;
-        }
-
-        if ($decoded[0]->isPush() || $decoded[0]->getOp() !== Opcodes::OP_RETURN) {
-            return false;
-        }
-
-        if ($decoded[1]->isPush()) {
-            $data = $decoded[1]->getData()->getBinary();
-            if ($decoded[1]->getDataSize() === 0x24 && substr($data, 0, 4) === "\xaa\x21\xa9\xed") {
-                return new Buffer(substr($data, 4));
-            }
-        }
-
-        return false;
+        return $this->link . ($this->description ? ' ' . $this->description->render() : '');
     }
-
-    /**
-     * @param ScriptInterface $script
-     * @return bool
-     */
-    public function isWitnessCoinbaseCommitment(ScriptInterface $script): bool
-    {
-        try {
-            return $this->decodeWitnessCoinbaseCommitment($script->getScriptParser()->decode()) !== false;
-        } catch (\Exception $e) {
-        }
-
-        return false;
-    }
-
-    /**
-     * @param array $decoded
-     * @param null $solution
-     * @return string
-     */
-    priv
+}

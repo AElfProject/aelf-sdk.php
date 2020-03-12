@@ -1,22 +1,37 @@
-alue) {
-                    $data_size = 0;
-                    if ($key != $this->defaultValue($key_field)) {
-                        $data_size += $this->fieldDataOnlyByteSize(
-                            $key_field,
-                            $key);
-                        $data_size += GPBWire::tagSize($key_field);
-                    }
-                    if ($value != $this->defaultValue($value_field)) {
-                        $data_size += $this->fieldDataOnlyByteSize(
-                            $value_field,
-                            $value);
-                        $data_size += GPBWire::tagSize($value_field);
-                    }
-                    $size += GPBWire::varint32Size($data_size) + $data_size;
-                }
-            }
-        } elseif ($field->isRepeated()) {
-            $getter = $field->getGetter();
-            $values = $this->$getter();
-            $count = count($values);
-  
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Prediction;
+
+use Prophecy\Call\Call;
+use Prophecy\Prophecy\ObjectProphecy;
+use Prophecy\Prophecy\MethodProphecy;
+
+/**
+ * Prediction interface.
+ * Predictions are logical test blocks, tied to `should...` keyword.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+interface PredictionInterface
+{
+    /**
+     * Tests that double fulfilled prediction.
+     *
+     * @param Call[]        $calls
+     * @param ObjectProphecy $object
+     * @param MethodProphecy $method
+     *
+     * @throws object
+     * @return void
+     */
+    public function check(array $calls, ObjectProphecy $object, MethodProphecy $method);
+}

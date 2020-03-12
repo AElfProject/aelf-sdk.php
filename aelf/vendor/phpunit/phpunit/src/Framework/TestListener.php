@@ -1,298 +1,99 @@
-$this->authentications[$repositoryName] = array('username' => $username, 'password' => $password);
-}
-}
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework;
 
-
-
-
-
-
-
-
-
-
-
-namespace Composer\IO;
-
-
-
-
-
-
-class NullIO implements IOInterface
+/**
+ * A Listener for test progress.
+ */
+interface TestListener
 {
+    /**
+     * An error occurred.
+     *
+     * @param Test       $test
+     * @param \Exception $e
+     * @param float      $time
+     */
+    public function addError(Test $test, \Exception $e, $time);
 
+    /**
+     * A warning occurred.
+     *
+     * @param Test    $test
+     * @param Warning $e
+     * @param float   $time
+     */
+    public function addWarning(Test $test, Warning $e, $time);
 
+    /**
+     * A failure occurred.
+     *
+     * @param Test                 $test
+     * @param AssertionFailedError $e
+     * @param float                $time
+     */
+    public function addFailure(Test $test, AssertionFailedError $e, $time);
 
-public function isInteractive()
-{
-return false;
+    /**
+     * Incomplete test.
+     *
+     * @param Test       $test
+     * @param \Exception $e
+     * @param float      $time
+     */
+    public function addIncompleteTest(Test $test, \Exception $e, $time);
+
+    /**
+     * Risky test.
+     *
+     * @param Test       $test
+     * @param \Exception $e
+     * @param float      $time
+     */
+    public function addRiskyTest(Test $test, \Exception $e, $time);
+
+    /**
+     * Skipped test.
+     *
+     * @param Test       $test
+     * @param \Exception $e
+     * @param float      $time
+     */
+    public function addSkippedTest(Test $test, \Exception $e, $time);
+
+    /**
+     * A test suite started.
+     *
+     * @param TestSuite $suite
+     */
+    public function startTestSuite(TestSuite $suite);
+
+    /**
+     * A test suite ended.
+     *
+     * @param TestSuite $suite
+     */
+    public function endTestSuite(TestSuite $suite);
+
+    /**
+     * A test started.
+     *
+     * @param Test $test
+     */
+    public function startTest(Test $test);
+
+    /**
+     * A test ended.
+     *
+     * @param Test  $test
+     * @param float $time
+     */
+    public function endTest(Test $test, $time);
 }
-
-
-
-
-public function isVerbose()
-{
-return false;
-}
-
-
-
-
-public function isVeryVerbose()
-{
-return false;
-}
-
-
-
-
-public function isDebug()
-{
-return false;
-}
-
-
-
-
-public function isDecorated()
-{
-return false;
-}
-
-
-
-
-public function write($messages, $newline = true)
-{
-}
-
-
-
-
-public function overwrite($messages, $newline = true, $size = 80)
-{
-}
-
-
-
-
-public function ask($question, $default = null)
-{
-return $default;
-}
-
-
-
-
-public function askConfirmation($question, $default = true)
-{
-return $default;
-}
-
-
-
-
-public function askAndValidate($question, $validator, $attempts = false, $default = null)
-{
-return $default;
-}
-
-
-
-
-public function askAndHideAnswer($question)
-{
-return null;
-}
-
-
-
-
-public function getAuthentications()
-{
-return array();
-}
-
-
-
-
-public function hasAuthentication($repositoryName)
-{
-return false;
-}
-
-
-
-
-public function getAuthentication($repositoryName)
-{
-return array('username' => null, 'password' => null);
-}
-
-
-
-
-public function setAuthentication($repositoryName, $username, $password = null)
-{
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-
-namespace Composer\IO;
-
-
-
-
-
-
-interface IOInterface
-{
-
-
-
-
-
-public function isInteractive();
-
-
-
-
-
-
-public function isVerbose();
-
-
-
-
-
-
-public function isVeryVerbose();
-
-
-
-
-
-
-public function isDebug();
-
-
-
-
-
-
-public function isDecorated();
-
-
-
-
-
-
-
-public function write($messages, $newline = true);
-
-
-
-
-
-
-
-
-public function overwrite($messages, $newline = true, $size = 80);
-
-
-
-
-
-
-
-
-
-
-
-public function ask($question, $default = null);
-
-
-
-
-
-
-
-
-
-
-
-public function askConfirmation($question, $default = true);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function askAndValidate($question, $validator, $attempts = false, $default = null);
-
-
-
-
-
-
-
-
-public function askAndHideAnswer($question);
-
-
-
-
-
-
-public function getAuthentications();
-
-
-
-
-
-
-
-
-public function hasAuthentication($repositoryName);
-
-
-
-
-
-
-
-
-public function getAuthentication($repositoryName);
-
-
-
-
-
-
-
-
-public function set

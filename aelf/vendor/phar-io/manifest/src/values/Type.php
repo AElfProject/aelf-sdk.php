@@ -1,52 +1,60 @@
 <?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-namespace BitWasp\Buffertools\Types;
+use PharIo\Version\VersionConstraint;
 
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Exceptions\ParserOutOfRange;
-use BitWasp\Buffertools\Parser;
-
-class VarString extends AbstractType
-{
+abstract class Type {
     /**
-     * @var VarInt
+     * @return Application
      */
-    private $varint;
-
-    /**
-     * @param VarInt $varInt
-     */
-    public function __construct(VarInt $varInt)
-    {
-        $this->varint = $varInt;
-        parent::__construct($varInt->getByteOrder());
+    public static function application() {
+        return new Application;
     }
 
     /**
-     * {@inheritdoc}
-     * @see \BitWasp\Buffertools\Types\TypeInterface::write()
+     * @return Library
      */
-    public function write($buffer): string
-    {
-        if (!$buffer instanceof BufferInterface) {
-            throw new \InvalidArgumentException('Must provide a buffer');
-        }
-
-        $binary = $this->varint->write($buffer->getSize()) . $buffer->getBinary();
-        return $binary;
+    public static function library() {
+        return new Library;
     }
 
     /**
-     * {@inheritdoc}
-     * @see \BitWasp\Buffertools\Types\TypeInterface::write()
-     * @param Parser $parser
-     * @return \BitWasp\Buffertools\BufferInterface
-     * @throws \BitWasp\Buffertools\Exceptions\ParserOutOfRange
-     * @throws \Exception
+     * @param ApplicationName   $application
+     * @param VersionConstraint $versionConstraint
+     *
+     * @return Extension
      */
-    public function read(Parser $parser): BufferInterface
-    {
-        $length 
+    public static function extension(ApplicationName $application, VersionConstraint $versionConstraint) {
+        return new Extension($application, $versionConstraint);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isApplication() {
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isLibrary() {
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isExtension() {
+        return false;
+    }
+}

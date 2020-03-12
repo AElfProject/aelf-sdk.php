@@ -1,31 +1,26 @@
-   if (_isArray6) {
-        if (_i6 >= _iterator6.length) break;
-        _ref4 = _iterator6[_i6++];
-      } else {
-        _i6 = _iterator6.next();
-        if (_i6.done) break;
-        _ref4 = _i6.value;
-      }
+--TEST--
+phpunit -c ../_files/configuration_stop_on_warning.xml --stop-on-warning StopOnWarningTestSuite ./tests/_files/StopOnWarningTestSuite.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '-c';
+$_SERVER['argv'][2] = __DIR__ . '/../_files/configuration_stop_on_warning.xml';
+$_SERVER['argv'][3] = '--stop-on-warning';
+$_SERVER['argv'][4] = 'StopOnWarningTestSuite';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/StopOnWarningTestSuite.php';
 
-      var i = _ref4;
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
 
-      if (!changed && i.type === 'word' && i.value === origin) {
-        result.push({
-          type: 'word',
-          value: name
-        });
-        changed = true;
-      } else {
-        result.push(i);
-      }
-    }
+W
 
-    return result;
-  }
-  /**
-   * Find or create separator
-   */
-  ;
+Time: %s, Memory: %s
 
-  _proto.div = function div(params) {
-    for (var _iterator7 = params, _isArray7 = Array.isArray(_iterator7), _i7 = 0, _iterator7 = _isArray7 ? _iterator7 : _iterator7[Symbol.iterator]()
+There was 1 warning:
+
+1) Warning
+No tests found in class "NoTestCases".
+
+WARNINGS!
+Tests: 1, Assertions: 0, Warnings: 1.

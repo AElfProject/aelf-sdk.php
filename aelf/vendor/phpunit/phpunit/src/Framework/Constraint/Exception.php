@@ -1,40 +1,89 @@
-phpDocumentor\Reflection\Types\String_` and one of type 
-`\phpDocumentor\Reflection\Types\Integer`.
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework\Constraint;
 
-The real power of this resolver is in its capability to expand partial class names into fully qualified class names; but in order to do that we need an additional `\phpDocumentor\Reflection\Types\Context` class that will inform the resolver in which namespace the given expression occurs and which namespace aliases (or imports) apply.
+use PHPUnit\Util\Filter;
+use Throwable;
 
-### Resolving nullable types
-
-Php 7.1 introduced nullable types e.g. `?string`. Type resolver will resolve the original type without the nullable notation `?`
-just like it would do without the `?`. After that the type is wrapped in a `\phpDocumentor\Reflection\Types\Nullable` object.
-The `Nullable` type has a method to fetch the actual type. 
-
-## Resolving an FQSEN
-
-A Fully Qualified Structural Element Name is a reference to another element in your code bases and can be resolved using the `\phpDocumentor\Reflection\FqsenResolver` class' `resolve` method, like this:
-
-```php
-$fqsenResolver = new \phpDocumentor\Reflection\FqsenResolver();
-$fqsen = $fqsenResolver->resolve('\phpDocumentor\Reflection\FqsenResolver::resolve()');
-```
-
-In this example we resolve a Fully Qualified Structural Element Name (meaning that it includes the full namespace, class name and element name) and receive a Value Object of type `\phpDocumentor\Reflection\Fqsen`.
-
-The real power of this resolver is in its capability to expand partial element names into Fully Qualified Structural Element Names; but in order to do that we need an additional `\phpDocumentor\Reflection\Types\Context` class that will inform the resolver in which namespace the given expression occurs and which namespace aliases (or imports) apply.
-
-## Resolving partial Classes and Structural Element Names
-
-Perhaps the best feature of this library is that it knows how to resolve partial class names into fully qualified class names.
-
-For example, you have this file:
-
-```php
-namespace My\Example;
-
-use phpDocumentor\Reflection\Types;
-
-class Classy
+class Exception extends Constraint
 {
     /**
-     * @var Types\Context
-     * @see Classy::
+     * @var string
+     */
+    protected $className;
+
+    /**
+     * @param string $className
+     */
+    public function __construct($className)
+    {
+        parent::__construct();
+        $this->className = $className;
+    }
+
+    /**
+     * Evaluates the constraint for parameter $other. Returns true if the
+     * constraint is met, false otherwise.
+     *
+     * @param mixed $other Value or object to evaluate.
+     *
+     * @return bool
+     */
+    protected function matches($other)
+    {
+        return $other instanceof $this->className;
+    }
+
+    /**
+     * Returns the description of the failure
+     *
+     * The beginning of failure messages is "Failed asserting that" in most
+     * cases. This method should return the second part of that sentence.
+     *
+     * @param mixed $other Evaluated value or object.
+     *
+     * @return string
+     */
+    protected function failureDescription($other)
+    {
+        if ($other !== null) {
+            $message = '';
+            if ($other instanceof Throwable) {
+                $message = '. Message was: "' . $other->getMessage() . '" at'
+                    . "\n" . Filter::getFilteredStacktrace($other);
+            }
+
+            return \sprintf(
+                'exception of type "%s" matches expected exception "%s"%s',
+                \get_class($other),
+                $this->className,
+                $message
+            );
+        }
+
+        return \sprintf(
+            'exception of type "%s" is thrown',
+            $this->className
+        );
+    }
+
+    /**
+     * Returns a string representation of the constraint.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return \sprintf(
+            'exception of type "%s"',
+            $this->className
+        );
+    }
+}

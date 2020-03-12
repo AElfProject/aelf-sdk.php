@@ -1,7 +1,38 @@
-"use strict";
+<?php
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+class VariousIterableDataProviderTest
+{
+    /**
+     * @dataProvider asArrayProvider
+     * @dataProvider asIteratorProvider
+     * @dataProvider asTraversableProvider
+     */
+    public function test()
+    {
+    }
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+    public static function asArrayProvider()
+    {
+        return [
+            ['A'],
+            ['B'],
+            ['C'],
+        ];
+    }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true
+    public static function asIteratorProvider()
+    {
+        yield ['D'];
+        yield ['E'];
+        yield ['F'];
+    }
+
+    public static function asTraversableProvider()
+    {
+        return new WrapperIteratorAggregate([
+            ['G'],
+            ['H'],
+            ['I'],
+        ]);
+    }
+}

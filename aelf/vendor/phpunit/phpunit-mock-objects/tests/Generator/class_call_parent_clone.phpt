@@ -1,1 +1,77 @@
-ean',  'clerk',  'clever',  'click',  'client',  'cliff',  'climb',  'clinic',  'clip',  'clock',  'clog',  'close',  'cloth',  'cloud',  'clown',  'club',  'clump',  'cluster',  'clutch',  'coach',  'coast',  'coconut',  'code',  'coffee',  'coil',  'coin',  'collect',  'color',  'column',  'combine',  'come',  'comfort',  'comic',  'common',  'company',  'concert',  'conduct',  'confirm',  'congress',  'connect',  'consider',  'control',  'convince',  'cook',  'cool',  'copper',  'copy',  'coral',  'core',  'corn',  'correct',  'cost',  'cotton',  'couch',  'country',  'couple',  'course',  'cousin',  'cover',  'coyote',  'crack',  'cradle',  'craft',  'cram',  'crane',  'crash',  'crater',  'crawl',  'crazy',  'cream',  'credit',  'creek',  'crew',  'cricket',  'crime',  'crisp',  'critic',  'crop',  'cross',  'crouch',  'crowd',  'crucial',  'cruel',  'cruise',  'crumble',  'crunch',  'crush',  'cry',  'crystal',  'cube',  'culture',  'cup',  'cupboard',  'curious',  'current',  'curtain',  'curve',  'cushion',  'custom',  'cute',  'cycle',  'dad',  'damage',  'damp',  'dance',  'danger',  'daring',  'dash',  'daughter',  'dawn',  'day',  'deal',  'debate',  'debris',  'decade',  'december',  'decide',  'decline',  'decorate',  'decrease',  'deer',  'defense',  'define',  'defy',  'degree',  'delay',  'deliver',  'demand',  'demise',  'denial',  'dentist',  'deny',  'depart',  'depend',  'deposit',  'depth',  'deputy',  'derive',  'describe',  'desert',  'design',  'desk',  'despair',  'destroy',  'detail',  'detect',  'develop',  'device',  'devote',  'diagram',  'dial',  'diamond',  'diary',  'dice',  'diesel',  'diet',  'differ',  'digital',  'dignity',  'dilemma',  'dinner',  'dinosaur',  'direct',  'dirt',  'disagree',  'discover',  'disease',  'dish',  'dismiss',  'disorder',  'display',  'distance',  'divert',  'divide',  'divorce',  'dizzy',  'doctor',  'document',  'dog',  'doll',  'dolphin',  'domain',  'donate',  'donkey',  'donor',
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('Foo', array(), 'MockFoo', true)
+--FILE--
+<?php
+class Foo
+{
+    public function __clone()
+    {
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'Foo',
+    array(),
+    'MockFoo',
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = [];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+        parent::__clone();
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

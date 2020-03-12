@@ -1,345 +1,560 @@
 <?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace SebastianBergmann\CodeCoverage;
 
-namespace BitWasp\Bitcoin\Script\Interpreter;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\EcSerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Key\PublicKey;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PublicKeySerializerInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Signature\DerSignatureSerializerInterface;
-use BitWasp\Bitcoin\Exceptions\ScriptRuntimeException;
-use BitWasp\Bitcoin\Exceptions\SignatureNotCanonical;
-use BitWasp\Bitcoin\Locktime;
-use BitWasp\Bitcoin\Script\ScriptInterface;
-use BitWasp\Bitcoin\Serializer\Signature\TransactionSignatureSerializer;
-use BitWasp\Bitcoin\Signature\TransactionSignature;
-use BitWasp\Bitcoin\Transaction\SignatureHash\SigHash;
-use BitWasp\Bitcoin\Transaction\TransactionInput;
-use BitWasp\Bitcoin\Transaction\TransactionInputInterface;
-use BitWasp\Bitcoin\Transaction\TransactionInterface;
-use BitWasp\Buffertools\BufferInterface;
-
-abstract class CheckerBase
-{
-    /**
-     * @var EcAdapterInterface
-     */
-    protected $adapter;
-
-    /**
-     * @var TransactionInterface
-     */
-    protected $transaction;
-
-    /**
-     * @var int
-     */
-    protected $nInput;
-
-    /**
-     * @var int
-     */
-    protected $amount;
-
-    /**
-     * @var array
-     */
-    protected $sigCache = [];
-
-    /**
-     * @var TransactionSignatureSerializer
-     */
-    private $sigSerializer;
-
-    /**
-     * @var PublicKeySerializerInterface
-     */
-    private $pubKeySerializer;
-
-    /**
-     * @var int
-     */
-    protected $sigHashOptionalBits = SigHash::ANYONECANPAY;
-
-    /**
-     * Checker constructor.
-     * @param EcAdapterInterface $ecAdapter
-     * @param TransactionInterface $transaction
-     * @param int $nInput
-     * @param int $amount
-     * @param TransactionSignatureSerializer|null $sigSerializer
-     * @param PublicKeySerializerInterface|null $pubKeySerializer
-     */
-    public function __construct(EcAdapterInterface $ecAdapter, TransactionInterface $transaction, int $nInput, int $amount, TransactionSignatureSerializer $sigSerializer = null, PublicKeySerializerInterface $pubKeySerializer = null)
-    {
-        $this->sigSerializer = $sigSerializer ?: new TransactionSignatureSerializer(EcSerializer::getSerializer(DerSignatureSerializerInterface::class, true, $ecAdapter));
-        $this->pubKeySerializer = $pubKeySerializer ?: EcSerializer::getSerializer(PublicKeySerializerInterface::class, true, $ecAdapter);
-        $this->adapter = $ecAdapter;
-        $this->transaction = $transaction;
-        $this->nInput = $nInput;
-        $this->amount = $amount;
-    }
-
-    /**
-     * @param ScriptInterface $script
-     * @param int $hashType
-     * @param int $sigVersion
-     * @return BufferInterface
-     */
-    abstract public function getSigHash(ScriptInterface $script, int $hashType, int $sigVersion): BufferInterface;
-
-    /**
-     * @param BufferInterface $signature
-     * @return bool
-     */
-    public function isValidSignatureEncoding(BufferInterface $signature): bool
-    {
-        try {
-            TransactionSignature::isDERSignature($signature);
-            return true;
-        } catch (SignatureNotCanonical $e) {
-            /* In any case, we will return false outside this block */
-        }
-
-        return false;
-    }
-
-    /**
-     * @param BufferInterface $signature
-     * @return bool
-     * @throws ScriptRuntimeException
-     * @throws \Exception
-     */
-    public function isLowDerSignature(BufferInterface $signature): bool
-    {
-        if (!$this->isValidSignatureEncoding($signature)) {
-            throw new ScriptRuntimeException(Interpreter::VERIFY_DERSIG, 'Signature with incorrect encoding');
-        }
-
-        $binary = $signature->getBinary();
-        $nLenR = ord($binary[3]);
-        $nLenS = ord($binary[5 + $nLenR]);
-        $s = $signature->slice(6 + $nLenR, $nLenS)->getGmp();
-
-        return $this->adapter->validateSignatureElement($s, true);
-    }
-
-    /**
-     * @param int $hashType
-     * @return bool
-     */
-    public function isDefinedHashtype(int $hashType): bool
-    {
-        $nHashType = $hashType & (~($this->sigHashOptionalBits));
-
-        return !(($nHashType < SigHash::ALL) || ($nHashType > SigHash::SINGLE));
-    }
-
-    /**
-     * Determine whether the sighash byte appended to the signature encodes
-     * a valid sighash type.
-     *
-     * @param BufferInterface $signature
-     * @return bool
-     */
-    public function isDefinedHashtypeSignature(BufferInterface $signature): bool
-    {
-        if ($signature->getSize() === 0) {
-            return false;
-        }
-
-        $binary = $signature->getBinary();
-        return $this->isDefinedHashtype(ord(substr($binary, -1)));
-    }
-
-    /**
-     * @param BufferInterface $signature
-     * @param int $flags
-     * @return $this
-     * @throws \BitWasp\Bitcoin\Exceptions\ScriptRuntimeException
-     */
-    public function checkSignatureEncoding(BufferInterface $signature, int $flags)
-    {
-        if ($signature->getSize() === 0) {
-            return $this;
-        }
-
-        if (($flags & (Interpreter::VERIFY_DERSIG | Interpreter::VERIFY_LOW_S | Interpreter::VERIFY_STRICTENC)) !== 0 && !$this->isValidSignatureEncoding($signature)) {
-            throw new ScriptRuntimeException(Interpreter::VERIFY_DERSIG, 'Signature with incorrect encoding');
-        } else if (($flags & Interpreter::VERIFY_LOW_S) !== 0 && !$this->isLowDerSignature($signature)) {
-            throw new ScriptRuntimeException(Interpreter::VERIFY_LOW_S, 'Signature s element was not low');
-        } else if (($flags & Interpreter::VERIFY_STRICTENC) !== 0 && !$this->isDefinedHashtypeSignature($signature)) {
-            throw new ScriptRuntimeException(Interpreter::VERIFY_STRICTENC, 'Signature with invalid hashtype');
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param BufferInterface $publicKey
-     * @param int $flags
-     * @return $this
-     * @throws \Exception
-     */
-    public function checkPublicKeyEncoding(BufferInterface $publicKey, int $flags)
-    {
-        if (($flags & Interpreter::VERIFY_STRICTENC) !== 0 && !PublicKey::isCompressedOrUncompressed($publicKey)) {
-            throw new ScriptRuntimeException(Interpreter::VERIFY_STRICTENC, 'Public key with incorrect encoding');
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param ScriptInterface $script
-     * @param BufferInterface $sigBuf
-     * @param BufferInterface $keyBuf
-     * @param int $sigVersion
-     * @param int $flags
-     * @return bool
-     * @throws ScriptRuntimeException
-     */
-    public function checkSig(ScriptInterface $script, BufferInterface $sigBuf, BufferInterface $keyBuf, int $sigVersion, int $flags)
-    {
-        $this
-            ->checkSignatureEncoding($sigBuf, $flags)
-            ->checkPublicKeyEncoding($keyBuf, $flags);
-
-        try {
-            $cacheCheck = "{$script->getBinary()}{$sigVersion}{$keyBuf->getBinary()}{$sigBuf->getBinary()}";
-            if (!isset($this->sigCache[$cacheCheck])) {
-                $txSignature = $this->sigSerializer->parse($sigBuf);
-                $publicKey = $this->pubKeySerializer->parse($keyBuf);
-
-                $hash = $this->getSigHash($script, $txSignature->getHashType(), $sigVersion);
-                $result = $this->sigCache[$cacheCheck] = $publicKey->verify($hash, $txSignature->getSignature());
-            } else {
-                $result = $this->sigCache[$cacheCheck];
-            }
-
-            return $result;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
-    /**
-     * @param \BitWasp\Bitcoin\Script\Interpreter\Number $scriptLockTime
-     * @return bool
-     */
-    public function checkLockTime(\BitWasp\Bitcoin\Script\Interpreter\Number $scriptLockTime): bool
-    {
-        $input = $this->transaction->getInput($this->nInput);
-        $nLockTime = $scriptLockTime->getInt();
-        $txLockTime = $this->transaction->getLockTime();
-
-        if (!(($txLockTime < Locktime::BLOCK_MAX && $nLockTime < Locktime::BLOCK_MAX) ||
-            ($txLockTime >= Locktime::BLOCK_MAX && $nLockTime >= Locktime::BLOCK_MAX))
-        ) {
-            return false;
-        }
-
-        if ($nLockTime > $txLockTime) {
-            return false;
-        }
-
-        if ($input->isFinal()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param \BitWasp\Bitcoin\Script\Interpreter\Number $sequence
-     * @return bool
-     */
-    public function checkSequence(\BitWasp\Bitcoin\Script\Interpreter\Number $sequence): bool
-    {
-        $txSequence = $this->transaction->getInput($this->nInput)->getSequence();
-        if ($this->transaction->getVersion() < 2) {
-            return false;
-        }
-
-        if (($txSequence & TransactionInputInterface::SEQUENCE_LOCKTIME_DISABLE_FLAG) !== 0) {
-            return false;
-        }
-
-        $mask = TransactionInputInterface::SEQUENCE_LOCKTIME_TYPE_FLAG | TransactionInputInterface::SEQUENCE_LOCKTIME_MASK;
-
-        $txToSequenceMasked = $txSequence & $mask;
-        $nSequenceMasked = $sequence->getInt() & $mask;
-        if (!(($txToSequenceMasked < TransactionInput::SEQUENCE_LOCKTIME_TYPE_FLAG && $nSequenceMasked < TransactionInput::SEQUENCE_LOCKTIME_TYPE_FLAG) ||
-            ($txToSequenceMasked >= TransactionInput::SEQUENCE_LOCKTIME_TYPE_FLAG && $nSequenceMasked >= TransactionInput::SEQUENCE_LOCKTIME_TYPE_FLAG))
-        ) {
-            return false;
-        }
-
-        if ($nSequenceMasked > $txToSequenceMasked) {
-            return false;
-        }
-
-        return true;
-    }
-}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <?php
-# Generated by the protocol buffer compiler.  DO NOT EDIT!
-# source: google/protobuf/descriptor.proto
-
-namespace Google\Protobuf\Internal\FieldOptions;
-
-use UnexpectedValueException;
+use SebastianBergmann\CodeCoverage\Driver\PHPDBG;
+use SebastianBergmann\CodeCoverage\Driver\Xdebug;
 
 /**
- * Protobuf type <code>google.protobuf.FieldOptions.CType</code>
+ * @covers SebastianBergmann\CodeCoverage\CodeCoverage
  */
-class CType
+class CodeCoverageTest extends TestCase
 {
     /**
-     * Default mode.
-     *
-     * Generated from protobuf enum <code>STRING = 0;</code>
+     * @var CodeCoverage
      */
-    const STRING = 0;
-    /**
-     * Generated from protobuf enum <code>CORD = 1;</code>
-     */
-    const CORD = 1;
-    /**
-     * Generated from protobuf enum <code>STRING_PIECE = 2;</code>
-     */
-    const STRING_PIECE = 2;
+    private $coverage;
 
-    private static $valueToName = [
-        self::STRING => 'STRING',
-        self::CORD => 'CORD',
-        self::STRING_PIECE => 'STRING_PIECE',
-    ];
-
-    public static function name($value)
+    protected function setUp()
     {
-        if (!isset(self::$valueToName[$value])) {
-            throw new UnexpectedValueException(sprintf(
-                    'Enum %s has no name defined for value %s', __CLASS__, $value));
-        }
-        return self::$valueToName[$value];
+        $this->coverage = new CodeCoverage;
     }
 
-
-    public static function value($name)
+    public function testCanBeConstructedForXdebugWithoutGivenFilterObject()
     {
-        $const = __CLASS__ . '::' . strtoupper($name);
-        if (!defined($const)) {
-            throw new UnexpectedValueException(sprintf(
-                    'Enum %s has no value defined for name %s', __CLASS__, $name));
+        if (PHP_SAPI == 'phpdbg') {
+            $this->markTestSkipped('Requires PHP CLI and Xdebug');
         }
-        return constant($const);
+
+        $this->assertAttributeInstanceOf(
+            Xdebug::class,
+            'driver',
+            $this->coverage
+        );
+
+        $this->assertAttributeInstanceOf(
+            Filter::class,
+            'filter',
+            $this->coverage
+        );
+    }
+
+    public function testCanBeConstructedForXdebugWithGivenFilterObject()
+    {
+        if (PHP_SAPI == 'phpdbg') {
+            $this->markTestSkipped('Requires PHP CLI and Xdebug');
+        }
+
+        $filter   = new Filter;
+        $coverage = new CodeCoverage(null, $filter);
+
+        $this->assertAttributeInstanceOf(
+            Xdebug::class,
+            'driver',
+            $coverage
+        );
+
+        $this->assertSame($filter, $coverage->filter());
+    }
+
+    public function testCanBeConstructedForPhpdbgWithoutGivenFilterObject()
+    {
+        if (PHP_SAPI != 'phpdbg') {
+            $this->markTestSkipped('Requires PHPDBG');
+        }
+
+        $this->assertAttributeInstanceOf(
+            PHPDBG::class,
+            'driver',
+            $this->coverage
+        );
+
+        $this->assertAttributeInstanceOf(
+            Filter::class,
+            'filter',
+            $this->coverage
+        );
+    }
+
+    public function testCanBeConstructedForPhpdbgWithGivenFilterObject()
+    {
+        if (PHP_SAPI != 'phpdbg') {
+            $this->markTestSkipped('Requires PHPDBG');
+        }
+
+        $filter   = new Filter;
+        $coverage = new CodeCoverage(null, $filter);
+
+        $this->assertAttributeInstanceOf(
+            PHPDBG::class,
+            'driver',
+            $coverage
+        );
+
+        $this->assertSame($filter, $coverage->filter());
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testCannotStartWithInvalidArgument()
+    {
+        $this->coverage->start(null, null);
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testCannotStopWithInvalidFirstArgument()
+    {
+        $this->coverage->stop(null);
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testCannotStopWithInvalidSecondArgument()
+    {
+        $this->coverage->stop(true, null);
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testCannotAppendWithInvalidArgument()
+    {
+        $this->coverage->append([], null);
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetCacheTokensThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setCacheTokens(null);
+    }
+
+    public function testSetCacheTokens()
+    {
+        $this->coverage->setCacheTokens(true);
+        $this->assertAttributeEquals(true, 'cacheTokens', $this->coverage);
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetCheckForUnintentionallyCoveredCodeThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setCheckForUnintentionallyCoveredCode(null);
+    }
+
+    public function testSetCheckForUnintentionallyCoveredCode()
+    {
+        $this->coverage->setCheckForUnintentionallyCoveredCode(true);
+        $this->assertAttributeEquals(
+            true,
+            'checkForUnintentionallyCoveredCode',
+            $this->coverage
+        );
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetForceCoversAnnotationThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setForceCoversAnnotation(null);
+    }
+
+    public function testSetCheckForMissingCoversAnnotation()
+    {
+        $this->coverage->setCheckForMissingCoversAnnotation(true);
+        $this->assertAttributeEquals(
+            true,
+            'checkForMissingCoversAnnotation',
+            $this->coverage
+        );
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetCheckForMissingCoversAnnotationThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setCheckForMissingCoversAnnotation(null);
+    }
+
+    public function testSetForceCoversAnnotation()
+    {
+        $this->coverage->setForceCoversAnnotation(true);
+        $this->assertAttributeEquals(
+            true,
+            'forceCoversAnnotation',
+            $this->coverage
+        );
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetCheckForUnexecutedCoveredCodeThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setCheckForUnexecutedCoveredCode(null);
+    }
+
+    public function testSetCheckForUnexecutedCoveredCode()
+    {
+        $this->coverage->setCheckForUnexecutedCoveredCode(true);
+        $this->assertAttributeEquals(
+            true,
+            'checkForUnexecutedCoveredCode',
+            $this->coverage
+        );
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetAddUncoveredFilesFromWhitelistThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setAddUncoveredFilesFromWhitelist(null);
+    }
+
+    public function testSetAddUncoveredFilesFromWhitelist()
+    {
+        $this->coverage->setAddUncoveredFilesFromWhitelist(true);
+        $this->assertAttributeEquals(
+            true,
+            'addUncoveredFilesFromWhitelist',
+            $this->coverage
+        );
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetProcessUncoveredFilesFromWhitelistThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setProcessUncoveredFilesFromWhitelist(null);
+    }
+
+    public function testSetProcessUncoveredFilesFromWhitelist()
+    {
+        $this->coverage->setProcessUncoveredFilesFromWhitelist(true);
+        $this->assertAttributeEquals(
+            true,
+            'processUncoveredFilesFromWhitelist',
+            $this->coverage
+        );
+    }
+
+    public function testSetIgnoreDeprecatedCode()
+    {
+        $this->coverage->setIgnoreDeprecatedCode(true);
+        $this->assertAttributeEquals(
+            true,
+            'ignoreDeprecatedCode',
+            $this->coverage
+        );
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\Exception
+     */
+    public function testSetIgnoreDeprecatedCodeThrowsExceptionForInvalidArgument()
+    {
+        $this->coverage->setIgnoreDeprecatedCode(null);
+    }
+
+    public function testClear()
+    {
+        $this->coverage->clear();
+
+        $this->assertAttributeEquals(null, 'currentId', $this->coverage);
+        $this->assertAttributeEquals([], 'data', $this->coverage);
+        $this->assertAttributeEquals([], 'tests', $this->coverage);
+    }
+
+    public function testCollect()
+    {
+        $coverage = $this->getCoverageForBankAccount();
+
+        $this->assertEquals(
+            $this->getExpectedDataArrayForBankAccount(),
+            $coverage->getData()
+        );
+
+        $this->assertEquals(
+            [
+                'BankAccountTest::testBalanceIsInitiallyZero'       => ['size' => 'unknown', 'status' => null],
+                'BankAccountTest::testBalanceCannotBecomeNegative'  => ['size' => 'unknown', 'status' => null],
+                'BankAccountTest::testBalanceCannotBecomeNegative2' => ['size' => 'unknown', 'status' => null],
+                'BankAccountTest::testDepositWithdrawMoney'         => ['size' => 'unknown', 'status' => null]
+            ],
+            $coverage->getTests()
+        );
+    }
+
+    public function testMerge()
+    {
+        $coverage = $this->getCoverageForBankAccountForFirstTwoTests();
+        $coverage->merge($this->getCoverageForBankAccountForLastTwoTests());
+
+        $this->assertEquals(
+            $this->getExpectedDataArrayForBankAccount(),
+            $coverage->getData()
+        );
+    }
+
+    public function testMerge2()
+    {
+        $coverage = new CodeCoverage(
+            $this->createMock(Xdebug::class),
+            new Filter
+        );
+
+        $coverage->merge($this->getCoverageForBankAccount());
+
+        $this->assertEquals(
+            $this->getExpectedDataArrayForBankAccount(),
+            $coverage->getData()
+        );
+    }
+
+    public function testGetLinesToBeIgnored()
+    {
+        $this->assertEquals(
+            [
+                1,
+                3,
+                4,
+                5,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                30,
+                32,
+                33,
+                34,
+                35,
+                36,
+                37,
+                38
+            ],
+            $this->getLinesToBeIgnored()->invoke(
+                $this->coverage,
+                TEST_FILES_PATH . 'source_with_ignore.php'
+            )
+        );
+    }
+
+    public function testGetLinesToBeIgnored2()
+    {
+        $this->assertEquals(
+            [1, 5],
+            $this->getLinesToBeIgnored()->invoke(
+                $this->coverage,
+                TEST_FILES_PATH . 'source_without_ignore.php'
+            )
+        );
+    }
+
+    public function testGetLinesToBeIgnored3()
+    {
+        $this->assertEquals(
+            [
+                1,
+                2,
+                3,
+                4,
+                5,
+                8,
+                11,
+                15,
+                16,
+                19,
+                20
+            ],
+            $this->getLinesToBeIgnored()->invoke(
+                $this->coverage,
+                TEST_FILES_PATH . 'source_with_class_and_anonymous_function.php'
+            )
+        );
+    }
+
+    public function testGetLinesToBeIgnoredOneLineAnnotations()
+    {
+        $this->assertEquals(
+            [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                14,
+                15,
+                16,
+                18,
+                20,
+                21,
+                23,
+                24,
+                25,
+                27,
+                28,
+                29,
+                30,
+                31,
+                32,
+                33,
+                34,
+                37
+            ],
+            $this->getLinesToBeIgnored()->invoke(
+                $this->coverage,
+                TEST_FILES_PATH . 'source_with_oneline_annotations.php'
+            )
+        );
+    }
+
+    /**
+     * @return \ReflectionMethod
+     */
+    private function getLinesToBeIgnored()
+    {
+        $getLinesToBeIgnored = new \ReflectionMethod(
+            'SebastianBergmann\CodeCoverage\CodeCoverage',
+            'getLinesToBeIgnored'
+        );
+
+        $getLinesToBeIgnored->setAccessible(true);
+
+        return $getLinesToBeIgnored;
+    }
+
+    public function testGetLinesToBeIgnoredWhenIgnoreIsDisabled()
+    {
+        $this->coverage->setDisableIgnoredLines(true);
+
+        $this->assertEquals(
+            [
+                7,
+                11,
+                12,
+                13,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                26,
+                27,
+                32,
+                33,
+                34,
+                35,
+                36,
+                37
+            ],
+            $this->getLinesToBeIgnored()->invoke(
+                $this->coverage,
+                TEST_FILES_PATH . 'source_with_ignore.php'
+            )
+        );
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\CoveredCodeNotExecutedException
+     */
+    public function testAppendThrowsExceptionIfCoveredCodeWasNotExecuted()
+    {
+        $this->coverage->filter()->addDirectoryToWhitelist(TEST_FILES_PATH);
+        $this->coverage->setCheckForUnexecutedCoveredCode(true);
+
+        $data = [
+            TEST_FILES_PATH . 'BankAccount.php' => [
+                29 => -1,
+                31 => -1
+            ]
+        ];
+
+        $linesToBeCovered = [
+            TEST_FILES_PATH . 'BankAccount.php' => [
+                22,
+                24
+            ]
+        ];
+
+        $linesToBeUsed = [];
+
+        $this->coverage->append($data, 'File1.php', true, $linesToBeCovered, $linesToBeUsed);
+    }
+
+    /**
+     * @expectedException SebastianBergmann\CodeCoverage\CoveredCodeNotExecutedException
+     */
+    public function testAppendThrowsExceptionIfUsedCodeWasNotExecuted()
+    {
+        $this->coverage->filter()->addDirectoryToWhitelist(TEST_FILES_PATH);
+        $this->coverage->setCheckForUnexecutedCoveredCode(true);
+
+        $data = [
+            TEST_FILES_PATH . 'BankAccount.php' => [
+                29 => -1,
+                31 => -1
+            ]
+        ];
+
+        $linesToBeCovered = [
+            TEST_FILES_PATH . 'BankAccount.php' => [
+                29,
+                31
+            ]
+        ];
+
+        $linesToBeUsed = [
+            TEST_FILES_PATH . 'BankAccount.php' => [
+                22,
+                24
+            ]
+        ];
+
+        $this->coverage->append($data, 'File1.php', true, $linesToBeCovered, $linesToBeUsed);
     }
 }
-
-// Adding a class alias for backwards compatibility with the previous class name.
-class_alias(CType::class, \Google\Protobuf\Internal\FieldOptions_CType::class);
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    

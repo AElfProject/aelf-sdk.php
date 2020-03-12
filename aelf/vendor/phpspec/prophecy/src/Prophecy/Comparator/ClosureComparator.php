@@ -1,31 +1,44 @@
-"use strict";
+<?php
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+namespace Prophecy\Comparator;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+use SebastianBergmann\Comparator\Comparator;
+use SebastianBergmann\Comparator\ComparisonFailure;
 
-var flexSpec = require('./flex-spec');
+/**
+ * Closure comparator.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+final class ClosureComparator extends Comparator
+{
+    public function accepts($expected, $actual)
+    {
+        return is_object($expected) && $expected instanceof \Closure
+            && is_object($actual) && $actual instanceof \Closure;
+    }
 
-var Declaration = require('../declaration');
-
-var FlexWrap =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(FlexWrap, _Declaration);
-
-  function FlexWrap() {
-    return _Declaration.apply(this, arguments) || this;
-  }
-
-  var _proto = FlexWrap.prototype;
-
-  /**
-   * Don't add prefix for 2009 spec
-   */
-  _proto.set = function set(decl, prefix) {
-    var spec = flexSpec(prefix)[0];
-
-    if (spec !== 2009) {
-      return _Declaration.pro
+    public function assertEquals($expected, $actual, $delta = 0.0, $canonicalize = false, $ignoreCase = false, array &$processed = array())
+    {
+        if ($expected !== $actual) {
+            throw new ComparisonFailure(
+                $expected,
+                $actual,
+                // we don't need a diff
+                '',
+                '',
+                false,
+                'all closures are different if not identical'
+            );
+        }
+    }
+}

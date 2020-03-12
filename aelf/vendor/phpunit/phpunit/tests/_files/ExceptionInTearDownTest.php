@@ -1,27 +1,37 @@
+<?php
+use PHPUnit\Framework\TestCase;
+
+class ExceptionInTearDownTest extends TestCase
 {
-    "name": "yurunsoft/yurun-http",
-    "description": "YurunHttp 是开源的 PHP HTTP 类库，支持链式操作，简单易用。支持 Curl、Swoole，支持 Http、Http2、WebSocket！",
-    "require": {
-        "php": ">=7.1.0",
-        "psr/http-message": "~1.0",
-        "yurunsoft/swoole-co-pool": "^1.1.0"
-    },
-    "require-dev": {
-        "swoft/swoole-ide-helper": "~2.0",
-        "phpunit/phpunit": ">=4 <8"
-    },
-    "type": "library",
-    "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "Yurun\\Util\\": "./src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Yurun\\Util\\YurunHttp\\Test\\": "tests/unit/"
-        }
-    },
-    "scripts": {
-        "test": "@php ./tests/phpunit -c ./tests/phpunit.xml",
-   
+    public $setUp                = false;
+    public $assertPreConditions  = false;
+    public $assertPostConditions = false;
+    public $tearDown             = false;
+    public $testSomething        = false;
+
+    protected function setUp()
+    {
+        $this->setUp = true;
+    }
+
+    protected function assertPreConditions()
+    {
+        $this->assertPreConditions = true;
+    }
+
+    public function testSomething()
+    {
+        $this->testSomething = true;
+    }
+
+    protected function assertPostConditions()
+    {
+        $this->assertPostConditions = true;
+    }
+
+    protected function tearDown()
+    {
+        $this->tearDown = true;
+        throw new Exception;
+    }
+}

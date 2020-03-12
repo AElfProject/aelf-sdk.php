@@ -1,145 +1,145 @@
-<?php
-/*
- * This file is part of the PHPASN1 library.
- *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+# Base58 Encoding and Decoding Library for PHP
 
-namespace FG\ASN1;
+[![Build Status](https://travis-ci.org/stephen-hill/base58php.png)](https://travis-ci.org/stephen-hill/base58php)
+[![Packagist Release](http://img.shields.io/packagist/v/stephenhill/base58.svg)](https://packagist.org/packages/stephenhill/base58)
+[![MIT License](http://img.shields.io/packagist/l/stephenhill/base58.svg)](https://github.com/stephen-hill/base58php/blob/master/license)
+[![Flattr this](https://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=stephen-hill&url=https%3A%2F%2Fgithub.com%2Fstephen-hill%2Fbase58php)
 
-use Exception;
+## Long Term Support
 
-/**
- * The Identifier encodes the ASN.1 tag (class and number) of the type of a data value.
- *
- * Every identifier whose number is in the range 0 to 30 has the following structure:
- *
- * Bits:    8  7    6    5  4  3  2  1
- *       | Class | P/C |   Tag number  |
- *       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *
- * Bits 8 and 7 define the class of this type ( Universal, Application, Context-specific or Private).
- * Bit 6 encoded whether this type is primitive or constructed
- * The remaining bits 5 - 1 encode the tag number
- */
-class Identifier
+Each major version of this library will be supported for 5 years after it's initial release. Support will be provided for security and bug fixes.
+
+Version 1 will therefore be supported until the 11th September 2019.
+
+## Background
+
+I wanted a replacement for Base64 encoded strings and the [Base58 encoding used by Bitcoin](https://en.bitcoin.it/wiki/Base58Check_encoding) looked ideal. I looked around for an existing PHP library which would directly convert a string into Base58 but I couldn't find one, or at least one that worked correctly and was also well tested.
+
+So I decided to create a library with the following goals:
+
+- Encode/Decode PHP Strings
+- Simple and easy to use
+- Fully Tested
+- Available via Composer
+
+## Requirements
+
+This library has the following requirements:
+
+- PHP => 5.3
+- BC Math Extension
+
+## Installation
+
+I recommend you install this library via Composer.
+
+```json
 {
-    const CLASS_UNIVERSAL        = 0x00;
-    const CLASS_APPLICATION      = 0x01;
-    const CLASS_CONTEXT_SPECIFIC = 0x02;
-    const CLASS_PRIVATE          = 0x03;
-
-    const EOC               = 0x00; // unsupported for now
-    const BOOLEAN           = 0x01;
-    const INTEGER           = 0x02;
-    const BITSTRING         = 0x03;
-    const OCTETSTRING       = 0x04;
-    const NULL              = 0x05;
-    const OBJECT_IDENTIFIER = 0x06;
-    const OBJECT_DESCRIPTOR = 0x07;
-    const EXTERNAL          = 0x08; // unsupported for now
-    const REAL              = 0x09; // unsupported for now
-    const ENUMERATED        = 0x0A;
-    const EMBEDDED_PDV      = 0x0B; // unsupported for now
-    const UTF8_STRING       = 0x0C;
-    const RELATIVE_OID      = 0x0D;
-    // value 0x0E and 0x0F are reserved for future use
-
-    const SEQUENCE          = 0x30;
-    const SET               = 0x31;
-    const NUMERIC_STRING    = 0x12;
-    const PRINTABLE_STRING  = 0x13;
-    const T61_STRING        = 0x14; // sometimes referred to as TeletextString
-    const VIDEOTEXT_STRING  = 0x15;
-    const IA5_STRING        = 0x16;
-    const UTC_TIME          = 0x17;
-    const GENERALIZED_TIME  = 0x18;
-    const GRAPHIC_STRING    = 0x19;
-    const VISIBLE_STRING    = 0x1A;
-    const GENERAL_STRING    = 0x1B;
-    const UNIVERSAL_STRING  = 0x1C;
-    const CHARACTER_STRING  = 0x1D; // Unrestricted character type
-    const BMP_STRING        = 0x1E;
-
-    const LONG_FORM         = 0x1F;
-    const IS_CONSTRUCTED    = 0x20;
-
-    /**
-     * Creates an identifier. Short form identifiers are returned as integers
-     * for BC, long form identifiers will be returned as a string of octets.
-     *
-     * @param int $class
-     * @param bool $isConstructed
-     * @param int $tagNumber
-     *
-     * @throws Exception if the given arguments are invalid
-     *
-     * @return int|string
-     */
-    public static function create($class, $isConstructed, $tagNumber)
-    {
-        if (!is_numeric($class) || $class < self::CLASS_UNIVERSAL || $class > self::CLASS_PRIVATE) {
-            throw new Exception(sprintf('Invalid class %d given', $class));
-        }
-
-        if (!is_bool($isConstructed)) {
-            throw new Exception("\$isConstructed must be a boolean value ($isConstructed given)");
-        }
-
-        $tagNumber = self::makeNumeric($tagNumber);
-        if ($tagNumber < 0) {
-            throw new Exception(sprintf('Invalid $tagNumber %d given. You can only use positive integers.', $tagNumber));
-        }
-
-        if ($tagNumber < self::LONG_FORM) {
-            return ($class << 6) | ($isConstructed << 5) | $tagNumber;
-        }
-
-        $firstOctet = ($class << 6) | ($isConstructed << 5) | self::LONG_FORM;
-
-        // Tag numbers formatted in long form are base-128 encoded. See X.609#8.1.2.4
-        return chr($firstOctet).Base128::encode($tagNumber);
+    "require": {
+        "stephenhill/base58": "~1.0"
     }
+}
+```
 
-    public static function isConstructed($identifierOctet)
-    {
-        return ($identifierOctet & self::IS_CONSTRUCTED) === self::IS_CONSTRUCTED;
-    }
+## Basic Usage
 
-    public static function isLongForm($identifierOctet)
-    {
-        return ($identifierOctet & self::LONG_FORM) === self::LONG_FORM;
-    }
+```php
+require_once('vendor/autoload.php');
 
-    /**
-     * Return the name of the mapped ASN.1 type with a preceding "ASN.1 ".
-     *
-     * Example: ASN.1 Octet String
-     *
-     * @see Identifier::getShortName()
-     *
-     * @param int|string $identifier
-     *
-     * @return string
-     */
-    public static function getName($identifier)
-    {
-        $identifierOctet = self::makeNumeric($identifier);
+$base58 = new StephenHill\Base58();
 
-        $typeName = static::getShortName($identifier);
+$base58->encode('Hello World');
+$base58->decode('JxF12TrwUP45BMd');
+```
 
-        if (($identifierOctet & self::LONG_FORM) < self::LONG_FORM) {
-            $typeName = "ASN.1 {$typeName}";
-        }
+## Advanced Usage
 
-        return $typeName;
-    }
+By default this library chooses the encoding service provider to use, either GMPService or BCMathService (in that order).
+If you want to specify one of the included services or your own, you can inject it into the constructor.
 
-    /**
-     * Return the short version of the type name.
-     *
-     * If the given identifier octet can be mapped to a known universal type this will
-     * return its name. Else Iden
+```php
+require_once('vendor/autoload.php');
+
+$gmp = new StephenHill\GMPService();
+$base58 = new StephenHill\Base58(null, $gmp);
+
+$base58->encode('Hello World');
+$base58->decode('JxF12TrwUP45BMd');
+```
+
+Also by default, this library uses Bitcoin's Base58 alphabet. If you want to use another variant, you can do this in the constructor.
+
+```php
+require_once('vendor/autoload.php');
+
+// Flickr's Base58 Alphabet
+$base58 = new StephenHill\Base58('123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ');
+
+$base58->encode('Hello World');
+$base58->decode('iXf12sRWto45bmC');
+```
+
+## Testing
+
+This library is tested using PHPUnit.
+
+```bash
+$ bin/phpunit
+```
+
+## Benchmarking
+
+You can benchmark this library using [Athletic](https://github.com/polyfractal/athletic).
+The benchmarking suite also benchmarks PHP's built-in Base64 and Base16 encoding for comparison.
+
+```bash
+$ bin/athletic -p benchmarks
+```
+
+Example output.
+
+```
+StephenHill\Benchmarks\Base16Event
+    Method Name    Iterations    Average Time      Ops/second
+    ------------  ------------  --------------    -------------
+    encodeBase16: [10,000    ] [0.0000010839939] [922,514.40637]
+    decodeBase16: [10,000    ] [0.0000011516809] [868,296.03561]
+
+
+StephenHill\Benchmarks\Base58BCMathEvent
+    Method Name    Iterations    Average Time      Ops/second
+    ------------  ------------  --------------    -------------
+    encodeBase58: [10,000    ] [0.0001500048161] [6,666.45263]
+    decodeBase58: [10,000    ] [0.0001741812706] [5,741.14540]
+
+
+StephenHill\Benchmarks\Base58GMPEvent
+    Method Name    Iterations    Average Time      Ops/second
+    ------------  ------------  --------------    -------------
+    encodeBase58: [10,000    ] [0.0001168665648] [8,556.76730]
+    decodeBase58: [10,000    ] [0.0001385705233] [7,216.54199]
+
+
+StephenHill\Benchmarks\Base64Event
+    Method Name    Iterations    Average Time      Ops/second
+    ------------  ------------  --------------    -------------
+    encodeBase64: [10,000    ] [0.0000009050369] [1,104,927.29189]
+    decodeBase64: [10,000    ] [0.0000009787321] [1,021,730.04312]
+```
+
+## Contributing
+
+I welcome everyone to contribute to this library. Please see the Contributing document for details.
+
+## License
+
+This library is license under the MIT License (MIT). Please see License File for more information.
+
+## Credits
+
+This library was forked from [Jeremy Johnstone's](https://github.com/jsjohnst) Base58 methods on Gist https://gist.github.com/jsjohnst/126883.
+
+Some of the unit tests were based on the following:
+
+- https://code.google.com/p/bitcoinj/source/browse/core/src/test/java/com/google/bitcoin/core/Base58Test.java
+- https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/fixtures/base58.json

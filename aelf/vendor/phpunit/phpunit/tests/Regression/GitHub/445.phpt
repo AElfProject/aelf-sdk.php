@@ -1,1 +1,32 @@
-module.exports={A:{A:{"1":"E A B","2":"iB","8":"K D G"},B:{"1":"2 C d J M H I"},C:{"1":"0 1 2 3 4 6 7 8 9 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB ZB YB"},D:{"1":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB"},E:{"1":"5 F N K D G E A B C RB IB TB UB VB WB XB p aB"},F:{"1":"0 1 5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z bB cB dB eB p AB gB"},G:{"1":"G IB hB EB jB KB lB mB nB oB pB qB rB sB tB uB"},H:{"1":"vB"},I:{"1":"4 DB F wB xB yB zB EB 0B 1B"},J:{"1":"D A"
+--TEST--
+GH-455: expectOutputString not working in strict mode
+--FILE--
+<?php
+
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--disallow-test-output';
+$_SERVER['argv'][3] = 'Issue445Test';
+$_SERVER['argv'][4] = __DIR__ . '/445/Issue445Test.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+?>
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+..F                                                                 3 / 3 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 failure:
+
+1) Issue445Test::testNotMatchingOutput
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'foo'
++'bar'
+
+FAILURES!
+Tests: 3, Assertions: 3, Failures: 1.

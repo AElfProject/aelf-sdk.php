@@ -1,22 +1,24 @@
-<?php
+<?php declare(strict_types=1);
+/*
+ * This file is part of sebastian/diff.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace SebastianBergmann\Diff;
 
-namespace BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Signature;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\CompactSignatureInterface;
-use BitWasp\Buffertools\BufferInterface;
-
-interface CompactSignatureSerializerInterface
+interface LongestCommonSubsequenceCalculator
 {
     /**
-     * @param CompactSignatureInterface $signature
-     * @return BufferInterface
+     * Calculates the longest common subsequence of two arrays.
+     *
+     * @param array $from
+     * @param array $to
+     *
+     * @return array
      */
-    public function serialize(CompactSignatureInterface $signature): BufferInterface;
-
-    /**
-     * @param BufferInterface $data
-     * @return CompactSignatureInterface
-     */
-    public function parse(Buffe
+    public function calculate(array $from, array $to): array;
+}

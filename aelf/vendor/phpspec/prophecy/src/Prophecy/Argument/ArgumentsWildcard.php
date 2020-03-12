@@ -1,80 +1,101 @@
 <?php
-declare(strict_types=1);
 
-namespace Mdanter\Ecc\Serializer\PublicKey\Der;
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use FG\ASN1\ASNObject;
-use FG\ASN1\Identifier;
-use FG\ASN1\Universal\Sequence;
-use Mdanter\Ecc\Crypto\Key\PublicKeyInterface;
-use Mdanter\Ecc\Math\GmpMathInterface;
-use Mdanter\Ecc\Serializer\Util\CurveOidMapper;
-use Mdanter\Ecc\Primitives\GeneratorPoint;
-use Mdanter\Ecc\Serializer\PublicKey\DerPublicKeySerializer;
-use Mdanter\Ecc\Serializer\Point\PointSerializerInterface;
-use Mdanter\Ecc\Serializer\Point\UncompressedPointSerializer;
-use Mdanter\Ecc\Crypto\Key\PublicKey;
+namespace Prophecy\Argument;
 
-class Parser
+/**
+ * Arguments wildcarding.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class ArgumentsWildcard
 {
+    /**
+     * @var Token\TokenInterface[]
+     */
+    private $tokens = array();
+    private $string;
 
     /**
-     * @var GmpMathInterface
+     * Initializes wildcard.
+     *
+     * @param array $arguments Array of argument tokens or values
      */
-    private $adapter;
-
-    /**
-     * @var UncompressedPointSerializer
-     */
-    private $pointSerializer;
-
-    /**
-     * Parser constructor.
-     * @param GmpMathInterface $adapter
-     * @param PointSerializerInterface|null $pointSerializer
-     */
-    public function __construct(GmpMathInterface $adapter, PointSerializerInterface $pointSerializer = null)
+    public function __construct(array $arguments)
     {
-        $this->adapter = $adapter;
-        $this->pointSerializer = $pointSerializer ?: new UncompressedPointSerializer();
+        foreach ($arguments as $argument) {
+            if (!$argument instanceof Token\TokenInterface) {
+                $argument = new Token\ExactValueToken($argument);
+            }
+
+            $this->tokens[] = $argument;
+        }
     }
 
     /**
-     * @param string $binaryData
-     * @return PublicKeyInterface
-     * @throws \FG\ASN1\Exception\ParserException
+     * Calculates wildcard match score for provided arguments.
+     *
+     * @param array $arguments
+     *
+     * @return false|int False OR integer score (higher - better)
      */
-    public function parse(string $binaryData): PublicKeyInterface
+    public function scoreArguments(array $arguments)
     {
-        $asnObject = ASNObject::fromBinary($binaryData);
-        if ($asnObject->getType() !== Identifier::SEQUENCE) {
-            throw new \RuntimeException('Invalid data.');
+        if (0 == count($arguments) && 0 == count($this->tokens)) {
+            return 1;
         }
 
-        /** @var Sequence $asnObject */
-        if ($asnObject->getNumberofChildren() != 2) {
-            throw new \RuntimeException('Invalid data.');
+        $arguments  = array_values($arguments);
+        $totalScore = 0;
+        foreach ($this->tokens as $i => $token) {
+            $argument = isset($arguments[$i]) ? $arguments[$i] : null;
+            if (1 >= $score = $token->scoreArgument($argument)) {
+                return false;
+            }
+
+            $totalScore += $score;
+
+            if (true === $token->isLast()) {
+                return $totalScore;
+            }
         }
 
-        $children = $asnObject->getChildren();
-        if (count($children) != 2) {
-            throw new \RuntimeException('Invalid data.');
+        if (count($arguments) > count($this->tokens)) {
+            return false;
         }
 
-        if (count($children) != 2) {
-            throw new \RuntimeException('Invalid data.');
+        return $totalScore;
+    }
+
+    /**
+     * Returns string representation for wildcard.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        if (null === $this->string) {
+            $this->string = implode(', ', array_map(function ($token) {
+                return (string) $token;
+            }, $this->tokens));
         }
 
-        if ($children[0]->getType() !== Identifier::SEQUENCE) {
-            throw new \RuntimeException('Invalid data.');
-        }
+        return $this->string;
+    }
 
-        if (count($children[0]->getChildren()) != 2) {
-            throw new \RuntimeException('Invalid data.');
-        }
-
-        if ($children[0]->getChildren()[0]->getType() !== Identifier::OBJECT_IDENTIFIER) {
-            throw new \RuntimeException('Invalid data.');
-        }
-
-      
+    /**
+     * @return array
+     */
+    public function getTokens()
+    {
+        return $this->tokens;
+    }
+}

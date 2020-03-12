@@ -1,67 +1,59 @@
-n !check.test(all);
-  }
-  /**
-     * Return true if we need to remove node
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace SebastianBergmann\CodeCoverage\Report;
+
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\RuntimeException;
+
+/**
+ * Uses var_export() to write a SebastianBergmann\CodeCoverage\CodeCoverage object to a file.
+ */
+class PHP
+{
+    /**
+     * @param CodeCoverage $coverage
+     * @param string       $target
+     *
+     * @return string
      */
-  ;
+    public function process(CodeCoverage $coverage, $target = null)
+    {
+        $filter = $coverage->filter();
 
-  _proto.toRemove = function toRemove(str, all) {
-    var _this$parse2 = this.parse(str),
-        prop = _this$parse2[0],
-        value = _this$parse2[1];
+        $buffer = \sprintf(
+            '<?php
+$coverage = new SebastianBergmann\CodeCoverage\CodeCoverage;
+$coverage->setData(%s);
+$coverage->setTests(%s);
 
-    var unprefixed = this.all.unprefixed(prop);
-    var cleaner = this.all.cleaner();
+$filter = $coverage->filter();
+$filter->setWhitelistedFiles(%s);
 
-    if (cleaner.remove[prop] && cleaner.remove[prop].remove && !this.isHack(all, unprefixed)) {
-      return true;
-    }
+return $coverage;',
+            \var_export($coverage->getData(true), 1),
+            \var_export($coverage->getTests(), 1),
+            \var_export($filter->getWhitelistedFiles(), 1)
+        );
 
-    for (var _iterator3 = cleaner.values('remove', unprefixed), _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : _iterator3[Symbol.iterator]();;) {
-      var _ref3;
-
-      if (_isArray3) {
-        if (_i3 >= _iterator3.length) break;
-        _ref3 = _iterator3[_i3++];
-      } else {
-        _i3 = _iterator3.next();
-        if (_i3.done) break;
-        _ref3 = _i3.value;
-      }
-
-      var checker = _ref3;
-
-      if (checker.check(value)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-  /**
-     * Remove all unnecessary prefixes
-     */
-  ;
-
-  _proto.remove = function remove(nodes, all) {
-    var i = 0;
-
-    while (i < nodes.length) {
-      if (!this.isNot(nodes[i - 1]) && this.isProp(nodes[i]) && this.isOr(nodes[i + 1])) {
-        if (this.toRemove(nodes[i][0], all)) {
-          nodes.splice(i, 2);
-          continue;
+        if ($target !== null) {
+            if (@\file_put_contents($target, $buffer) === false) {
+                throw new RuntimeException(
+                    \sprintf(
+                        'Could not write to "%s',
+                        $target
+                    )
+                );
+            }
         }
 
-        i += 2;
-        continue;
-      }
-
-      if (typeof nodes[i] === 'object') {
-        nodes[i] = this.remove(nodes[i], all);
-      }
-
-      i += 1;
+        return $buffer;
     }
-
-    return nodes
+}

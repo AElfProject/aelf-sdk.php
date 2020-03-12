@@ -1,12 +1,39 @@
-         'swing', 'vision', 'wife', 'beside', 'crash', 'forgot', 'guide',
-            'haunt', 'joke', 'knock', 'plant', 'pour', 'prove', 'reveal',
-            'steal', 'stuff', 'trip', 'wood', 'wrist', 'bother', 'bottom',
-            'crawl', 'crowd', 'fix', 'forgive', 'frown', 'grace', 'loose',
-            'lucky', 'party', 'release', 'surely', 'survive', 'teacher',
-            'gently', 'grip', 'speed', 'suicide', 'travel', 'treat', 'vein',
-            'written', 'cage', 'chain', 'conversation', 'date', 'enemy',
-            'however', 'interest', 'million', 'page', 'pink', 'proud', 'sway',
-            'themselves', 'winter', 'church', 'cruel', 'cup', 'demon',
-            'experience', 'freedom', 'pair', 'pop', 'purpose', 'respect',
-            'shoot', 'softly', 'state', 'strange', 'bar', 'birth', 'curl',
-            '
+<?php
+class BeforeClassWithOnlyDataProviderTest extends \PHPUnit\Framework\TestCase
+{
+    public static $setUpBeforeClassWasCalled;
+    public static $beforeClassWasCalled;
+
+    public static function resetProperties()
+    {
+        self::$setUpBeforeClassWasCalled = false;
+        self::$beforeClassWasCalled      = false;
+    }
+
+    public static function setUpBeforeClass()
+    {
+        self::$setUpBeforeClassWasCalled = true;
+    }
+
+    /**
+     * @beforeClass
+     */
+    public static function someAnnotatedSetupMethod()
+    {
+        self::$beforeClassWasCalled = true;
+    }
+
+    public function dummyProvider()
+    {
+        return [[1]];
+    }
+
+    /**
+     * @dataProvider dummyProvider
+     * delete annotation to fail test case
+     */
+    public function testDummy()
+    {
+        $this->assertFalse(false);
+    }
+}

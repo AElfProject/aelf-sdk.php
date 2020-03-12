@@ -1,38 +1,21 @@
-<?php
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="phpunit-mock-objects" default="setup">
+    <target name="setup" depends="clean,composer"/>
 
-declare(strict_types=1);
+    <target name="clean" description="Cleanup build artifacts">
+        <delete dir="${basedir}/vendor"/>
+        <delete file="${basedir}/composer.lock"/>
+    </target>
 
-namespace BitWasp\Bitcoin\Key\KeyToScript;
-
-use BitWasp\Bitcoin\Address\Address;
-use BitWasp\Bitcoin\Address\BaseAddressCreator;
-use BitWasp\Bitcoin\Script\ScriptInterface;
-use BitWasp\Bitcoin\Transaction\Factory\SignData;
-
-class ScriptAndSignData
-{
-    /**
-     * @var ScriptInterface
-     */
-    private $scriptPubKey;
-
-    /**
-     * @var SignData
-     */
-    private $signData;
-
-    /**
-     * ScriptAndSignData constructor.
-     * @param ScriptInterface $scriptPubKey
-     * @param SignData $signData
-     */
-    public function __construct(ScriptInterface $scriptPubKey, SignData $signData)
-    {
-        $this->scriptPubKey = $scriptPubKey;
-        $this->signData = $signData;
-    }
-
-    /**
-     * @return ScriptInterface
-     */
-    public function getSc
+    <target name="composer" depends="clean" description="Install dependencies with Composer">
+        <exec executable="composer" taskname="composer">
+            <arg value="update"/>
+            <arg value="--no-interaction"/>
+            <arg value="--no-progress"/>
+            <arg value="--no-ansi"/>
+            <arg value="--no-suggest"/>
+            <arg value="--optimize-autoloader"/>
+            <arg value="--prefer-stable"/>
+        </exec>
+    </target>
+</project>

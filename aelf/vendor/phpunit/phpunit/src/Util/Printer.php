@@ -1,7 +1,146 @@
-fc9b7b5305f52816d4458e37e41c7719fac1d76a01fff3f50fe1a5875ccc3fb70001c947a33fc8b207de13572ccdb8ba98933ab01757621b1675db7cacef7f2782587ff3af51a3ef2f4bcf9279c4ce94002e1f00424bf0eb621982cc85cb4d171e564a0c2f6e3567a1aae2cddb7e9b25f47dc20a51050542969ca:
-1acb4a256c2f8993ca24de1e0014606d668b5e756032d269f1d24d351c8eea4acbbdcd8cbc885ab43a057e5f9579f1161954159e7b562ea26cd9a43c88d3f96d:cbbdcd8cbc885ab43a057e5f9579f1161954159e7b562ea26cd9a43c88d3f96d:c46a6d61aa0aed1c1d8547a70b89b7196475d5a4870881b1ecd0f0cb9c745f8a2adc8024e2dc55b53aa5d383a81aabc1a47e8d07d00b7f0b56ceddbfb1f424bb5c02184678a666:05aa76f7fe51892303d78914715995e7d768ff7714ce270f175e56af17ae018d3fa939f5f620de82bcd1549687b205c7871203e624238c4e309fab7f92fbaa05c46a6d61aa0aed1c1d8547a70b89b7196475d5a4870881b1ecd0f0cb9c745f8a2adc8024e2dc55b53aa5d383a81aabc1a47e8d07d00b7f0b56ceddbfb1f424bb5c02184678a666:
-ace3c46424823622979fc3a84a7da69c1d527d8312e8fb018375bd3a96c29c18937cf34136d9e1cce0de11b12c70cbfb7455448421e92c82e7c40934bff8c676:937cf34136d9e1cce0de11b12c70cbfb7455448421e92c82e7c40934bff8c676:a9f137bc9021bf105aee25be21cd9ee5b3547cf10cc5f98476fb588bd70e2d6d6b0834e842e4ee94303cf96b09c1715381b36e14a491b80f895ea421b8ec2b1d3c187e02935c5526:feb8896dd3fe6001ffea171b37b788a69f7f850193a63406f56376dd263d099aef80ece67e2c43f40eca462c6b71e79406b18db74ae5d49844e3b132bc2a1307a9f137bc9021bf105aee25be21cd9ee5b3547cf10cc5f98476fb588bd70e2d6d6b0834e842e4ee94303cf96b09c1715381b36e14a491b80f895ea421b8ec2b1d3c187e02935c5526:
-88f681934e33c35c07dc6e5a832942ae3d59903ccde2f76ccb7587cea7ec41b66a4e8aa5adb63d22fd7b14a26fdb03b7c8aa6ccd5a196f2c54b0465adb5092e1:6a4e8aa5adb63d22fd7b14a26fdb03b7c8aa6ccd5a196f2c54b0465adb5092e1:6e8bac1f853b81fef94707e18cc61c6f0a9cbc2a41d078dcc83fc0229c7f8dbe6dbdd90854b1f1ae2b9f2b120b86a8786b4e78ce23ab86baaf88754af0f3d88881dae0bc5261bfd038:45b27bf1b9eac06b62b686f6d546563b2dfe5b175dbef32bf78c35a16c958a9d4f26d291de9bb2066c0a286113cc09172d40a36d4cbd951708860226eb30cd056e8bac1f853b81fef94707e18cc61c6f0a9cbc2a41d078dcc83fc0229c7f8dbe6dbdd90854b1f1ae2b9f2b120b86a8786b4e78ce23ab86baaf88754af0f3d88881dae0bc5261bfd038:
-48050a6e0158f6ad253412e4497cff62d5ee555edffe59e4dc401522813295ce975e010abb9a3e56659137b0506057f283982f886ca172c7bc2c500ed9bd26c1:975e010abb9a3e56659137b0506057f283982f886ca172c7bc2c500ed9bd26c1:ed6eec29fb7049dff707f0a4426ebc8f5b350e95870b9d6198c8139e9c3e1e409937d1a858a0dea482a5cb1a854ed3b5a9397acb63bff6b64039ef2eb1159e99858310bbbd86125c3e0e:7216ab60c35168187d0fce4753c86e80058d540b76bf95843a5898841060a99a44de6f439625a3f6365f59c377bf45909bbfef5c50b25f3194e5fbd34ea5e706ed6eec29fb7049dff707f0a4426ebc8f5b350e95870b9d6198c8139e9c3e1e409937d1a858a0dea482a5cb1a854ed3b5a9397acb63bff6b64039ef2eb1159e99858310bbbd86125c3e0e:
-18d13d0c00e8e3386a5cfb30a9e79fe88b1861ed2d1201eb170038e194770403a4afc833401876090d9b880c41267d68cbbeeaa38afb20884e27328f3b7f535e:a4afc833401876090d9b880c41267d68cbbeeaa38afb20884e27328f3b7f535e:910f6c272dd97931ac47310d244cadb43251365e02ba9f6a5b3c3226be9d7d3a74a2ba4906e8e71a4bf3d3556ebdfc666cd6b12f20c4a00834b88fbb244575199286b0b9344cf334aff007:033988154c5d79d2510be83e778015dfe2fb85b8111f7ec139918b5400e3d656ee80a9f5c9072b5b467a5cc5a57cc8ad1062b5bff10862d9d369dde2cc966701910f6c272dd97931ac47310d244cadb43251365e02ba9f6a5b3c3226be9d7d3a74a2ba4906e8e71a4bf3d3556ebdfc666cd6b12f20c4a00834b88fbb244575199286b0b9344cf334aff007:
-4adc8c28646a93a817293a14d29b48e2c6d712a68993547a5c5e4d1452acb
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Util;
+
+use PHPUnit\Framework\Exception;
+
+/**
+ * Utility class that can print to STDOUT or write to a file.
+ */
+class Printer
+{
+    /**
+     * If true, flush output after every write.
+     *
+     * @var bool
+     */
+    protected $autoFlush = false;
+
+    /**
+     * @var resource
+     */
+    protected $out;
+
+    /**
+     * @var string
+     */
+    protected $outTarget;
+
+    /**
+     * Constructor.
+     *
+     * @param mixed $out
+     *
+     * @throws Exception
+     */
+    public function __construct($out = null)
+    {
+        if ($out !== null) {
+            if (\is_string($out)) {
+                if (\strpos($out, 'socket://') === 0) {
+                    $out = \explode(':', \str_replace('socket://', '', $out));
+
+                    if (\count($out) != 2) {
+                        throw new Exception;
+                    }
+
+                    $this->out = \fsockopen($out[0], $out[1]);
+                } else {
+                    if (\strpos($out, 'php://') === false && !\is_dir(\dirname($out))) {
+                        \mkdir(\dirname($out), 0777, true);
+                    }
+
+                    $this->out = \fopen($out, 'wt');
+                }
+
+                $this->outTarget = $out;
+            } else {
+                $this->out = $out;
+            }
+        }
+    }
+
+    /**
+     * Flush buffer and close output if it's not to a PHP stream
+     */
+    public function flush()
+    {
+        if ($this->out && \strncmp($this->outTarget, 'php://', 6) !== 0) {
+            \fclose($this->out);
+        }
+    }
+
+    /**
+     * Performs a safe, incremental flush.
+     *
+     * Do not confuse this function with the flush() function of this class,
+     * since the flush() function may close the file being written to, rendering
+     * the current object no longer usable.
+     */
+    public function incrementalFlush()
+    {
+        if ($this->out) {
+            \fflush($this->out);
+        } else {
+            \flush();
+        }
+    }
+
+    /**
+     * @param string $buffer
+     */
+    public function write($buffer)
+    {
+        if ($this->out) {
+            \fwrite($this->out, $buffer);
+
+            if ($this->autoFlush) {
+                $this->incrementalFlush();
+            }
+        } else {
+            if (PHP_SAPI != 'cli' && PHP_SAPI != 'phpdbg') {
+                $buffer = \htmlspecialchars($buffer, ENT_SUBSTITUTE);
+            }
+
+            print $buffer;
+
+            if ($this->autoFlush) {
+                $this->incrementalFlush();
+            }
+        }
+    }
+
+    /**
+     * Check auto-flush mode.
+     *
+     * @return bool
+     */
+    public function getAutoFlush()
+    {
+        return $this->autoFlush;
+    }
+
+    /**
+     * Set auto-flushing mode.
+     *
+     * If set, *incremental* flushes will be done after each write. This should
+     * not be confused with the different effects of this class' flush() method.
+     *
+     * @param bool $autoFlush
+     */
+    public function setAutoFlush($autoFlush)
+    {
+        if (\is_bool($autoFlush)) {
+            $this->autoFlush = $autoFlush;
+        } else {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+    }
+}

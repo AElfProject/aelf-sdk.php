@@ -1,33 +1,42 @@
+--TEST--
+phpunit --process-isolation --verbose DependencyTestSuite ../_files/DependencyTestSuite.php
+--FILE--
 <?php
-namespace Yurun\Util\YurunHttp\Http\Psr7\Consts;
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--process-isolation';
+$_SERVER['argv'][3] = '--verbose';
+$_SERVER['argv'][4] = 'DependencyTestSuite';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/DependencyTestSuite.php';
 
-/**
- * 常见的http请求头
- */
-abstract class RequestHeader
-{
-    const ACCEPT = 'Accept';
-    const ACCEPT_CHARSET = 'Accept-Charset';
-    const ACCEPT_ENCODING = 'Accept-Encoding';
-    const ACCEPT_LANGUAGE = 'Accept-Language';
-    const ACCEPT_DATETIME = 'Accept-Datetime';
-    const AUTHORIZATION = 'Authorization';
-    const CACHE_CONTROL = 'Cache-Control';
-    const CONNECTION = 'Connection';
-    const COOKIE = 'Cookie';
-    const CONTENT_LENGTH = 'Content-Length';
-    const CONTENT_MD5 = 'Content-MD5';
-    const CONTENT_TYPE = 'Content-Type';
-    const DATE = 'Date';
-    const EXPECT = 'Expect';
-    const FROM = 'From';
-    const HOST = 'Host';
-    const IF_MATCH = 'If-Match';
-    const IF_MODIFIED_SINCE = 'If-Modified-Since';
-    const IF_NONE_MATCH = 'If-None-Match';
-    const IF_RANGE = 'If-Range';
-    const IF_UNMODIFIED_SINCE = 'If-Unmodified-Since';
-    const MAX_FORWARDS = 'Max-Forwards';
-    const ORIGIN = 'Origin';
-    const PRAGMA = 'Pragma';
-    const PROXY_AUTHORIZATION = 'Prox
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+Runtime:       %s
+
+...FSSS                                                             7 / 7 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 failure:
+
+1) DependencyFailureTest::testOne
+
+%s:%i
+
+--
+
+There were 3 skipped tests:
+
+1) DependencyFailureTest::testTwo
+This test depends on "DependencyFailureTest::testOne" to pass.
+
+2) DependencyFailureTest::testThree
+This test depends on "DependencyFailureTest::testTwo" to pass.
+
+3) DependencyFailureTest::testFour
+This test depends on "DependencyFailureTest::testOne" to pass.
+
+FAILURES!
+Tests: 7, Assertions: 4, Failures: 1, Skipped: 3.

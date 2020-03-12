@@ -1,51 +1,39 @@
 <?php
-namespace Yurun\Swoole\CoPool;
+use PHPUnit\Framework\TestCase;
 
-class CoPool
+class DataProviderSkippedTest extends TestCase
 {
     /**
-     * 工作协程数量
-     *
-     * @var int
+     * @dataProvider skippedTestProviderMethod
      */
-    private $coCount;
+    public function testSkipped($a, $b, $c)
+    {
+        $this->assertTrue(true);
+    }
 
     /**
-     * 队列最大长度
-     *
-     * @var int
+     * @dataProvider providerMethod
      */
-    private $queueLength;
+    public function testAdd($a, $b, $c)
+    {
+        $this->assertEquals($c, $a + $b);
+    }
 
-    /**
-     * 任务队列
-     *
-     * @var \Swoole\Coroutine\Channel
-     */
-    private $taskQueue;
+    public function skippedTestProviderMethod()
+    {
+        $this->markTestSkipped('skipped');
 
-    /**
-     * 是否正在运行
-     *
-     * @var boolean
-     */
-    private $running = false;
+        return [
+          [0, 0, 0],
+          [0, 1, 1],
+        ];
+    }
 
-    /**
-     * 任务类
-     *
-     * @var string
-     */
-    public $taskClass;
-
-    /**
-     * 任务参数类名
-     *
-     * @var string
-     */
-    public $taskParamClass;
-
-    /**
-     * 创建协程的函数
-     * 
-     * 有些框架自定�
+    public static function providerMethod()
+    {
+        return [
+          [0, 0, 0],
+          [0, 1, 1],
+        ];
+    }
+}

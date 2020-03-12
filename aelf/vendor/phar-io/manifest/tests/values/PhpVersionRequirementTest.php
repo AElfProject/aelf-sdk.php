@@ -1,39 +1,38 @@
 <?php
-
-declare(strict_types=1);
-
-/**
- * This file is part of phpDocumentor.
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * @link http://phpdoc.org
  */
 
-namespace phpDocumentor\Reflection\DocBlock\Tags;
+namespace PharIo\Manifest;
 
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\DocBlock\Tags\Reference\Fqsen as FqsenRef;
-use phpDocumentor\Reflection\DocBlock\Tags\Reference\Reference;
-use phpDocumentor\Reflection\DocBlock\Tags\Reference\Url;
-use phpDocumentor\Reflection\FqsenResolver;
-use phpDocumentor\Reflection\Types\Context as TypeContext;
-use Webmozart\Assert\Assert;
-use function preg_match;
-use function preg_split;
+use PharIo\Version\ExactVersionConstraint;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Reflection class for an {@}see tag in a Docblock.
+ * @covers PharIo\Manifest\PhpVersionRequirement
+ *
+ * @uses \PharIo\Version\VersionConstraint
  */
-final class See extends BaseTag implements Factory\StaticMethod
-{
-    /** @var string */
-    protected $name = 'see';
-
-    /** @var Reference */
-    protected $refers;
-
+class PhpVersionRequirementTest extends TestCase {
     /**
-     * Initializes th
+     * @var PhpVersionRequirement
+     */
+    private $requirement;
+
+    protected function setUp() {
+        $this->requirement = new PhpVersionRequirement(new ExactVersionConstraint('7.1.0'));
+    }
+
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(PhpVersionRequirement::class, $this->requirement);
+    }
+
+    public function testVersionConstraintCanBeRetrieved() {
+        $this->assertEquals('7.1.0', $this->requirement->getVersionConstraint()->asString());
+    }
+}

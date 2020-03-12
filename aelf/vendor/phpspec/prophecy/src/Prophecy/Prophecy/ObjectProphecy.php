@@ -1,224 +1,286 @@
-           "name": "Volker Dusch",
-                    "email": "github@wallbash.com"
-                },
-                {
-                    "name": "Bernhard Schussek",
-                    "email": "bschussek@2bepublished.at"
-                },
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                },
-                {
-                    "name": "Adam Harvey",
-                    "email": "aharvey@php.net"
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Prophecy;
+
+use SebastianBergmann\Comparator\ComparisonFailure;
+use Prophecy\Comparator\Factory as ComparatorFactory;
+use Prophecy\Call\Call;
+use Prophecy\Doubler\LazyDouble;
+use Prophecy\Argument\ArgumentsWildcard;
+use Prophecy\Call\CallCenter;
+use Prophecy\Exception\Prophecy\ObjectProphecyException;
+use Prophecy\Exception\Prophecy\MethodProphecyException;
+use Prophecy\Exception\Prediction\AggregateException;
+use Prophecy\Exception\Prediction\PredictionException;
+
+/**
+ * Object prophecy.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class ObjectProphecy implements ProphecyInterface
+{
+    private $lazyDouble;
+    private $callCenter;
+    private $revealer;
+    private $comparatorFactory;
+
+    /**
+     * @var MethodProphecy[][]
+     */
+    private $methodProphecies = array();
+
+    /**
+     * Initializes object prophecy.
+     *
+     * @param LazyDouble        $lazyDouble
+     * @param CallCenter        $callCenter
+     * @param RevealerInterface $revealer
+     * @param ComparatorFactory $comparatorFactory
+     */
+    public function __construct(
+        LazyDouble $lazyDouble,
+        CallCenter $callCenter = null,
+        RevealerInterface $revealer = null,
+        ComparatorFactory $comparatorFactory = null
+    ) {
+        $this->lazyDouble = $lazyDouble;
+        $this->callCenter = $callCenter ?: new CallCenter;
+        $this->revealer   = $revealer ?: new Revealer;
+
+        $this->comparatorFactory = $comparatorFactory ?: ComparatorFactory::getInstance();
+    }
+
+    /**
+     * Forces double to extend specific class.
+     *
+     * @param string $class
+     *
+     * @return $this
+     */
+    public function willExtend($class)
+    {
+        $this->lazyDouble->setParentClass($class);
+
+        return $this;
+    }
+
+    /**
+     * Forces double to implement specific interface.
+     *
+     * @param string $interface
+     *
+     * @return $this
+     */
+    public function willImplement($interface)
+    {
+        $this->lazyDouble->addInterface($interface);
+
+        return $this;
+    }
+
+    /**
+     * Sets constructor arguments.
+     *
+     * @param array $arguments
+     *
+     * @return $this
+     */
+    public function willBeConstructedWith(array $arguments = null)
+    {
+        $this->lazyDouble->setArguments($arguments);
+
+        return $this;
+    }
+
+    /**
+     * Reveals double.
+     *
+     * @return object
+     *
+     * @throws \Prophecy\Exception\Prophecy\ObjectProphecyException If double doesn't implement needed interface
+     */
+    public function reveal()
+    {
+        $double = $this->lazyDouble->getInstance();
+
+        if (null === $double || !$double instanceof ProphecySubjectInterface) {
+            throw new ObjectProphecyException(
+                "Generated double must implement ProphecySubjectInterface, but it does not.\n".
+                'It seems you have wrongly configured doubler without required ClassPatch.',
+                $this
+            );
+        }
+
+        $double->setProphecy($this);
+
+        return $double;
+    }
+
+    /**
+     * Adds method prophecy to object prophecy.
+     *
+     * @param MethodProphecy $methodProphecy
+     *
+     * @throws \Prophecy\Exception\Prophecy\MethodProphecyException If method prophecy doesn't
+     *                                                              have arguments wildcard
+     */
+    public function addMethodProphecy(MethodProphecy $methodProphecy)
+    {
+        $argumentsWildcard = $methodProphecy->getArgumentsWildcard();
+        if (null === $argumentsWildcard) {
+            throw new MethodProphecyException(sprintf(
+                "Can not add prophecy for a method `%s::%s()`\n".
+                "as you did not specify arguments wildcard for it.",
+                get_class($this->reveal()),
+                $methodProphecy->getMethodName()
+            ), $methodProphecy);
+        }
+
+        $methodName = strtolower($methodProphecy->getMethodName());
+
+        if (!isset($this->methodProphecies[$methodName])) {
+            $this->methodProphecies[$methodName] = array();
+        }
+
+        $this->methodProphecies[$methodName][] = $methodProphecy;
+    }
+
+    /**
+     * Returns either all or related to single method prophecies.
+     *
+     * @param null|string $methodName
+     *
+     * @return MethodProphecy[]
+     */
+    public function getMethodProphecies($methodName = null)
+    {
+        if (null === $methodName) {
+            return $this->methodProphecies;
+        }
+
+        $methodName = strtolower($methodName);
+
+        if (!isset($this->methodProphecies[$methodName])) {
+            return array();
+        }
+
+        return $this->methodProphecies[$methodName];
+    }
+
+    /**
+     * Makes specific method call.
+     *
+     * @param string $methodName
+     * @param array  $arguments
+     *
+     * @return mixed
+     */
+    public function makeProphecyMethodCall($methodName, array $arguments)
+    {
+        $arguments = $this->revealer->reveal($arguments);
+        $return    = $this->callCenter->makeCall($this, $methodName, $arguments);
+
+        return $this->revealer->reveal($return);
+    }
+
+    /**
+     * Finds calls by method name & arguments wildcard.
+     *
+     * @param string            $methodName
+     * @param ArgumentsWildcard $wildcard
+     *
+     * @return Call[]
+     */
+    public function findProphecyMethodCalls($methodName, ArgumentsWildcard $wildcard)
+    {
+        return $this->callCenter->findCalls($methodName, $wildcard);
+    }
+
+    /**
+     * Checks that registered method predictions do not fail.
+     *
+     * @throws \Prophecy\Exception\Prediction\AggregateException If any of registered predictions fail
+     * @throws \Prophecy\Exception\Call\UnexpectedCallException
+     */
+    public function checkProphecyMethodsPredictions()
+    {
+        $exception = new AggregateException(sprintf("%s:\n", get_class($this->reveal())));
+        $exception->setObjectProphecy($this);
+
+        $this->callCenter->checkUnexpectedCalls();
+
+        foreach ($this->methodProphecies as $prophecies) {
+            foreach ($prophecies as $prophecy) {
+                try {
+                    $prophecy->checkPrediction();
+                } catch (PredictionException $e) {
+                    $exception->append($e);
                 }
-            ],
-            "description": "Provides the functionality to export PHP variables for visualization",
-            "homepage": "http://www.github.com/sebastianbergmann/exporter",
-            "keywords": [
-                "export",
-                "exporter"
-            ],
-            "time": "2016-11-19T08:54:04+00:00"
-        },
-        {
-            "name": "sebastian/global-state",
-            "version": "1.1.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/global-state.git",
-                "reference": "bc37d50fea7d017d3d340f230811c9f1d7280af4"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/global-state/zipball/bc37d50fea7d017d3d340f230811c9f1d7280af4",
-                "reference": "bc37d50fea7d017d3d340f230811c9f1d7280af4",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.2"
-            },
-            "suggest": {
-                "ext-uopz": "*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Snapshotting of global state",
-            "homepage": "http://www.github.com/sebastianbergmann/global-state",
-            "keywords": [
-                "global state"
-            ],
-            "time": "2015-10-12T03:26:01+00:00"
-        },
-        {
-            "name": "sebastian/object-enumerator",
-            "version": "2.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/object-enumerator.git",
-                "reference": "1311872ac850040a79c3c058bea3e22d0f09cbb7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/object-enumerator/zipball/1311872ac850040a79c3c058bea3e22d0f09cbb7",
-                "reference": "1311872ac850040a79c3c058bea3e22d0f09cbb7",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6",
-                "sebastian/recursion-context": "~2.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~5"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Traverses array structures and object graphs to enumerate all referenced objects",
-            "homepage": "https://github.com/sebastianbergmann/object-enumerator/",
-            "time": "2017-02-18T15:18:39+00:00"
-        },
-        {
-            "name": "sebastian/recursion-context",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/recursion-context.git",
-                "reference": "2c3ba150cbec723aa057506e73a8d33bdb286c9a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/2c3ba150cbec723aa057506e73a8d33bdb286c9a",
-                "reference": "2c3ba150cbec723aa057506e73a8d33bdb286c9a",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.4"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Jeff Welch",
-                    "email": "whatthejeff@gmail.com"
-                },
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                },
-                {
-                    "name": "Adam Harvey",
-                    "email": "aharvey@php.net"
-                }
-            ],
-            "description": "Provides functionality to recursively process PHP variables",
-            "homepage": "http://www.github.com/sebastianbergmann/recursion-context",
-            "time": "2016-11-19T07:33:16+00:00"
-        },
-        {
-            "name": "sebastian/resource-operations",
-            "version": "1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/resource-operations.git",
-                "reference": "ce990bb21759f94aeafd30209e8cfcdfa8bc3f52"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/resource-operations/zipball/ce990bb21759f94aeafd30209e8cfcdfa8bc3f52",
-                "reference": "ce990bb21759f94aeafd30209e8cfcdfa8bc3f52",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Provides a list of PHP built-in functions that operate on resources",
-            "homepage": "https://www.github.com/sebastianbergmann/resource-operations",
-            "time": "2015-07-28T20:34:47+00:00"
-        },
-        {
-            "name": "sebastian/version",
-            "version": "2.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/version.git",
-                "reference": "99732be0ddb3361e16ad77b68ba41efc8e979019"
-       
+            }
+        }
+
+        if (count($exception->getExceptions())) {
+            throw $exception;
+        }
+    }
+
+    /**
+     * Creates new method prophecy using specified method name and arguments.
+     *
+     * @param string $methodName
+     * @param array  $arguments
+     *
+     * @return MethodProphecy
+     */
+    public function __call($methodName, array $arguments)
+    {
+        $arguments = new ArgumentsWildcard($this->revealer->reveal($arguments));
+
+        foreach ($this->getMethodProphecies($methodName) as $prophecy) {
+            $argumentsWildcard = $prophecy->getArgumentsWildcard();
+            $comparator = $this->comparatorFactory->getComparatorFor(
+                $argumentsWildcard, $arguments
+            );
+
+            try {
+                $comparator->assertEquals($argumentsWildcard, $arguments);
+                return $prophecy;
+            } catch (ComparisonFailure $failure) {}
+        }
+
+        return new MethodProphecy($this, $methodName, $arguments);
+    }
+
+    /**
+     * Tries to get property value from double.
+     *
+     * @param string $name
+     *
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        return $this->reveal()->$name;
+    }
+
+    /**
+     * Tries to set property value to double.
+     *
+     * @param string $name
+     * @param mixed  $value
+     */
+    public function __set($name, $value)
+    {
+        $this->reveal()->$name = $this->revealer->reveal($value);
+    }
+}

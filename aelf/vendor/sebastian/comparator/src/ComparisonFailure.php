@@ -1,119 +1,135 @@
-The value of the uninterpreted option, in whatever type the tokenizer
-     * identified it as during parsing. Exactly one of these should be set.
+<?php
+/*
+ * This file is part of sebastian/comparator.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace SebastianBergmann\Comparator;
+
+use SebastianBergmann\Diff\Differ;
+use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
+
+/**
+ * Thrown when an assertion for string equality failed.
+ */
+class ComparisonFailure extends \RuntimeException
+{
+    /**
+     * Expected value of the retrieval which does not match $actual.
      *
-     * Generated from protobuf field <code>optional string identifier_value = 3;</code>
+     * @var mixed
+     */
+    protected $expected;
+
+    /**
+     * Actually retrieved value which does not match $expected.
+     *
+     * @var mixed
+     */
+    protected $actual;
+
+    /**
+     * The string representation of the expected value
+     *
+     * @var string
+     */
+    protected $expectedAsString;
+
+    /**
+     * The string representation of the actual value
+     *
+     * @var string
+     */
+    protected $actualAsString;
+
+    /**
+     * @var bool
+     */
+    protected $identical;
+
+    /**
+     * Optional message which is placed in front of the first line
+     * returned by toString().
+     *
+     * @var string
+     */
+    protected $message;
+
+    /**
+     * Initialises with the expected value and the actual value.
+     *
+     * @param mixed  $expected         Expected value retrieved.
+     * @param mixed  $actual           Actual value retrieved.
+     * @param string $expectedAsString
+     * @param string $actualAsString
+     * @param bool   $identical
+     * @param string $message          A string which is prefixed on all returned lines
+     *                                 in the difference output.
+     */
+    public function __construct($expected, $actual, $expectedAsString, $actualAsString, $identical = false, $message = '')
+    {
+        $this->expected         = $expected;
+        $this->actual           = $actual;
+        $this->expectedAsString = $expectedAsString;
+        $this->actualAsString   = $actualAsString;
+        $this->message          = $message;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getActual()
+    {
+        return $this->actual;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getExpected()
+    {
+        return $this->expected;
+    }
+
+    /**
      * @return string
      */
-    public function getIdentifierValue()
+    public function getActualAsString()
     {
-        return $this->identifier_value;
+        return $this->actualAsString;
     }
 
     /**
-     * The value of the uninterpreted option, in whatever type the tokenizer
-     * identified it as during parsing. Exactly one of these should be set.
-     *
-     * Generated from protobuf field <code>optional string identifier_value = 3;</code>
-     * @param string $var
-     * @return $this
+     * @return string
      */
-    public function setIdentifierValue($var)
+    public function getExpectedAsString()
     {
-        GPBUtil::checkString($var, True);
-        $this->identifier_value = $var;
-        $this->has_identifier_value = true;
-
-        return $this;
-    }
-
-    public function hasIdentifierValue()
-    {
-        return $this->has_identifier_value;
+        return $this->expectedAsString;
     }
 
     /**
-     * Generated from protobuf field <code>optional uint64 positive_int_value = 4;</code>
-     * @return int|string
+     * @return string
      */
-    public function getPositiveIntValue()
+    public function getDiff()
     {
-        return $this->positive_int_value;
+        if (!$this->actualAsString && !$this->expectedAsString) {
+            return '';
+        }
+
+        $differ = new Differ(new UnifiedDiffOutputBuilder("\n--- Expected\n+++ Actual\n"));
+
+        return $differ->diff($this->expectedAsString, $this->actualAsString);
     }
 
     /**
-     * Generated from protobuf field <code>optional uint64 positive_int_value = 4;</code>
-     * @param int|string $var
-     * @return $this
+     * @return string
      */
-    public function setPositiveIntValue($var)
+    public function toString()
     {
-        GPBUtil::checkUint64($var);
-        $this->positive_int_value = $var;
-        $this->has_positive_int_value = true;
-
-        return $this;
+        return $this->message . $this->getDiff();
     }
-
-    public function hasPositiveIntValue()
-    {
-        return $this->has_positive_int_value;
-    }
-
-    /**
-     * Generated from protobuf field <code>optional int64 negative_int_value = 5;</code>
-     * @return int|string
-     */
-    public function getNegativeIntValue()
-    {
-        return $this->negative_int_value;
-    }
-
-    /**
-     * Generated from protobuf field <code>optional int64 negative_int_value = 5;</code>
-     * @param int|string $var
-     * @return $this
-     */
-    public function setNegativeIntValue($var)
-    {
-        GPBUtil::checkInt64($var);
-        $this->negative_int_value = $var;
-        $this->has_negative_int_value = true;
-
-        return $this;
-    }
-
-    public function hasNegativeIntValue()
-    {
-        return $this->has_negative_int_value;
-    }
-
-    /**
-     * Generated from protobuf field <code>optional double double_value = 6;</code>
-     * @return float
-     */
-    public function getDoubleValue()
-    {
-        return $this->double_value;
-    }
-
-    /**
-     * Generated from protobuf field <code>optional double double_value = 6;</code>
-     * @param float $var
-     * @return $this
-     */
-    public function setDoubleValue($var)
-    {
-        GPBUtil::checkDouble($var);
-        $this->double_value = $var;
-        $this->has_double_value = true;
-
-        return $this;
-    }
-
-    public function hasDoubleValue()
-    {
-        return $this->has_double_value;
-    }
-
-    /**
-     * Generated from protobuf field <code>optional bytes strin
+}

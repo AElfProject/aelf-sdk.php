@@ -1,7 +1,38 @@
-"use strict";
+<?php
+namespace Foo;
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+class CoveredParentClass
+{
+    private function privateMethod()
+    {
+    }
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+    protected function protectedMethod()
+    {
+        $this->privateMethod();
+    }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProp
+    public function publicMethod()
+    {
+        $this->protectedMethod();
+    }
+}
+
+class CoveredClass extends CoveredParentClass
+{
+    private function privateMethod()
+    {
+    }
+
+    protected function protectedMethod()
+    {
+        parent::protectedMethod();
+        $this->privateMethod();
+    }
+
+    public function publicMethod()
+    {
+        parent::publicMethod();
+        $this->protectedMethod();
+    }
+}

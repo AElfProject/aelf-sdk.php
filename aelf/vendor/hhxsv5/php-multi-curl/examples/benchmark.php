@@ -1,26 +1,31 @@
 <?php
-/*
- * This file is part of the PHPASN1 library.
- *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+require '../vendor/autoload.php';
 
-namespace FG\ASN1\Composite;
+use Hhxsv5\PhpMultiCurl\Curl;
+use Hhxsv5\PhpMultiCurl\MultiCurl;
 
-use FG\ASN1\Universal\PrintableString;
-use FG\ASN1\Universal\IA5String;
-use FG\ASN1\Universal\UTF8String;
+$start = microtime(true);
 
-class RDNString extends RelativeDistinguishedName
-{
-    /**
-     * @param string|\FG\ASN1\Universal\ObjectIdentifier $objectIdentifierString
-     * @param string|\FG\ASN1\ASNObject $value
-     */
-    public function __construct($objectIdentifierString, $value)
-    {
-        if (PrintableString::isValid($value)) {
-      
+$mc = new MultiCurl();
+
+for ($i = 0; $i < 200; ++$i) {
+    $c4 = new Curl();
+    $c4->makeGet('http://www.weather.com.cn/data/cityinfo/101270101.html');
+
+    $c5 = new Curl();
+    $c5->makeGet('http://www.weather.com.cn/data/cityinfo/101270401.html');
+
+    $mc->addCurls([$c4, $c5]);
+}
+$mc->exec();
+
+echo sprintf('Total cost: %fs', microtime(true) - $start), PHP_EOL;
+
+foreach ($mc->getCurls() as $curl) {
+    $response = $curl->getResponse();
+    if ($response->hasError()) {
+        var_dump($response->getError());
+    } else {
+        var_dump($response->getBody());
+    }
+}

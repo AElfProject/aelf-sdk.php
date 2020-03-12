@@ -1,26 +1,25 @@
 <?php
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-/**
- * This file is part of phpDocumentor.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- *
- * @link      http://phpdoc.org
- */
+class AuthorElementTest extends \PHPUnit_Framework_TestCase {
+    /**
+     * @var AuthorElement
+     */
+    private $author;
 
-namespace phpDocumentor\Reflection\DocBlock\Tags;
+    protected function setUp() {
+        $dom = new \DOMDocument();
+        $dom->loadXML('<?xml version="1.0" ?><author xmlns="https://phar.io/xml/manifest/1.0" name="Reiner Zufall" email="reiner@zufall.de" />');
+        $this->author = new AuthorElement($dom->documentElement);
+    }
 
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\Type;
-use phpDocumentor\Reflection\TypeResolver;
-use phpDocumentor\Reflection\Types\Context as TypeContext;
-use Webmozart\Assert\Assert;
-use function array_shift;
-use function array_unshift;
-use function implode;
-use function preg_split;
-use funct
+    public function testNameCanBeRetrieved() {
+        $this->assertEquals('Reiner Zufall', $this->author->getName());
+    }
+
+    public function testEmailCanBeRetrieved() {
+        $this->assertEquals('reiner@zufall.de', $this->author->getEmail());
+    }
+
+}

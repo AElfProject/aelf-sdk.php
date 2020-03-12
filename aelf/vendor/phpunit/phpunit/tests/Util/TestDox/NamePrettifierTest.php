@@ -1,104 +1,73 @@
-clone($this);
-        $res->bi = $res->bi->pow($num->bi);
-        return $res;
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PHPUnit\Util\TestDox;
+
+use PHPUnit\Framework\TestCase;
+
+class NamePrettifierTest extends TestCase
+{
+    /**
+     * @var NamePrettifier
+     */
+    private $namePrettifier;
+
+    protected function setUp()
+    {
+        $this->namePrettifier = new NamePrettifier;
     }
 
-    // Shift-left in-place
-    public function iushln($bits) {
-        assert(is_integer($bits) && $bits >= 0);
-        if ($bits < 54) {
-            $this->bi = $this->bi->mul(1 << $bits);
-        } else {
-            $this->bi = $this->bi->mul((new BigInteger(2))->pow($bits));
-        }
-        return $this;
+    public function testTitleHasSensibleDefaults()
+    {
+        $this->assertEquals('Foo', $this->namePrettifier->prettifyTestClass('FooTest'));
+        $this->assertEquals('Foo', $this->namePrettifier->prettifyTestClass('TestFoo'));
+        $this->assertEquals('Foo', $this->namePrettifier->prettifyTestClass('TestFooTest'));
+        $this->assertEquals('Foo', $this->namePrettifier->prettifyTestClass('Test\FooTest'));
     }
 
-    public function ishln($bits) {
-        if (assert_options(ASSERT_ACTIVE)) assert(!$this->negative());
-        return $this->iushln($bits);
+    public function testCaterForUserDefinedSuffix()
+    {
+        $this->namePrettifier->setSuffix('TestCase');
+        $this->namePrettifier->setPrefix(null);
+
+        $this->assertEquals('Foo', $this->namePrettifier->prettifyTestClass('FooTestCase'));
+        $this->assertEquals('TestFoo', $this->namePrettifier->prettifyTestClass('TestFoo'));
+        $this->assertEquals('FooTest', $this->namePrettifier->prettifyTestClass('FooTest'));
     }
 
-    // Shift-right in-place
-    // NOTE: `hint` is a lowest bit before trailing zeroes
-    // NOTE: if `extended` is present - it will be filled with destroyed bits
-    public function iushrn($bits, $hint = 0, &$extended = null) {
-        if( $hint != 0 )
-            throw new Exception("Not implemented");
+    public function testCaterForUserDefinedPrefix()
+    {
+        $this->namePrettifier->setSuffix(null);
+        $this->namePrettifier->setPrefix('XXX');
 
-        assert(is_integer($bits) && $bits >= 0);
-
-        if( $extended != null )
-            $extended = $this->maskn($bits);
-               
-        if ($bits < 54) {
-            $this->bi = $this->bi->div(1 << $bits);
-        } else {
-            $this->bi = $this->bi->div((new BigInteger(2))->pow($bits));
-        }
-        return $this;
+        $this->assertEquals('Foo', $this->namePrettifier->prettifyTestClass('XXXFoo'));
+        $this->assertEquals('TestXXX', $this->namePrettifier->prettifyTestClass('TestXXX'));
+        $this->assertEquals('XXX', $this->namePrettifier->prettifyTestClass('XXXXXX'));
     }
 
-    public function ishrn($bits, $hint = null, $extended = null) {
-        if (assert_options(ASSERT_ACTIVE)) assert(!$this->negative());
-        return $this->iushrn($bits, $hint, $extended);
+    public function testTestNameIsConvertedToASentence()
+    {
+        $this->assertEquals('This is a test', $this->namePrettifier->prettifyTestMethod('testThisIsATest'));
+        $this->assertEquals('This is a test', $this->namePrettifier->prettifyTestMethod('testThisIsATest2'));
+        $this->assertEquals('This is a test', $this->namePrettifier->prettifyTestMethod('this_is_a_test'));
+        $this->assertEquals('Foo for bar is 0', $this->namePrettifier->prettifyTestMethod('testFooForBarIs0'));
+        $this->assertEquals('Foo for baz is 1', $this->namePrettifier->prettifyTestMethod('testFooForBazIs1'));
+        $this->assertEquals('', $this->namePrettifier->prettifyTestMethod('test'));
     }
 
-    // Shift-left
-    public function shln($bits) {
-        return $this->_clone()->ishln($bits);
+    /**
+     * @ticket 224
+     */
+    public function testTestNameIsNotGroupedWhenNotInSequence()
+    {
+        $this->assertEquals('Sets redirect header on 301', $this->namePrettifier->prettifyTestMethod('testSetsRedirectHeaderOn301'));
+        $this->assertEquals('Sets redirect header on 302', $this->namePrettifier->prettifyTestMethod('testSetsRedirectHeaderOn302'));
     }
-
-    public function ushln($bits) {
-        return $this->_clone()->iushln($bits);
-    }
-
-    // Shift-right
-    public function shrn($bits) {
-        return $this->_clone()->ishrn($bits);
-    }
-
-    public function ushrn($bits) {
-        return $this->_clone()->iushrn($bits);
-    }
-
-    // Test if n bit is set
-    public function testn($bit) {
-        assert(is_integer($bit) && $bit >= 0);
-        return $this->bi->testbit($bit);
-    }
-
-    // Return only lowers bits of number (in-place)
-    public function imaskn($bits) {
-        assert(is_integer($bits) && $bits >= 0);
-        if (assert_options(ASSERT_ACTIVE)) assert(!$this->negative());
-        $mask = "";
-        for($i = 0; $i < $bits; $i++)
-            $mask .= "1";
-        return $this->iand(new BN($mask, 2));
-    }
-
-    // Return only lowers bits of number
-    public function maskn($bits) {
-        return $this->_clone()->imaskn($bits);
-    }
-
-    // Add plain number `num` to `this`
-    public function iaddn($num) {
-        assert(is_numeric($num));
-        $this->bi = $this->bi->add(intval($num));
-        return $this;
-    }
-
-    // Subtract plain number `num` from `this`
-    public function isubn($num) {
-        assert(is_numeric($num));
-        $this->bi = $this->bi->sub(intval($num));
-        return $this;
-    }
-
-    public function addn($num) {
-        return $this->_clone()->iaddn($num);
-    }
-
- 
+}

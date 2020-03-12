@@ -1,93 +1,105 @@
-    "sebastian/version": "^1.0 || ^2.0"
-            },
-            "require-dev": {
-                "ext-xdebug": "^2.1.4",
-                "phpunit/phpunit": "^5.7"
-            },
-            "suggest": {
-                "ext-xdebug": "^2.5.1"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Library that provides collection, processing, and rendering functionality for PHP code coverage information.",
-            "homepage": "https://github.com/sebastianbergmann/php-code-coverage",
-            "keywords": [
-                "coverage",
-                "testing",
-                "xunit"
-            ],
-            "time": "2017-04-02T07:44:40+00:00"
-        },
-        {
-            "name": "phpunit/php-file-iterator",
-            "version": "1.4.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-file-iterator.git",
-                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
-                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.4.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "FilterIterator implementation that filters files based on a list of suffixes.",
-            "homepage": "https://github.com/sebastianbergmann/php-file-iterator/",
-            "keywords": [
-                "filesystem",
-                "iterator"
-            ],
-            "time": "2016-10-03T07:40:28+00:00"
-        },
-        {
-            "name": "phpunit/php-text-template",
-            "version": "1.2.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/seba
+<?php
+
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\DocBlock\Tags;
+
+use phpDocumentor\Reflection\DocBlock\Description;
+use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
+use phpDocumentor\Reflection\Type;
+use phpDocumentor\Reflection\TypeResolver;
+use phpDocumentor\Reflection\Types\Context as TypeContext;
+use Webmozart\Assert\Assert;
+use function array_shift;
+use function array_unshift;
+use function implode;
+use function preg_split;
+use function strpos;
+use function substr;
+use const PREG_SPLIT_DELIM_CAPTURE;
+
+/**
+ * Reflection class for a {@}var tag in a Docblock.
+ */
+final class Var_ extends TagWithType implements Factory\StaticMethod
+{
+    /** @var string|null */
+    protected $variableName = '';
+
+    public function __construct(?string $variableName, ?Type $type = null, ?Description $description = null)
+    {
+        Assert::string($variableName);
+
+        $this->name         = 'var';
+        $this->variableName = $variableName;
+        $this->type         = $type;
+        $this->description  = $description;
+    }
+
+    public static function create(
+        string $body,
+        ?TypeResolver $typeResolver = null,
+        ?DescriptionFactory $descriptionFactory = null,
+        ?TypeContext $context = null
+    ) : self {
+        Assert::stringNotEmpty($body);
+        Assert::notNull($typeResolver);
+        Assert::notNull($descriptionFactory);
+
+        [$firstPart, $body] = self::extractTypeFromBody($body);
+
+        $parts = preg_split('/(\s+)/Su', $body, 2, PREG_SPLIT_DELIM_CAPTURE);
+        Assert::isArray($parts);
+        $type         = null;
+        $variableName = '';
+
+        // if the first item that is encountered is not a variable; it is a type
+        if ($firstPart && $firstPart[0] !== '$') {
+            $type = $typeResolver->resolve($firstPart, $context);
+        } else {
+            // first part is not a type; we should prepend it to the parts array for further processing
+            array_unshift($parts, $firstPart);
+        }
+
+        // if the next item starts with a $ or ...$ it must be the variable name
+        if (isset($parts[0]) && strpos($parts[0], '$') === 0) {
+            $variableName = array_shift($parts);
+            array_shift($parts);
+
+            Assert::notNull($variableName);
+
+            $variableName = substr($variableName, 1);
+        }
+
+        $description = $descriptionFactory->create(implode('', $parts), $context);
+
+        return new static($variableName, $type, $description);
+    }
+
+    /**
+     * Returns the variable's name.
+     */
+    public function getVariableName() : ?string
+    {
+        return $this->variableName;
+    }
+
+    /**
+     * Returns a string representation for this tag.
+     */
+    public function __toString() : string
+    {
+        return ($this->type ? $this->type . ' ' : '')
+            . (empty($this->variableName) ? '' : '$' . $this->variableName)
+            . ($this->description ? ' ' . $this->description : '');
+    }
+}

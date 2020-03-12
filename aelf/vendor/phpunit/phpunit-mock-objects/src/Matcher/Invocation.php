@@ -1,38 +1,46 @@
-ple, the "extendee" of an extension declaration appears at the
-     *   beginning of the "extend" block and is shared by all extensions within
-     *   the block.
-     * - Just because a location's span is a subset of some other location's span
-     *   does not mean that it is a descendant.  For example, a "group" defines
-     *   both a type and a field in a single declaration.  Thus, the locations
-     *   corresponding to the type and field and their components will overlap.
-     * - Code which tries to interpret locations should probably be designed to
-     *   ignore those that it doesn't understand, as more types of locations could
-     *   be recorded in the future.
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+use PHPUnit\Framework\SelfDescribing;
+
+/**
+ * Interface for classes which matches an invocation based on its
+ * method name, argument, order or call count.
+ */
+interface PHPUnit_Framework_MockObject_Matcher_Invocation extends SelfDescribing, PHPUnit_Framework_MockObject_Verifiable
+{
+    /**
+     * Registers the invocation $invocation in the object as being invoked.
+     * This will only occur after matches() returns true which means the
+     * current invocation is the correct one.
      *
-     * Generated from protobuf field <code>repeated .google.protobuf.SourceCodeInfo.Location location = 1;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * The matcher can store information from the invocation which can later
+     * be checked in verify(), or it can check the values directly and throw
+     * and exception if an expectation is not met.
+     *
+     * If the matcher is a stub it will also have a return value.
+     *
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation Object containing information on a mocked or stubbed method which was invoked
+     *
+     * @return mixed
      */
-    public function getLocation()
-    {
-        return $this->location;
-    }
+    public function invoked(PHPUnit_Framework_MockObject_Invocation $invocation);
 
     /**
-     * A Location identifies a piece of source code in a .proto file which
-     * corresponds to a particular definition.  This information is intended
-     * to be useful to IDEs, code indexers, documentation generators, and similar
-     * tools.
-     * For example, say we have a file like:
-     *   message Foo {
-     *     optional string foo = 1;
-     *   }
-     * Let's look at just the field definition:
-     *   optional string foo = 1;
-     *   ^       ^^     ^^  ^  ^^^
-     *   a       bc     de  f  ghi
-     * We have the following locations:
-     *   span   path               represents
-     *   [a,i)  [ 4, 0, 2, 0 ]     The whole field definition.
-     *   [a,b)  [ 4, 0, 2, 0, 4 ]  The label (optional).
-     *   [c,d)  [ 4, 0, 2, 0, 5 ]  The type (string).
-     *   [e,f)  [ 4, 0, 2, 0, 1 ]  
+     * Checks if the invocation $invocation matches the current rules. If it does
+     * the matcher will get the invoked() method called which should check if an
+     * expectation is met.
+     *
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation Object containing information on a mocked or stubbed method which was invoked
+     *
+     * @return bool
+     */
+    public function matches(PHPUnit_Framework_MockObject_Invocation $invocation);
+}

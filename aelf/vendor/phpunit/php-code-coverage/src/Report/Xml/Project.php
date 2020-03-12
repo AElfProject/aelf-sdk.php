@@ -1,83 +1,95 @@
-oString($class)
-            ));
-        }
-    }
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
+namespace SebastianBergmann\CodeCoverage\Report\Xml;
+
+class Project extends Node
+{
     /**
-     * @psalm-assert class-string $value
-     *
-     * @param mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
+     * @param string $directory
      */
-    public static function interfaceExists($value, $message = '')
+    public function __construct($directory)
     {
-        if (!\interface_exists($value)) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected an existing interface name. got %s',
-                static::valueToString($value)
-            ));
-        }
+        $this->init();
+        $this->setProjectSourceDirectory($directory);
     }
 
-    /**
-     * @param mixed  $value
-     * @param mixed  $interface
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function implementsInterface($value, $interface, $message = '')
+    private function init()
     {
-        if (!\in_array($interface, \class_implements($value))) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected an implementation of %2$s. Got: %s',
-                static::valueToString($value),
-                static::valueToString($interface)
-            ));
-        }
+        $dom = new \DOMDocument();
+        $dom->loadXML('<?xml version="1.0" ?><phpunit xmlns="http://schema.phpunit.de/coverage/1.0"><build/><project/></phpunit>');
+
+        $this->setContextNode(
+            $dom->getElementsByTagNameNS(
+                'http://schema.phpunit.de/coverage/1.0',
+                'project'
+            )->item(0)
+        );
     }
 
-    /**
-     * @param string|object $classOrObject
-     * @param mixed         $property
-     * @param string        $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function propertyExists($classOrObject, $property, $message = '')
+    private function setProjectSourceDirectory($name)
     {
-        if (!\property_exists($classOrObject, $property)) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected the property %s to exist.',
-                static::valueToString($property)
-            ));
-        }
+        $this->getContextNode()->setAttribute('source', $name);
     }
 
     /**
-     * @param string|object $classOrObject
-     * @param mixed         $property
-     * @param string        $message
-     *
-     * @throws InvalidArgumentException
+     * @return string
      */
-    public static function propertyNotExists($classOrObject, $property, $message = '')
+    public function getProjectSourceDirectory()
     {
-        if (\property_exists($classOrObject, $property)) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected the property %s to not exist.',
-                static::valueToString($property)
-            ));
-        }
+        return $this->getContextNode()->getAttribute('source');
     }
 
     /**
-     * @param string|object $classOrObject
-     * @param mixed         $method
-     * @param string        $message
-     *
-     * @throws InvalidArgumentException
+     * @return BuildInformation
      */
-    public static function methodExists($cla
+    public function getBuildInformation()
+    {
+        $buildNode = $this->getDom()->getElementsByTagNameNS(
+            'http://schema.phpunit.de/coverage/1.0',
+            'build'
+        )->item(0);
+
+        if (!$buildNode) {
+            $buildNode = $this->getDom()->documentElement->appendChild(
+                $this->getDom()->createElementNS(
+                    'http://schema.phpunit.de/coverage/1.0',
+                    'build'
+                )
+            );
+        }
+
+        return new BuildInformation($buildNode);
+    }
+
+    public function getTests()
+    {
+        $testsNode = $this->getContextNode()->getElementsByTagNameNS(
+            'http://schema.phpunit.de/coverage/1.0',
+            'tests'
+        )->item(0);
+
+        if (!$testsNode) {
+            $testsNode = $this->getContextNode()->appendChild(
+                $this->getDom()->createElementNS(
+                    'http://schema.phpunit.de/coverage/1.0',
+                    'tests'
+                )
+            );
+        }
+
+        return new Tests($testsNode);
+    }
+
+    public function asDom()
+    {
+        return $this->getDom();
+    }
+}

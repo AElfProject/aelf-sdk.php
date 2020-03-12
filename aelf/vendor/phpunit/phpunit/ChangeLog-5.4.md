@@ -1,126 +1,84 @@
-               "psr-4": {
-                    "phpDocumentor\\Reflection\\": [
-                        "src"
-                    ]
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Jaap van Otterdijk",
-                    "email": "opensource@ijaap.nl"
-                }
-            ],
-            "description": "Common reflection classes used by phpdocumentor to reflect the code structure",
-            "homepage": "http://www.phpdoc.org",
-            "keywords": [
-                "FQSEN",
-                "phpDocumentor",
-                "phpdoc",
-                "reflection",
-                "static analysis"
-            ],
-            "time": "2017-09-11T18:02:19+00:00"
-        },
-        {
-            "name": "phpdocumentor/reflection-docblock",
-            "version": "4.1.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "2d3d238c433cf69caeb4842e97a3223a116f94b2"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/2d3d238c433cf69caeb4842e97a3223a116f94b2",
-                "reference": "2d3d238c433cf69caeb4842e97a3223a116f94b2",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.0",
-                "phpdocumentor/reflection-common": "^1.0@dev",
-                "phpdocumentor/type-resolver": "^0.4.0",
-                "webmozart/assert": "^1.0"
-            },
-            "require-dev": {
-                "mockery/mockery": "^0.9.4",
-                "phpunit/phpunit": "^4.4"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "phpDocumentor\\Reflection\\": [
-                        "src/"
-                    ]
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mike van Riel",
-                    "email": "me@mikevanriel.com"
-                }
-            ],
-            "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
-            "time": "2017-08-30T18:51:59+00:00"
-        },
-        {
-            "name": "phpdocumentor/type-resolver",
-            "version": "0.4.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpDocumentor/TypeResolver.git",
-                "reference": "9c977708995954784726e25d0cd1dddf4e65b0f7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/9c977708995954784726e25d0cd1dddf4e65b0f7",
-                "reference": "9c977708995954784726e25d0cd1dddf4e65b0f7",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^5.5 || ^7.0",
-                "phpdocumentor/reflection-common": "^1.0"
-            },
-            "require-dev": {
-                "mockery/mockery": "^0.9.4",
-                "phpunit/phpunit": "^5.2||^4.8.24"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "phpDocumentor\\Reflection\\": [
-                        "src/"
-                    ]
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mike van Riel",
-                    "email": "me@mikevanriel.com"
-                }
-            ],
-            "time": "2017-07-14T14:27:02+00:00"
-        },
-        {
-            "name": "phpspec/prophecy",
-            "version": "v1.7.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "c9b8c6088acd19d769d4cc0
+# Changes in PHPUnit 5.4
+
+All notable changes of the PHPUnit 5.4 release series are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
+
+## [5.4.8] - 2016-07-26
+
+### Changed
+
+* Bumped required version of `phpunit/php-code-coverage` to `4.0.1`
+
+## [5.4.7] - 2016-07-21
+
+### Fixed
+
+* Fixed [#1968](https://github.com/sebastianbergmann/phpunit/issues/1968): Invalid data sets are not handled correctly for `@testWith` annotation
+* Fixed [#2200](https://github.com/sebastianbergmann/phpunit/issues/2200): No warnings when test runs in separate process
+* Fixed [#2221](https://github.com/sebastianbergmann/phpunit/issues/2221): `expectException()` accepts non-string argument
+
+## [5.4.6] - 2016-06-16
+
+### Fixed
+
+* Fixed [#2219](https://github.com/sebastianbergmann/phpunit/issues/2219): PHAR does not contain all dependencies
+
+## [5.4.5] - 2016-06-15
+
+### Fixed
+
+* Fixed [#2181](https://github.com/sebastianbergmann/phpunit/issues/2181): Use `setlocale()` with `0` as second argument to not affect current setting
+* Fixed [#2211](https://github.com/sebastianbergmann/phpunit/issues/2211): Correctly handle paths to PHP binary that contain spaces (`C:\Program Files`) on Microsoft Windows
+
+## [5.4.4] - 2016-06-09
+
+### Fixed
+
+* Blacklisted phpdocumentor/reflection-docblock 3.0.2 due to https://github.com/phpDocumentor/ReflectionDocBlock/pull/77
+
+## [5.4.3] - 2016-06-09
+
+### Changed
+
+* Renamed `phpunit\framework\TestCase` to `PHPUnit\Framework\TestCase`
+
+## [5.4.2] - 2016-06-03
+
+### Fixed
+
+* Reverted the JUnit XML logfile format change to restore backward compatibility
+
+## [5.4.1] - 2016-06-03
+
+### Fixed
+
+* Fixed [#2186](https://github.com/sebastianbergmann/phpunit/issues/2186): `PHPUnit_Framework_TestCase::getMockBuilder()` should be `public`, not `protected` 
+
+## [5.4.0] - 2016-06-03
+
+### Added
+
+* Implemented [#2037](https://github.com/sebastianbergmann/phpunit/issues/2037): Log more information about failures in JSON output
+* Implemented [#2152](https://github.com/sebastianbergmann/phpunit/issues/2152): Filter for which tests TestDox output is generated
+* Added the `PHPUnit\Framework\TestCase::createMock()` method for creating test doubles using best practice defaults
+* Added `registerMockObjectsFromTestArgumentsRecursively` configuration directive for optionally registering mock objects from test arguments recursively
+* Added support for the `ENV`, `STDIN`, `ARGS`, `FILEEOF`, `FILE_EXTERNAL`, `EXPECT_EXTERNAL`, `EXPECTF_EXTERNAL`, `EXPECTREGEX_EXTERNAL`, and `XFAIL` sections to PHPT test runner
+* Added TestDox XML logger
+* Added `phpunit\framework\TestCase` as an alias for `PHPUnit_Framework_TestCase` for forward compatibility
+
+### Changed
+
+* The `PHPUnit_Framework_TestCase::getMock()` method has been deprecated. Please use `PHPUnit_Framework_TestCase::createMock()` or `PHPUnit_Framework_TestCase::getMockBuilder()` instead.
+* The `PHPUnit_Framework_TestCase::getMockWithoutInvokingTheOriginalConstructor()` method has been deprecated. Please use `PHPUnit_Framework_TestCase::createMock()` instead.
+* The logfile format generated using the `--log-junit` option and the `<log type="junit" target="..."/>` configuration directive has been updated to match the [current format used by JUnit](http://llg.cubic.org/docs/junit/). Due to this change you may need to update how your continuous integration server processes test result logfiles generated by PHPUnit.
+* The methods `PHPUnit_Framework_TestCase::getMockBuilder()`, `PHPUnit_Framework_TestCase::createTestDouble()`, `PHPUnit_Framework_TestCase::getMock()`, `PHPUnit_Framework_TestCase::getMockWithoutInvokingTheOriginalConstructor()`, `PHPUnit_Framework_TestCase::getMockForAbstractClass()` and `PHPUnit_Framework_TestCase::getMockForTrait()` are now protected (they were public before).
+
+[5.4.8]: https://github.com/sebastianbergmann/phpunit/compare/5.4.7...5.4.8
+[5.4.7]: https://github.com/sebastianbergmann/phpunit/compare/5.4.6...5.4.7
+[5.4.6]: https://github.com/sebastianbergmann/phpunit/compare/5.4.5...5.4.6
+[5.4.5]: https://github.com/sebastianbergmann/phpunit/compare/5.4.4...5.4.5
+[5.4.4]: https://github.com/sebastianbergmann/phpunit/compare/5.4.3...5.4.4
+[5.4.3]: https://github.com/sebastianbergmann/phpunit/compare/5.4.2...5.4.3
+[5.4.2]: https://github.com/sebastianbergmann/phpunit/compare/5.4.1...5.4.2
+[5.4.1]: https://github.com/sebastianbergmann/phpunit/compare/5.4.0...5.4.1
+[5.4.0]: https://github.com/sebastianbergmann/phpunit/compare/5.3...5.4.0
+

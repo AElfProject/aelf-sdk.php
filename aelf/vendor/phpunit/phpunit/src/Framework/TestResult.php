@@ -1,1114 +1,1308 @@
-t post-update-cmd</info>
-EOT
-)
-;
-}
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-$script = $input->getArgument('script');
-if (!in_array($script, array(
-ScriptEvents::PRE_INSTALL_CMD,
-ScriptEvents::POST_INSTALL_CMD,
-ScriptEvents::PRE_UPDATE_CMD,
-ScriptEvents::POST_UPDATE_CMD,
-))) {
-if (defined('Composer\Script\ScriptEvents::'.str_replace('-', '_', strtoupper($script)))) {
-throw new \InvalidArgumentException(sprintf('Script "%s" cannot be run with this command', $script));
-}
-
-throw new \InvalidArgumentException(sprintf('Script "%s" does not exist', $script));
-}
-
-$this->getComposer()->getEventDispatcher()->dispatchCommandEvent($script, $input->getOption('dev') || !$input->getOption('no-dev'));
-}
-}
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
+namespace PHPUnit\Framework;
 
+use AssertionError;
+use Countable;
+use Error;
+use PHP_Invoker;
+use PHP_Invoker_TimeoutException;
+use PHP_Timer;
+use PHPUnit_Framework_MockObject_Exception;
+use PHPUnit_Framework_RiskyTestError;
+use PHPUnit\Util\Blacklist;
+use PHPUnit\Util\InvalidArgumentHelper;
+use PHPUnit\Util\Printer;
+use ReflectionClass;
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Exception as OriginalCodeCoverageException;
+use SebastianBergmann\CodeCoverage\CoveredCodeNotExecutedException as OriginalCoveredCodeNotExecutedException;
+use SebastianBergmann\CodeCoverage\MissingCoversAnnotationException as OriginalMissingCoversAnnotationException;
+use SebastianBergmann\CodeCoverage\UnintentionallyCoveredCodeException;
+use SebastianBergmann\ResourceOperations\ResourceOperations;
+use Throwable;
 
-
-
-
-
-
-
-
-
-namespace Composer\Command;
-
-use Composer\Composer;
-use Composer\Factory;
-use Composer\Downloader\TransportException;
-use Composer\Util\ConfigValidator;
-use Composer\Util\RemoteFilesystem;
-use Composer\Util\StreamContextFactory;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-
-
-
-
-class DiagnoseCommand extends Command
+/**
+ * A TestResult collects the results of executing a test case.
+ */
+class TestResult implements Countable
 {
-protected $rfs;
-protected $failures = 0;
-
-protected function configure()
-{
-$this
-->setName('diagnose')
-->setDescription('Diagnoses the system to identify common errors.')
-->setHelp(<<<EOT
-The <info>diagnose</info> command checks common errors to help debugging problems.
-
-EOT
-)
-;
+    /**
+     * @var array
+     */
+    protected $passed = [];
+
+    /**
+     * @var array
+     */
+    protected $errors = [];
+
+    /**
+     * @var array
+     */
+    protected $failures = [];
+
+    /**
+     * @var array
+     */
+    protected $warnings = [];
+
+    /**
+     * @var array
+     */
+    protected $notImplemented = [];
+
+    /**
+     * @var array
+     */
+    protected $risky = [];
+
+    /**
+     * @var array
+     */
+    protected $skipped = [];
+
+    /**
+     * @var array
+     */
+    protected $listeners = [];
+
+    /**
+     * @var int
+     */
+    protected $runTests = 0;
+
+    /**
+     * @var float
+     */
+    protected $time = 0;
+
+    /**
+     * @var TestSuite
+     */
+    protected $topTestSuite;
+
+    /**
+     * Code Coverage information.
+     *
+     * @var CodeCoverage
+     */
+    protected $codeCoverage;
+
+    /**
+     * @var bool
+     */
+    protected $convertErrorsToExceptions = true;
+
+    /**
+     * @var bool
+     */
+    protected $stop = false;
+
+    /**
+     * @var bool
+     */
+    protected $stopOnError = false;
+
+    /**
+     * @var bool
+     */
+    protected $stopOnFailure = false;
+
+    /**
+     * @var bool
+     */
+    protected $stopOnWarning = false;
+
+    /**
+     * @var bool
+     */
+    protected $beStrictAboutTestsThatDoNotTestAnything = true;
+
+    /**
+     * @var bool
+     */
+    protected $beStrictAboutOutputDuringTests = false;
+
+    /**
+     * @var bool
+     */
+    protected $beStrictAboutTodoAnnotatedTests = false;
+
+    /**
+     * @var bool
+     */
+    protected $beStrictAboutResourceUsageDuringSmallTests = false;
+
+    /**
+     * @var bool
+     */
+    protected $enforceTimeLimit = false;
+
+    /**
+     * @var int
+     */
+    protected $timeoutForSmallTests = 1;
+
+    /**
+     * @var int
+     */
+    protected $timeoutForMediumTests = 10;
+
+    /**
+     * @var int
+     */
+    protected $timeoutForLargeTests = 60;
+
+    /**
+     * @var bool
+     */
+    protected $stopOnRisky = false;
+
+    /**
+     * @var bool
+     */
+    protected $stopOnIncomplete = false;
+
+    /**
+     * @var bool
+     */
+    protected $stopOnSkipped = false;
+
+    /**
+     * @var bool
+     */
+    protected $lastTestFailed = false;
+
+    /**
+     * @var bool
+     */
+    private $registerMockObjectsFromTestArgumentsRecursively = false;
+
+    /**
+     * Registers a TestListener.
+     *
+     * @param TestListener $listener
+     */
+    public function addListener(TestListener $listener)
+    {
+        $this->listeners[] = $listener;
+    }
+
+    /**
+     * Unregisters a TestListener.
+     *
+     * @param TestListener $listener
+     */
+    public function removeListener(TestListener $listener)
+    {
+        foreach ($this->listeners as $key => $_listener) {
+            if ($listener === $_listener) {
+                unset($this->listeners[$key]);
+            }
+        }
+    }
+
+    /**
+     * Flushes all flushable TestListeners.
+     */
+    public function flushListeners()
+    {
+        foreach ($this->listeners as $listener) {
+            if ($listener instanceof Printer) {
+                $listener->flush();
+            }
+        }
+    }
+
+    /**
+     * Adds an error to the list of errors.
+     *
+     * @param Test      $test
+     * @param Throwable $t
+     * @param float     $time
+     */
+    public function addError(Test $test, Throwable $t, $time)
+    {
+        if ($t instanceof RiskyTest) {
+            $this->risky[] = new TestFailure($test, $t);
+            $notifyMethod  = 'addRiskyTest';
+
+            if ($test instanceof TestCase) {
+                $test->markAsRisky();
+            }
+
+            if ($this->stopOnRisky) {
+                $this->stop();
+            }
+        } elseif ($t instanceof IncompleteTest) {
+            $this->notImplemented[] = new TestFailure($test, $t);
+            $notifyMethod           = 'addIncompleteTest';
+
+            if ($this->stopOnIncomplete) {
+                $this->stop();
+            }
+        } elseif ($t instanceof SkippedTest) {
+            $this->skipped[] = new TestFailure($test, $t);
+            $notifyMethod    = 'addSkippedTest';
+
+            if ($this->stopOnSkipped) {
+                $this->stop();
+            }
+        } else {
+            $this->errors[] = new TestFailure($test, $t);
+            $notifyMethod   = 'addError';
+
+            if ($this->stopOnError || $this->stopOnFailure) {
+                $this->stop();
+            }
+        }
+
+        // @see https://github.com/sebastianbergmann/phpunit/issues/1953
+        if ($t instanceof Error) {
+            $t = new ExceptionWrapper($t);
+        }
+
+        foreach ($this->listeners as $listener) {
+            $listener->$notifyMethod($test, $t, $time);
+        }
+
+        $this->lastTestFailed = true;
+        $this->time += $time;
+    }
+
+    /**
+     * Adds a warning to the list of warnings.
+     * The passed in exception caused the warning.
+     *
+     * @param Test    $test
+     * @param Warning $e
+     * @param float   $time
+     */
+    public function addWarning(Test $test, Warning $e, $time)
+    {
+        if ($this->stopOnWarning) {
+            $this->stop();
+        }
+
+        $this->warnings[] = new TestFailure($test, $e);
+
+        foreach ($this->listeners as $listener) {
+            $listener->addWarning($test, $e, $time);
+        }
+
+        $this->time += $time;
+    }
+
+    /**
+     * Adds a failure to the list of failures.
+     * The passed in exception caused the failure.
+     *
+     * @param Test                 $test
+     * @param AssertionFailedError $e
+     * @param float                $time
+     */
+    public function addFailure(Test $test, AssertionFailedError $e, $time)
+    {
+        if ($e instanceof RiskyTest || $e instanceof OutputError) {
+            $this->risky[] = new TestFailure($test, $e);
+            $notifyMethod  = 'addRiskyTest';
+
+            if ($test instanceof TestCase) {
+                $test->markAsRisky();
+            }
+
+            if ($this->stopOnRisky) {
+                $this->stop();
+            }
+        } elseif ($e instanceof IncompleteTest) {
+            $this->notImplemented[] = new TestFailure($test, $e);
+            $notifyMethod           = 'addIncompleteTest';
+
+            if ($this->stopOnIncomplete) {
+                $this->stop();
+            }
+        } elseif ($e instanceof SkippedTest) {
+            $this->skipped[] = new TestFailure($test, $e);
+            $notifyMethod    = 'addSkippedTest';
+
+            if ($this->stopOnSkipped) {
+                $this->stop();
+            }
+        } else {
+            $this->failures[] = new TestFailure($test, $e);
+            $notifyMethod     = 'addFailure';
+
+            if ($this->stopOnFailure) {
+                $this->stop();
+            }
+        }
+
+        foreach ($this->listeners as $listener) {
+            $listener->$notifyMethod($test, $e, $time);
+        }
+
+        $this->lastTestFailed = true;
+        $this->time += $time;
+    }
+
+    /**
+     * Informs the result that a testsuite will be started.
+     *
+     * @param TestSuite $suite
+     */
+    public function startTestSuite(TestSuite $suite)
+    {
+        if ($this->topTestSuite === null) {
+            $this->topTestSuite = $suite;
+        }
+
+        foreach ($this->listeners as $listener) {
+            $listener->startTestSuite($suite);
+        }
+    }
+
+    /**
+     * Informs the result that a testsuite was completed.
+     *
+     * @param TestSuite $suite
+     */
+    public function endTestSuite(TestSuite $suite)
+    {
+        foreach ($this->listeners as $listener) {
+            $listener->endTestSuite($suite);
+        }
+    }
+
+    /**
+     * Informs the result that a test will be started.
+     *
+     * @param Test $test
+     */
+    public function startTest(Test $test)
+    {
+        $this->lastTestFailed = false;
+        $this->runTests += \count($test);
+
+        foreach ($this->listeners as $listener) {
+            $listener->startTest($test);
+        }
+    }
+
+    /**
+     * Informs the result that a test was completed.
+     *
+     * @param Test  $test
+     * @param float $time
+     */
+    public function endTest(Test $test, $time)
+    {
+        foreach ($this->listeners as $listener) {
+            $listener->endTest($test, $time);
+        }
+
+        if (!$this->lastTestFailed && $test instanceof TestCase) {
+            $class = \get_class($test);
+            $key   = $class . '::' . $test->getName();
+
+            $this->passed[$key] = [
+                'result' => $test->getResult(),
+                'size'   => \PHPUnit\Util\Test::getSize(
+                    $class,
+                    $test->getName(false)
+                )
+            ];
+
+            $this->time += $time;
+        }
+    }
+
+    /**
+     * Returns true if no risky test occurred.
+     *
+     * @return bool
+     */
+    public function allHarmless()
+    {
+        return $this->riskyCount() == 0;
+    }
+
+    /**
+     * Gets the number of risky tests.
+     *
+     * @return int
+     */
+    public function riskyCount()
+    {
+        return \count($this->risky);
+    }
+
+    /**
+     * Returns true if no incomplete test occurred.
+     *
+     * @return bool
+     */
+    public function allCompletelyImplemented()
+    {
+        return $this->notImplementedCount() == 0;
+    }
+
+    /**
+     * Gets the number of incomplete tests.
+     *
+     * @return int
+     */
+    public function notImplementedCount()
+    {
+        return \count($this->notImplemented);
+    }
+
+    /**
+     * Returns an Enumeration for the risky tests.
+     *
+     * @return array
+     */
+    public function risky()
+    {
+        return $this->risky;
+    }
+
+    /**
+     * Returns an Enumeration for the incomplete tests.
+     *
+     * @return array
+     */
+    public function notImplemented()
+    {
+        return $this->notImplemented;
+    }
+
+    /**
+     * Returns true if no test has been skipped.
+     *
+     * @return bool
+     */
+    public function noneSkipped()
+    {
+        return $this->skippedCount() == 0;
+    }
+
+    /**
+     * Gets the number of skipped tests.
+     *
+     * @return int
+     */
+    public function skippedCount()
+    {
+        return \count($this->skipped);
+    }
+
+    /**
+     * Returns an Enumeration for the skipped tests.
+     *
+     * @return array
+     */
+    public function skipped()
+    {
+        return $this->skipped;
+    }
+
+    /**
+     * Gets the number of detected errors.
+     *
+     * @return int
+     */
+    public function errorCount()
+    {
+        return \count($this->errors);
+    }
+
+    /**
+     * Returns an Enumeration for the errors.
+     *
+     * @return array
+     */
+    public function errors()
+    {
+        return $this->errors;
+    }
+
+    /**
+     * Gets the number of detected failures.
+     *
+     * @return int
+     */
+    public function failureCount()
+    {
+        return \count($this->failures);
+    }
+
+    /**
+     * Returns an Enumeration for the failures.
+     *
+     * @return array
+     */
+    public function failures()
+    {
+        return $this->failures;
+    }
+
+    /**
+     * Gets the number of detected warnings.
+     *
+     * @return int
+     */
+    public function warningCount()
+    {
+        return \count($this->warnings);
+    }
+
+    /**
+     * Returns an Enumeration for the warnings.
+     *
+     * @return array
+     */
+    public function warnings()
+    {
+        return $this->warnings;
+    }
+
+    /**
+     * Returns the names of the tests that have passed.
+     *
+     * @return array
+     */
+    public function passed()
+    {
+        return $this->passed;
+    }
+
+    /**
+     * Returns the (top) test suite.
+     *
+     * @return TestSuite
+     */
+    public function topTestSuite()
+    {
+        return $this->topTestSuite;
+    }
+
+    /**
+     * Returns whether code coverage information should be collected.
+     *
+     * @return bool If code coverage should be collected
+     */
+    public function getCollectCodeCoverageInformation()
+    {
+        return $this->codeCoverage !== null;
+    }
+
+    /**
+     * Runs a TestCase.
+     *
+     * @param Test $test
+     */
+    public function run(Test $test)
+    {
+        Assert::resetCount();
+
+        $coversNothing = false;
+
+        if ($test instanceof TestCase) {
+            $test->setRegisterMockObjectsFromTestArgumentsRecursively(
+                $this->registerMockObjectsFromTestArgumentsRecursively
+            );
+
+            $annotations = $test->getAnnotations();
+
+            if (isset($annotations['class']['coversNothing']) || isset($annotations['method']['coversNothing'])) {
+                $coversNothing = true;
+            }
+        }
+
+        $error      = false;
+        $failure    = false;
+        $warning    = false;
+        $incomplete = false;
+        $risky      = false;
+        $skipped    = false;
+
+        $this->startTest($test);
+
+        $errorHandlerSet = false;
+
+        if ($this->convertErrorsToExceptions) {
+            $oldErrorHandler = \set_error_handler(
+                [\PHPUnit\Util\ErrorHandler::class, 'handleError'],
+                E_ALL | E_STRICT
+            );
+
+            if ($oldErrorHandler === null) {
+                $errorHandlerSet = true;
+            } else {
+                \restore_error_handler();
+            }
+        }
+
+        $collectCodeCoverage = $this->codeCoverage !== null &&
+                               !$test instanceof WarningTestCase &&
+                               !$coversNothing;
+
+        if ($collectCodeCoverage) {
+            $this->codeCoverage->start($test);
+        }
+
+        $monitorFunctions = $this->beStrictAboutResourceUsageDuringSmallTests &&
+            !$test instanceof WarningTestCase &&
+            $test->getSize() == \PHPUnit\Util\Test::SMALL &&
+            \function_exists('xdebug_start_function_monitor');
+
+        if ($monitorFunctions) {
+            \xdebug_start_function_monitor(ResourceOperations::getFunctions());
+        }
+
+        PHP_Timer::start();
+
+        try {
+            if (!$test instanceof WarningTestCase &&
+                $test->getSize() != \PHPUnit\Util\Test::UNKNOWN &&
+                $this->enforceTimeLimit &&
+                \extension_loaded('pcntl') && \class_exists('PHP_Invoker')) {
+                switch ($test->getSize()) {
+                    case \PHPUnit\Util\Test::SMALL:
+                        $_timeout = $this->timeoutForSmallTests;
+                        break;
+
+                    case \PHPUnit\Util\Test::MEDIUM:
+                        $_timeout = $this->timeoutForMediumTests;
+                        break;
+
+                    case \PHPUnit\Util\Test::LARGE:
+                        $_timeout = $this->timeoutForLargeTests;
+                        break;
+                }
+
+                $invoker = new PHP_Invoker;
+                $invoker->invoke([$test, 'runBare'], [], $_timeout);
+            } else {
+                $test->runBare();
+            }
+        } catch (PHP_Invoker_TimeoutException $e) {
+            $this->addFailure(
+                $test,
+                new PHPUnit_Framework_RiskyTestError(
+                    $e->getMessage()
+                ),
+                $_timeout
+            );
+
+            $risky = true;
+        } catch (PHPUnit_Framework_MockObject_Exception $e) {
+            $e = new Warning(
+                $e->getMessage()
+            );
+
+            $warning = true;
+        } catch (AssertionFailedError $e) {
+            $failure = true;
+
+            if ($e instanceof RiskyTestError) {
+                $risky = true;
+            } elseif ($e instanceof IncompleteTestError) {
+                $incomplete = true;
+            } elseif ($e instanceof SkippedTestError) {
+                $skipped = true;
+            }
+        } catch (AssertionError $e) {
+            $test->addToAssertionCount(1);
+
+            $failure = true;
+            $frame   = $e->getTrace()[0];
+
+            $e = new AssertionFailedError(
+                \sprintf(
+                    '%s in %s:%s',
+                    $e->getMessage(),
+                    $frame['file'],
+                    $frame['line']
+                )
+            );
+        } catch (Warning $e) {
+            $warning = true;
+        } catch (Exception $e) {
+            $error = true;
+        } catch (Throwable $e) {
+            $e     = new ExceptionWrapper($e);
+            $error = true;
+        }
+
+        $time = PHP_Timer::stop();
+        $test->addToAssertionCount(Assert::getCount());
+
+        if ($monitorFunctions) {
+            $blacklist = new Blacklist;
+            $functions = \xdebug_get_monitored_functions();
+            \xdebug_stop_function_monitor();
+
+            foreach ($functions as $function) {
+                if (!$blacklist->isBlacklisted($function['filename'])) {
+                    $this->addFailure(
+                        $test,
+                        new RiskyTestError(
+                            \sprintf(
+                                '%s() used in %s:%s',
+                                $function['function'],
+                                $function['filename'],
+                                $function['lineno']
+                            )
+                        ),
+                        $time
+                    );
+                }
+            }
+        }
+
+        if ($this->beStrictAboutTestsThatDoNotTestAnything &&
+            $test->getNumAssertions() == 0) {
+            $risky = true;
+        }
+
+        if ($collectCodeCoverage) {
+            $append           = !$risky && !$incomplete && !$skipped;
+            $linesToBeCovered = [];
+            $linesToBeUsed    = [];
+
+            if ($append && $test instanceof TestCase) {
+                try {
+                    $linesToBeCovered = \PHPUnit\Util\Test::getLinesToBeCovered(
+                        \get_class($test),
+                        $test->getName(false)
+                    );
+
+                    $linesToBeUsed = \PHPUnit\Util\Test::getLinesToBeUsed(
+                        \get_class($test),
+                        $test->getName(false)
+                    );
+                } catch (InvalidCoversTargetException $cce) {
+                    $this->addWarning(
+                        $test,
+                        new Warning(
+                            $cce->getMessage()
+                        ),
+                        $time
+                    );
+                }
+            }
+
+            try {
+                $this->codeCoverage->stop(
+                    $append,
+                    $linesToBeCovered,
+                    $linesToBeUsed
+                );
+            } catch (UnintentionallyCoveredCodeException $cce) {
+                $this->addFailure(
+                    $test,
+                    new UnintentionallyCoveredCodeError(
+                        'This test executed code that is not listed as code to be covered or used:' .
+                        PHP_EOL . $cce->getMessage()
+                    ),
+                    $time
+                );
+            } catch (OriginalCoveredCodeNotExecutedException $cce) {
+                $this->addFailure(
+                    $test,
+                    new CoveredCodeNotExecutedException(
+                        'This test did not execute all the code that is listed as code to be covered:' .
+                        PHP_EOL . $cce->getMessage()
+                    ),
+                    $time
+                );
+            } catch (OriginalMissingCoversAnnotationException $cce) {
+                if ($linesToBeCovered !== false) {
+                    $this->addFailure(
+                        $test,
+                        new MissingCoversAnnotationException(
+                            'This test does not have a @covers annotation but is expected to have one'
+                        ),
+                        $time
+                    );
+                }
+            } catch (OriginalCodeCoverageException $cce) {
+                $error = true;
+
+                if (!isset($e)) {
+                    $e = $cce;
+                }
+            }
+        }
+
+        if ($errorHandlerSet === true) {
+            \restore_error_handler();
+        }
+
+        if ($error === true) {
+            $this->addError($test, $e, $time);
+        } elseif ($failure === true) {
+            $this->addFailure($test, $e, $time);
+        } elseif ($warning === true) {
+            $this->addWarning($test, $e, $time);
+        } elseif ($this->beStrictAboutTestsThatDoNotTestAnything &&
+            !$test->doesNotPerformAssertions() &&
+            $test->getNumAssertions() == 0) {
+            $this->addFailure(
+                $test,
+                new RiskyTestError(
+                    'This test did not perform any assertions'
+                ),
+                $time
+            );
+        } elseif ($this->beStrictAboutOutputDuringTests && $test->hasOutput()) {
+            $this->addFailure(
+                $test,
+                new OutputError(
+                    \sprintf(
+                        'This test printed output: %s',
+                        $test->getActualOutput()
+                    )
+                ),
+                $time
+            );
+        } elseif ($this->beStrictAboutTodoAnnotatedTests && $test instanceof TestCase) {
+            $annotations = $test->getAnnotations();
+
+            if (isset($annotations['method']['todo'])) {
+                $this->addFailure(
+                    $test,
+                    new RiskyTestError(
+                        'Test method is annotated with @todo'
+                    ),
+                    $time
+                );
+            }
+        }
+
+        $this->endTest($test, $time);
+    }
+
+    /**
+     * Gets the number of run tests.
+     *
+     * @return int
+     */
+    public function count()
+    {
+        return $this->runTests;
+    }
+
+    /**
+     * Checks whether the test run should stop.
+     *
+     * @return bool
+     */
+    public function shouldStop()
+    {
+        return $this->stop;
+    }
+
+    /**
+     * Marks that the test run should stop.
+     */
+    public function stop()
+    {
+        $this->stop = true;
+    }
+
+    /**
+     * Returns the code coverage object.
+     *
+     * @return CodeCoverage
+     */
+    public function getCodeCoverage()
+    {
+        return $this->codeCoverage;
+    }
+
+    /**
+     * Sets the code coverage object.
+     *
+     * @param CodeCoverage $codeCoverage
+     */
+    public function setCodeCoverage(CodeCoverage $codeCoverage)
+    {
+        $this->codeCoverage = $codeCoverage;
+    }
+
+    /**
+     * Enables or disables the error-to-exception conversion.
+     *
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function convertErrorsToExceptions($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->convertErrorsToExceptions = $flag;
+    }
+
+    /**
+     * Returns the error-to-exception conversion setting.
+     *
+     * @return bool
+     */
+    public function getConvertErrorsToExceptions()
+    {
+        return $this->convertErrorsToExceptions;
+    }
+
+    /**
+     * Enables or disables the stopping when an error occurs.
+     *
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function stopOnError($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->stopOnError = $flag;
+    }
+
+    /**
+     * Enables or disables the stopping when a failure occurs.
+     *
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function stopOnFailure($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->stopOnFailure = $flag;
+    }
+
+    /**
+     * Enables or disables the stopping when a warning occurs.
+     *
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function stopOnWarning($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->stopOnWarning = $flag;
+    }
+
+    /**
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function beStrictAboutTestsThatDoNotTestAnything($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->beStrictAboutTestsThatDoNotTestAnything = $flag;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStrictAboutTestsThatDoNotTestAnything()
+    {
+        return $this->beStrictAboutTestsThatDoNotTestAnything;
+    }
+
+    /**
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function beStrictAboutOutputDuringTests($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->beStrictAboutOutputDuringTests = $flag;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStrictAboutOutputDuringTests()
+    {
+        return $this->beStrictAboutOutputDuringTests;
+    }
+
+    /**
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function beStrictAboutResourceUsageDuringSmallTests($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->beStrictAboutResourceUsageDuringSmallTests = $flag;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStrictAboutResourceUsageDuringSmallTests()
+    {
+        return $this->beStrictAboutResourceUsageDuringSmallTests;
+    }
+
+    /**
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function enforceTimeLimit($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->enforceTimeLimit = $flag;
+    }
+
+    /**
+     * @return bool
+     */
+    public function enforcesTimeLimit()
+    {
+        return $this->enforceTimeLimit;
+    }
+
+    /**
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function beStrictAboutTodoAnnotatedTests($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->beStrictAboutTodoAnnotatedTests = $flag;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStrictAboutTodoAnnotatedTests()
+    {
+        return $this->beStrictAboutTodoAnnotatedTests;
+    }
+
+    /**
+     * Enables or disables the stopping for risky tests.
+     *
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function stopOnRisky($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->stopOnRisky = $flag;
+    }
+
+    /**
+     * Enables or disables the stopping for incomplete tests.
+     *
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function stopOnIncomplete($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->stopOnIncomplete = $flag;
+    }
+
+    /**
+     * Enables or disables the stopping for skipped tests.
+     *
+     * @param bool $flag
+     *
+     * @throws Exception
+     */
+    public function stopOnSkipped($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->stopOnSkipped = $flag;
+    }
+
+    /**
+     * Returns the time spent running the tests.
+     *
+     * @return float
+     */
+    public function time()
+    {
+        return $this->time;
+    }
+
+    /**
+     * Returns whether the entire test was successful or not.
+     *
+     * @return bool
+     */
+    public function wasSuccessful()
+    {
+        return empty($this->errors) && empty($this->failures) && empty($this->warnings);
+    }
+
+    /**
+     * Sets the timeout for small tests.
+     *
+     * @param int $timeout
+     *
+     * @throws Exception
+     */
+    public function setTimeoutForSmallTests($timeout)
+    {
+        if (!\is_int($timeout)) {
+            throw InvalidArgumentHelper::factory(1, 'integer');
+        }
+
+        $this->timeoutForSmallTests = $timeout;
+    }
+
+    /**
+     * Sets the timeout for medium tests.
+     *
+     * @param int $timeout
+     *
+     * @throws Exception
+     */
+    public function setTimeoutForMediumTests($timeout)
+    {
+        if (!\is_int($timeout)) {
+            throw InvalidArgumentHelper::factory(1, 'integer');
+        }
+
+        $this->timeoutForMediumTests = $timeout;
+    }
+
+    /**
+     * Sets the timeout for large tests.
+     *
+     * @param int $timeout
+     *
+     * @throws Exception
+     */
+    public function setTimeoutForLargeTests($timeout)
+    {
+        if (!\is_int($timeout)) {
+            throw InvalidArgumentHelper::factory(1, 'integer');
+        }
+
+        $this->timeoutForLargeTests = $timeout;
+    }
+
+    /**
+     * Returns the set timeout for large tests.
+     *
+     * @return int
+     */
+    public function getTimeoutForLargeTests()
+    {
+        return $this->timeoutForLargeTests;
+    }
+
+    /**
+     * @param bool $flag
+     */
+    public function setRegisterMockObjectsFromTestArgumentsRecursively($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->registerMockObjectsFromTestArgumentsRecursively = $flag;
+    }
+
+    /**
+     * Returns the class hierarchy for a given class.
+     *
+     * @param string $className
+     * @param bool   $asReflectionObjects
+     *
+     * @return array
+     */
+    protected function getHierarchy($className, $asReflectionObjects = false)
+    {
+        if ($asReflectionObjects) {
+            $classes = [new ReflectionClass($className)];
+        } else {
+            $classes = [$className];
+        }
+
+        $done = false;
+
+        while (!$done) {
+            if ($asReflectionObjects) {
+                $class = new ReflectionClass(
+                    $classes[\count($classes) - 1]->getName()
+                );
+            } else {
+                $class = new ReflectionClass($classes[\count($classes) - 1]);
+            }
+
+            $parent = $class->getParentClass();
+
+            if ($parent !== false) {
+                if ($asReflectionObjects) {
+                    $classes[] = $parent;
+                } else {
+                    $classes[] = $parent->getName();
+                }
+            } else {
+                $done = true;
+            }
+        }
+
+        return $classes;
+    }
 }
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-$this->rfs = new RemoteFilesystem($this->getIO());
-
-$output->write('Checking platform settings: ');
-$this->outputResult($output, $this->checkPlatform());
-
-$output->write('Checking http connectivity: ');
-$this->outputResult($output, $this->checkHttp());
-
-$opts = stream_context_get_options(StreamContextFactory::getContext());
-if (!empty($opts['http']['proxy'])) {
-$output->write('Checking HTTP proxy: ');
-$this->outputResult($output, $this->checkHttpProxy());
-$output->write('Checking HTTPS proxy support for request_fulluri: ');
-$this->outputResult($output, $this->checkHttpsProxyFullUriRequestParam());
-}
-
-$composer = $this->getComposer(false);
-if ($composer) {
-$output->write('Checking composer.json: ');
-$this->outputResult($output, $this->checkComposerSchema());
-}
-
-if ($composer) {
-$config = $composer->getConfig();
-} else {
-$config = Factory::createConfig();
-}
-
-if ($oauth = $config->get('github-oauth')) {
-foreach ($oauth as $domain => $token) {
-$output->write('Checking '.$domain.' oauth access: ');
-$this->outputResult($output, $this->checkGithubOauth($domain, $token));
-}
-}
-
-$output->write('Checking composer version: ');
-$this->outputResult($output, $this->checkVersion());
-
-return $this->failures;
-}
-
-private function checkComposerSchema()
-{
-$validator = new ConfigValidator($this->getIO());
-list($errors, $publishErrors, $warnings) = $validator->validate(Factory::getComposerFile());
-
-if ($errors || $publishErrors || $warnings) {
-$messages = array(
-'error' => array_merge($errors, $publishErrors),
-'warning' => $warnings,
-);
-
-$output = '';
-foreach ($messages as $style => $msgs) {
-foreach ($msgs as $msg) {
-$output .= '<' . $style . '>' . $msg . '</' . $style . '>' . PHP_EOL;
-}
-}
-
-return rtrim($output);
-}
-
-return true;
-}
-
-private function checkHttp()
-{
-$protocol = extension_loaded('openssl') ? 'https' : 'http';
-try {
-$json = $this->rfs->getContents('packagist.org', $protocol . '://packagist.org/packages.json', false);
-} catch (\Exception $e) {
-return $e;
-}
-
-return true;
-}
-
-private function checkHttpProxy()
-{
-$protocol = extension_loaded('openssl') ? 'https' : 'http';
-try {
-$json = json_decode($this->rfs->getContents('packagist.org', $protocol . '://packagist.org/packages.json', false), true);
-$hash = reset($json['provider-includes']);
-$hash = $hash['sha256'];
-$path = str_replace('%hash%', $hash, key($json['provider-includes']));
-$provider = $this->rfs->getContents('packagist.org', $protocol . '://packagist.org/'.$path, false);
-
-if (hash('sha256', $provider) !== $hash) {
-return 'It seems that your proxy is modifying http traffic on the fly';
-}
-} catch (\Exception $e) {
-return $e;
-}
-
-return true;
-}
-
-
-
-
-
-
-
-
-private function checkHttpsProxyFullUriRequestParam()
-{
-$url = 'https://api.github.com/repos/Seldaek/jsonlint/zipball/1.0.0 ';
-try {
-$rfcResult = $this->rfs->getContents('api.github.com', $url, false);
-} catch (TransportException $e) {
-if (!extension_loaded('openssl')) {
-return 'You need the openssl extension installed for this check';
-}
-
-try {
-$this->rfs->getContents('api.github.com', $url, false, array('http' => array('request_fulluri' => false)));
-} catch (TransportException $e) {
-return 'Unable to assert the situation, maybe github is down ('.$e->getMessage().')';
-}
-
-return 'It seems there is a problem with your proxy server, try setting the "HTTP_PROXY_REQUEST_FULLURI" environment variable to "false"';
-}
-
-return true;
-}
-
-private function checkGithubOauth($domain, $token)
-{
-$this->getIO()->setAuthentication($domain, $token, 'x-oauth-basic');
-try {
-$url = $domain === 'github.com' ? 'https://api.'.$domain.'/user/repos' : 'https://'.$domain.'/api/v3/user/repos';
-
-return $this->rfs->getContents($domain, $url, false) ? true : 'Unexpected error';
-} catch (\Exception $e) {
-if ($e instanceof TransportException && $e->getCode() === 401) {
-return '<warning>The oauth token for '.$domain.' seems invalid, run "composer config --global --unset github-oauth.'.$domain.'" to remove it</warning>';
-}
-
-return $e;
-}
-}
-
-private function checkVersion()
-{
-$protocol = extension_loaded('openssl') ? 'https' : 'http';
-$latest = trim($this->rfs->getContents('getcomposer.org', $protocol . '://getcomposer.org/version', false));
-
-if (Composer::VERSION !== $latest && Composer::VERSION !== '82fc3b3eb3ef89fb61f385b50bd029b1df7fab4e') {
-return '<warning>Your are not running the latest version</warning>';
-}
-
-return true;
-}
-
-private function outputResult(OutputInterface $output, $result)
-{
-if (true === $result) {
-$output->writeln('<info>OK</info>');
-} else {
-$this->failures++;
-$output->writeln('<error>FAIL</error>');
-if ($result instanceof \Exception) {
-$output->writeln('['.get_class($result).'] '.$result->getMessage());
-} elseif ($result) {
-$output->writeln($result);
-}
-}
-}
-
-private function checkPlatform()
-{
-$output = '';
-$out = function ($msg, $style) use (&$output) {
-$output .= '<'.$style.'>'.$msg.'</'.$style.'>';
-};
-
-
- $errors = array();
-$warnings = array();
-
-$iniPath = php_ini_loaded_file();
-$displayIniMessage = false;
-if ($iniPath) {
-$iniMessage = PHP_EOL.PHP_EOL.'The php.ini used by your command-line PHP is: ' . $iniPath;
-} else {
-$iniMessage = PHP_EOL.PHP_EOL.'A php.ini file does not exist. You will have to create one.';
-}
-$iniMessage .= PHP_EOL.'If you can not modify the ini file, you can also run `php -d option=value` to modify ini values on the fly. You can use -d multiple times.';
-
-if (!ini_get('allow_url_fopen')) {
-$errors['allow_url_fopen'] = true;
-}
-
-if (version_compare(PHP_VERSION, '5.3.2', '<')) {
-$errors['php'] = PHP_VERSION;
-}
-
-if (!isset($errors['php']) && version_compare(PHP_VERSION, '5.3.4', '<')) {
-$warnings['php'] = PHP_VERSION;
-}
-
-if (!extension_loaded('openssl')) {
-$warnings['openssl'] = true;
-}
-
-if (ini_get('apc.enable_cli')) {
-$warnings['apc_cli'] = true;
-}
-
-ob_start();
-phpinfo(INFO_GENERAL);
-$phpinfo = ob_get_clean();
-if (preg_match('{Configure Command(?: *</td><td class="v">| *=> *)(.*?)(?:</td>|$)}m', $phpinfo, $match)) {
-$configure = $match[1];
-
-if (false !== strpos($configure, '--enable-sigchild')) {
-$warnings['sigchild'] = true;
-}
-
-if (false !== strpos($configure, '--with-curlwrappers')) {
-$warnings['curlwrappers'] = true;
-}
-}
-
-if (!empty($errors)) {
-foreach ($errors as $error => $current) {
-switch ($error) {
-case 'php':
-$text = PHP_EOL."Your PHP ({$current}) is too old, you must upgrade to PHP 5.3.2 or higher.";
-break;
-
-case 'allow_url_fopen':
-$text = PHP_EOL."The allow_url_fopen setting is incorrect.".PHP_EOL;
-$text .= "Add the following to the end of your `php.ini`:".PHP_EOL;
-$text .= "    allow_url_fopen = On";
-$displayIniMessage = true;
-break;
-}
-$out($text, 'error');
-}
-
-$output .= PHP_EOL;
-}
-
-if (!empty($warnings)) {
-foreach ($warnings as $warning => $current) {
-switch ($warning) {
-case 'apc_cli':
-$text = PHP_EOL."The apc.enable_cli setting is incorrect.".PHP_EOL;
-$text .= "Add the following to the end of your `php.ini`:".PHP_EOL;
-$text .= "    apc.enable_cli = Off";
-$displayIniMessage = true;
-break;
-
-case 'sigchild':
-$text = PHP_EOL."PHP was compiled with --enable-sigchild which can cause issues on some platforms.".PHP_EOL;
-$text .= "Recompile it without this flag if possible, see also:".PHP_EOL;
-$text .= "    https://bugs.php.net/bug.php?id=22999";
-break;
-
-case 'curlwrappers':
-$text = PHP_EOL."PHP was compiled with --with-curlwrappers which will cause issues with HTTP authentication and GitHub.".PHP_EOL;
-$text .= "Recompile it without this flag if possible";
-break;
-
-case 'openssl':
-$text = PHP_EOL."The openssl extension is missing, which will reduce the security and stability of Composer.".PHP_EOL;
-$text .= "If possible you should enable it or recompile php with --with-openssl";
-break;
-
-case 'php':
-$text = PHP_EOL."Your PHP ({$current}) is quite old, upgrading to PHP 5.3.4 or higher is recommended.".PHP_EOL;
-$text .= "Composer works with 5.3.2+ for most people, but there might be edge case issues.";
-break;
-}
-$out($text, 'warning');
-}
-}
-
-if ($displayIniMessage) {
-$out($iniMessage, 'warning');
-}
-
-return !$warnings && !$errors ? true : $output;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-
-namespace Composer\Command;
-
-use Composer\Factory;
-use Composer\IO\IOInterface;
-use Composer\DependencyResolver\Pool;
-use Composer\Package\LinkConstraint\VersionConstraint;
-use Composer\Repository\CompositeRepository;
-
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
-
-
-
-
-
-
-class ArchiveCommand extends Command
-{
-protected function configure()
-{
-$this
-->setName('archive')
-->setDescription('Create an archive of this composer package')
-->setDefinition(array(
-new InputArgument('package', InputArgument::OPTIONAL, 'The package to archive instead of the current project'),
-new InputArgument('version', InputArgument::OPTIONAL, 'The package version to archive'),
-new InputOption('format', 'f', InputOption::VALUE_REQUIRED, 'Format of the resulting archive: tar or zip', 'tar'),
-new InputOption('dir', false, InputOption::VALUE_REQUIRED, 'Write the archive to this directory', '.'),
-))
-->setHelp(<<<EOT
-The <info>archive</info> command creates an archive of the specified format
-containing the files and directories of the Composer project or the specified
-package in the specified version and writes it to the specified directory.
-
-<info>php composer.phar archive [--format=zip] [--dir=/foo] [package [version]]</info>
-
-EOT
-)
-;
-}
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-return $this->archive(
-$this->getIO(),
-$input->getArgument('package'),
-$input->getArgument('version'),
-$input->getOption('format'),
-$input->getOption('dir')
-);
-}
-
-protected function archive(IOInterface $io, $packageName = null, $version = null, $format = 'tar', $dest = '.')
-{
-$config = Factory::createConfig();
-$factory = new Factory;
-$archiveManager = $factory->createArchiveManager($config);
-
-if ($packageName) {
-$package = $this->selectPackage($io, $packageName, $version);
-
-if (!$package) {
-return 1;
-}
-} else {
-$package = $this->getComposer()->getPackage();
-}
-
-$io->write('<info>Creating the archive.</info>');
-$archiveManager->archive($package, $format, $dest);
-
-return 0;
-}
-
-protected function selectPackage(IOInterface $io, $packageName, $version = null)
-{
-$io->write('<info>Searching for the specified package.</info>');
-
-if ($composer = $this->getComposer(false)) {
-$localRepo = $composer->getRepositoryManager()->getLocalRepository();
-$repos = new CompositeRepository(array_merge(array($localRepo), $composer->getRepositoryManager()->getRepositories()));
-} else {
-$defaultRepos = Factory::createDefaultRepositories($this->getIO());
-$io->write('No composer.json found in the current directory, searching packages from ' . implode(', ', array_keys($defaultRepos)));
-$repos = new CompositeRepository($defaultRepos);
-}
-
-$pool = new Pool();
-$pool->addRepository($repos);
-
-$constraint = ($version) ? new VersionConstraint('>=', $version) : null;
-$packages = $pool->whatProvides($packageName, $constraint);
-
-if (count($packages) > 1) {
-$package = $packages[0];
-$io->write('<info>Found multiple matches, selected '.$package->getPrettyString().'.</info>');
-$io->write('Alternatives were '.implode(', ', array_map(function ($p) { return $p->getPrettyString(); }, $packages)).'.');
-$io->write('<comment>Please use a more specific constraint to pick a different package.</comment>');
-} elseif ($packages) {
-$package = $packages[0];
-$io->write('<info>Found an exact match '.$package->getPrettyString().'.</info>');
-} else {
-$io->write('<error>Could not find a package matching '.$packageName.'.</error>');
-return false;
-}
-
-return $package;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-
-namespace Composer\Command;
-
-use Composer\Composer;
-use Composer\Console\Application;
-use Composer\IO\IOInterface;
-use Composer\IO\NullIO;
-use Symfony\Component\Console\Command\Command as BaseCommand;
-
-
-
-
-
-
-
-abstract class Command extends BaseCommand
-{
-
-
-
-private $composer;
-
-
-
-
-private $io;
-
-
-
-
-
-public function getComposer($required = true)
-{
-if (null === $this->composer) {
-$application = $this->getApplication();
-if ($application instanceof Application) {
-
-$this->composer = $application->getComposer($required);
-} elseif ($required) {
-throw new \RuntimeException(
-'Could not create a Composer\Composer instance, you must inject '.
-'one if this command is not used with a Composer\Console\Application instance'
-);
-}
-}
-
-return $this->composer;
-}
-
-
-
-
-public function setComposer(Composer $composer)
-{
-$this->composer = $composer;
-}
-
-
-
-
-public function getIO()
-{
-if (null === $this->io) {
-$application = $this->getApplication();
-if ($application instanceof Application) {
-
-$this->io = $application->getIO();
-} else {
-$this->io = new NullIO();
-}
-}
-
-return $this->io;
-}
-
-
-
-
-public function setIO(IOInterface $io)
-{
-$this->io = $io;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-
-namespace Composer\Command;
-
-use Composer\Config;
-use Composer\Factory;
-use Composer\Installer;
-use Composer\Installer\ProjectInstaller;
-use Composer\Installer\InstallationManager;
-use Composer\IO\IOInterface;
-use Composer\Package\BasePackage;
-use Composer\Package\LinkConstraint\VersionConstraint;
-use Composer\DependencyResolver\Pool;
-use Composer\DependencyResolver\Operation\InstallOperation;
-use Composer\Repository\ComposerRepository;
-use Composer\Repository\CompositeRepository;
-use Composer\Repository\FilesystemRepository;
-use Composer\Repository\InstalledFilesystemRepository;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Finder\Finder;
-use Composer\Json\JsonFile;
-use Composer\Util\Filesystem;
-use Composer\Util\RemoteFilesystem;
-use Composer\Package\Version\VersionParser;
-
-
-
-
-
-
-
-class CreateProjectCommand extends Command
-{
-protected function configure()
-{
-$this
-->setName('create-project')
-->setDescription('Create new project from a package into given directory.')
-->setDefinition(array(
-new InputArgument('package', InputArgument::REQUIRED, 'Package name to be installed'),
-new InputArgument('directory', InputArgument::OPTIONAL, 'Directory where the files should be created'),
-new InputArgument('version', InputArgument::OPTIONAL, 'Version, will defaults to latest'),
-new InputOption('stability', 's', InputOption::VALUE_REQUIRED, 'Minimum-stability allowed (unless a version is specified).', 'stable'),
-new InputOption('prefer-source', null, InputOption::VALUE_NONE, 'Forces installation from package sources when possible, including VCS information.'),
-new InputOption('prefer-dist', null, InputOption::VALUE_NONE, 'Forces installation from package dist even for dev versions.'),
-new InputOption('repository-url', null, InputOption::VALUE_REQUIRED, 'Pick a different repository url to look for the package.'),
-new InputOption('dev', null, InputOption::VALUE_NONE, 'Whether to install dependencies for development.'),
-new InputOption('no-custom-installers', null, InputOption::VALUE_NONE, 'Whether to disable custom installers.'),
-new InputOption('no-scripts', null, InputOption::VALUE_NONE, 'Whether to prevent execution of all defined scripts in the root package.'),
-new InputOption('no-progress', null, InputOption::VALUE_NONE, 'Do not output download progress.'),
-new InputOption('keep-vcs', null, InputOption::VALUE_NONE, 'Whether to prevent deletion vcs folder.'),
-))
-->setHelp(<<<EOT
-The <info>create-project</info> command creates a new project from a given
-package into a new directory. You can use this command to bootstrap new
-projects or setup a clean version-controlled installation
-for developers of your project.
-
-<info>php composer.phar create-project vendor/project target-directory [version]</info>
-
-You can also specify the version with the package name using = or : as separator.
-
-To install unstable packages, either specify the version you want, or use the
---stability=dev (where dev can be one of RC, beta, alpha or dev).
-
-To setup a developer workable version you should create the project using the source
-controlled code by appending the <info>'--prefer-source'</info> flag. Also, it is
-advisable to install all dependencies required for development by appending the
-<info>'--dev'</info> flag.
-
-To install a package from another repository than the default one you
-can pass the <info>'--repository-url=http://myrepository.org'</info> flag.
-
-EOT
-)
-;
-}
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-$config = Factory::createConfig();
-
-$preferSource = false;
-$preferDist = false;
-switch ($config->get('preferred-install')) {
-case 'source':
-$preferSource = true;
-break;
-case 'dist':
-$preferDist = true;
-break;
-case 'auto':
-default:
-
- break;
-}
-if ($input->getOption('prefer-source') || $input->getOption('prefer-dist')) {
-$preferSource = $input->getOption('prefer-source');
-$preferDist = $input->getOption('prefer-dist');
-}
-
-return $this->installProject(
-$this->getIO(),
-$config,
-$input->getArgument('package'),
-$input->getArgument('directory'),
-$input->getArgument('version'),
-$input->getOption('stability'),
-$preferSource,
-$preferDist,
-$input->getOption('dev'),
-$input->getOption('repository-url'),
-$input->getOption('no-custom-installers'),
-$input->getOption('no-scripts'),
-$input->getOption('keep-vcs'),
-$input->getOption('no-progress')
-);
-}
-
-public function installProject(IOInterface $io, $config, $packageName, $directory = null, $packageVersion = null, $stability = 'stable', $preferSource = false, $preferDist = false, $installDevPackages = false, $repositoryUrl = null, $disableCustomInstallers = false, $noScripts = false, $keepVcs = false, $noProgress = false)
-{
-$stability = strtolower($stability);
-if ($stability === 'rc') {
-$stability = 'RC';
-}
-if (!isset(BasePackage::$stabilities[$stability])) {
-throw new \InvalidArgumentException('Invalid stability provided ('.$stability.'), must be one of: '.implode(', ', array_keys(BasePackage::$stabilities)));
-}
-
-if (null === $repositoryUrl) {
-$sourceRepo = new CompositeRepository(Factory::createDefaultRepositories($io, $config));
-} elseif ("json" === pathinfo($repositoryUrl, PATHINFO_EXTENSION)) {
-$sourceRepo = new FilesystemRepository(new JsonFile($repositoryUrl, new RemoteFilesystem($io)));
-} elseif (0 === strpos($repositoryUrl, 'http')) {
-$sourceRepo = new ComposerRepository(array('url' => $repositoryUrl), $io, $config);
-} else {
-throw new \InvalidArgumentException("Invalid repository url given. Has to be a .json file or an http url.");
-}
-
-$parser = new VersionParser();
-$candidates = array();
-$requirements = $parser->parseNameVersionPairs(array($packageName));
-$name = strtolower($requirements[0]['name']);
-if (!$packageVersion && isset($requirements[0]['version'])) {
-$packageVersion = $requirements[0]['version'];
-}
-
-$pool = new Pool($packageVersion ? 'dev' : $stability);
-$pool->addRepository($sourceRepo);
-
-$constraint = $packageVersion ? new VersionConstraint('=', $parser->normalize($packageVersion)) : null;
-$candidates = $pool->whatProvides($name, $constraint);
-foreach ($candidates as $key => $candidate) {
-if ($candidate->getName() !== $name) {
-unset($candidates[$key]);
-}
-}
-
-if (!$candidates) {
-throw new \InvalidArgumentException("Could not find package $name" . ($packageVersion ? " with version $packageVersion." : " with stability $stability."));
-}
-
-if (null === $directory) {
-$parts = explode("/", $name, 2);
-$directory = getcwd() . DIRECTORY_SEPARATOR . array_pop($parts);
-}
-
-
- $package = $candidates[0];
-foreach ($candidates as $candidate) {
-if (version_compare($package->getVersion(), $candidate->getVersion(), '<')) {
-$package = $candidate;
-}
-}
-unset($candidates);
-
-$io->write('<info>Installing ' . $package->getName() . ' (' . VersionParser::formatVersion($package, false) . ')</info>');
-
-if ($disableCustomInstallers) {
-$io->write('<info>Custom installers have been disabled.</info>');
-}
-
-if (0 === strpos($package->getPrettyVersion(), 'dev-') && in_array($package->getSourceType(), array('git', 'hg'))) {
-$package->setSourceReference(substr($package->getPrettyVersion(), 4));
-}
-
-$dm = $this->createDownloadManager($io, $config);
-$dm->setPreferSource($preferSource)
-->setPreferDist($preferDist)
-->setOutputProgress(!$noProgress);
-
-$projectInstaller = new ProjectInstaller($directory, $dm);
-$im = $this->createInstallationManager();
-$im->addInstaller($projectInstaller);
-$im->install(new InstalledFilesystemRepository(new JsonFile('php://memory')), new InstallOperation($package));
-$im->notifyInstalls();
-
-$installedFromVcs = 'source' === $package->getInstallationSource();
-
-$io->write('<info>Created project in ' . $directory . '</info>');
-chdir($directory);
-
-putenv('COMPOSER_ROOT_VERSION='.$package->getPrettyVersion());
-
-
- unset($dm, $im, $config, $projectInstaller, $sourceRepo, $package);
-
-
- $composer = Factory::create($io);
-$installer = Installer::create($io, $composer);
-
-$installer->setPreferSource($preferSource)
-->setPreferDist($preferDist)
-->setDevMode($installDevPackages)
-->setRunScripts( ! $noScripts);
-
-if ($disableCustomInstallers) {
-$installer->disableCustomInstallers();
-}
-
-if (!$installer->run()) {
-return 1;
-}
-
-if (!$keepVcs && $installedFromVcs
-&& (
-!$io->isInteractive()
-|| $io->askConfirmation('<info>Do you want to remove the existing VCS (.git, .svn..) history?</info> [<comment>Y,n</comment>]? ', true)
-)
-) {
-$finder = new Finder();
-$finder->depth(0)->directories()->in(getcwd())->ignoreVCS(false)->ignoreDotFiles(false);
-foreach (array('.svn', '_svn', 'CVS', '_darcs', '.arch-params', '.monotone', '.bzr', '.git', '.hg') as $vcsName) {
-$finder->name($vcsName);
-}
-
-try {
-$fs = new Filesystem();
-$dirs = iterator_to_array($finder);
-unset($finder);
-foreach ($dirs as $dir) {
-if (!$fs->removeDirectory($dir)) {
-throw new \RuntimeException('Could not remove '.$dir);
-}
-}
-} catch (\Exception $e) {
-$io->write('<error>An error occurred while removing the VCS metadata: '.$e->getMessage().'</error>');
-}
-}
-
-return 0;
-}
-
-protected function createDownloadManager(IOInterface $io, Config $config)
-{
-$factory = new Factory();
-
-return $factory->createDownloadManager($io, $config);
-}
-
-protected function createInstallationManager()
-{
-return new InstallationManager();
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-
-namespace Composer\Command;
-
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-
-
-
-
-class AboutCommand extends Command
-{
-protected function configure()
-{
-$this
-->setName('about')
-->setDescription('Short information about Composer')
-->setHelp(<<<EOT
-<info>php composer.phar about</info>
-EOT
-)
-;
-}
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-$output->writeln(<<<EOT
-<info>Composer - Package Management for PHP</info>
-<comment>Composer is a dependency manager tracking local dependencies of your projects and libraries.
-See http://getcomposer.org/ for more information.</comment>
-EOT
-);
-
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-
-namespace Composer\Command;
-
-use Composer\Composer;
-use Composer\DependencyResolver\Pool;
-use Composer\DependencyResolver\DefaultPolicy;
-use Composer\Factory;
-use Composer\Package\CompletePackageInterface;
-use Composer\Package\LinkConstraint\VersionConstraint;
-use Composer\Package\Version\VersionParser;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
-use Composer\Repository\ArrayRepository;
-use Composer\Repository\CompositeRepository;
-use Composer\Repository\ComposerRepository;
-use Composer\Repository\PlatformRepository;
-use Composer\Repository\RepositoryInterface;
-
-
-
-
-
-class ShowCommand extends Command
-{
-protected $versionParser;
-
-protected function configure()
-{
-$this
-->setName('show')
-->setDescription('Show information about packages')
-->setDefinition(array(
-new InputArgument('package', InputArgument::OPTIONAL, 'Package to inspect'),
-new InputArgument('version', InputArgument::OPTIONAL, 'Version or version constraint to inspect'),
-new InputOption('installed', 'i', InputOption::VALUE_NONE, 'List installed packages only'),
-new InputOption('platform', 'p', InputOption::VALUE_NONE, 'List platform packages only'),
-new InputOption('available', 'a', InputOption::VALUE_NONE, 'List available packages only'),
-new InputOption('self', 's', InputOption::VALUE_NONE, 'Show the root package information'),
-new InputOption('name-only', 'N', InputOption::VALUE_NONE, 'List package names only'),
-))
-->setHelp(<<<EOT
-The show command displays detailed information about a package, or
-lists all packages available.
-
-EOT
-)
-;
-}
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-$this->versionParser = new VersionParser;
-
-
- $platformRepo = new PlatformRepository;
-
-if ($input->getOption('self')) {
-$package = $this->getComposer(false)->getPackage();
-$repos = $installedRepo = new ArrayRepository(array($package));
-} elseif ($input->getOption('platform')) {
-$repos = $installedRepo = $platformRepo;
-} elseif ($input->getOption('installed')) {
-$repos = $installedRepo = $this->getComposer()->getRepositoryManager()->getLocalRepository();
-} elseif ($input->getOption('available')) {
-$installedRepo = $platformRepo;
-if ($composer = $this->getComposer(false)) {
-$repos = new CompositeRepository($composer->getRepositoryManager()->getRepositories());
-} else {
-$defaultRepos = Factory::createDefaultRepositories($this->getIO());
-$repos = new CompositeRepository($defaultRepos);
-$output->writeln('No composer.json found in the current directory, showing available packages from ' . implode(', ', array_keys($defaultRepos)));
-}
-} elseif ($composer = $this->getComposer(false)) {
-$composer = $this->getComposer();
-$localRepo = $composer->getRepositoryManager()->getLocalRepository();
-$installedRepo = new CompositeRepository(array($localRepo, $platformRepo));
-$repos = new CompositeRepository(array_merge(array($installedRepo), $composer->getRepositoryManager()->getRepositories()));
-} else {
-$defaultRepos = Factory::createDefaultRepositories($this->getIO());
-$output->writeln('No composer.json found in the current directory, showing available packages from ' . implode(', ', array_keys($defaultRepos)));
-$installedRepo = $platformRepo;
-$repos = new CompositeRepository(array_merge(array($installedRepo), $defaultRepos));
-}
-
-
- if ($input->getArgument('package') || !empty($package)) {
-$versions = array();
-if (empty($package)) {
-list($package, $versions) = $this->getPackage($installedRepo, $repos, $input->getArgument('package'), $input->getArgument('version'));
-
-if (!$package) {
-throw new \InvalidArgumentException('Package '.$input->getArgument('package').' not found');
-}
-} else {
-$versions = array($package->getPrettyVersion() => $package->getVersion());
-}
-
-$this->printMeta($input, $output, $package, $versions, $installedRepo, $repos);
-$this->printLinks($input, $output, $package, 'requires');
-$this->printLinks($input, $output, $package, 'devRequires', 'requires (dev)');
-if ($package->getSuggests()) {
-$output->writeln("\n<info>suggests</info>");
-foreach ($package->getSuggests() as $suggested => $reason) {
-$output->writeln($suggested . ' <comment>' . $reason . '</comment>');
-}
-}
-$this->printLinks($input, $output, $package, 'provides');
-$this->printLinks($input, $output, $package, 'conflicts');
-$this->printLinks($input, $output, $package, 'replaces');
-
-return;
-}
-
-
- $packages = array();
-
-if ($repos instanceof CompositeRepository) {
-$repos = $repos->getRepositories();
-} elseif (!is_array($repos)) {
-$repos = array($repos);
-}
-
-foreach ($repos as $repo) {
-if ($repo === $platformRepo) {
-$type = '<info>platform</info>:';
-} elseif (
-$repo === $installedRepo
-|| ($installedRepo instanceof CompositeRepository && in_array($repo, $installedRepo->getRepositories(), true))
-) {
-$type = '<info>installed</info>:';
-} else {
-$type = '<comment>available</comment>:';
-}
-if ($repo instanceof ComposerRepository && $repo->hasProviders()) {
-foreach ($repo->getProviderNames() as $name) {
-$packages[$type][$name] = $name;
-}
-} else {
-foreach ($repo->getPackages() as $package) {
-if (!isset($packages[$type][$package->getName()])
-|| !is_object($packages[$type][$package->getName()])
-|| version_compare($packages[$type][$package->getName()]->getVersion(), $package->getVersion(), '<')
-) {
-$packages[$type][$package->getName()] = $package;
-}
-}
-}
-}
-
-$tree = !$input->getOption('platform') && !$input->getOption('installed') && !$input->getOption('available');
-$indent = $tree ? '  ' : '';
-foreach (array('<info>platform</info>:' => true, '<comment>available</comment>:' => false, '<info>installed</info>:' => true) as $type => $showVersion) {
-if (isset($packages[$type])) {
-if ($tree) {
-$output->writeln($type);
-}
-ksort($packages[$type]);
-
-$nameLength = $versionLength = 0;
-foreach ($packages[$type] as $package) {
-if (is_object($package)) {
-$nameLength = max($nameLength, strlen($package->getPrettyName()));
-$versionLength = max($versionLength, strlen($this->versionParser->formatVersion($package)));
-} else {
-$nameLength = max($nameLength, $package);
-}
-}
-list($width) = $this->getApplication()->getTerminalDimensions();
-if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-$width--;
-}
-
-$writeVersion = !$input->getOption('name-only') && $showVersion && ($nameLength + $versionLength + 3 <= $width);
-$writeDescription = !$input->getOption('name-only') && ($nameLength + ($showVersion ? $versionLength : 0) + 24 <= $width);
-foreach ($packages[$type] as $package) {
-if (is_object($package)) {
-$output->write($indent . str_pad($package->getPrettyName(), $nameLength, ' '), false);
-
-if ($writeVersion) {
-$output->write(' ' . str_pad($this->versionParser->formatVersion($package), $versionLength, ' '), false);
-}
-
-if ($writeDescription) {
-$description = strtok($package->getDescription(), "\r\n");
-$remaining = $width - $nameLength - $versionLength - 4;
-if (strlen($description) > $remaining) {
-$description = substr($description, 0, $remaining - 3) . '...';
-}
-$output->write(' ' . $description);
-}
-} else {
-$output->write($indent . $package);
-}
-$output->writeln('');
-}
-if ($tree) {
-$output->writeln('');
-}
-}
-}
-}
-
-
-

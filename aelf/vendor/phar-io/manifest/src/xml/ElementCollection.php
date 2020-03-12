@@ -1,58 +1,58 @@
-"use strict";
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-/* eslint-disable import-helpers/order-imports */
-var unpack = require('caniuse-lite').feature;
+namespace PharIo\Manifest;
 
-function browsersSort(a, b) {
-  a = a.split(' ');
-  b = b.split(' ');
+use DOMElement;
+use DOMNodeList;
 
-  if (a[0] > b[0]) {
-    return 1;
-  } else if (a[0] < b[0]) {
-    return -1;
-  } else {
-    return Math.sign(parseFloat(a[1]) - parseFloat(b[1]));
-  }
-} // Convert Can I Use data
+abstract class ElementCollection implements \Iterator {
+    /**
+     * @var DOMNodeList
+     */
+    private $nodeList;
 
+    private $position;
 
-function f(data, opts, callback) {
-  data = unpack(data);
-
-  if (!callback) {
-    var _ref = [opts, {}];
-    callback = _ref[0];
-    opts = _ref[1];
-  }
-
-  var match = opts.match || /\sx($|\s)/;
-  var need = [];
-
-  for (var browser in data.stats) {
-    var versions = data.stats[browser];
-
-    for (var version in versions) {
-      var support = versions[version];
-
-      if (support.match(match)) {
-        need.push(browser + ' ' + version);
-      }
+    /**
+     * ElementCollection constructor.
+     *
+     * @param DOMNodeList $nodeList
+     */
+    public function __construct(DOMNodeList $nodeList) {
+        $this->nodeList = $nodeList;
+        $this->position = 0;
     }
-  }
 
-  callback(need.sort(browsersSort));
-} // Add data for all properties
+    abstract public function current();
 
+    /**
+     * @return DOMElement
+     */
+    protected function getCurrentElement() {
+        return $this->nodeList->item($this->position);
+    }
 
-var result = {};
+    public function next() {
+        $this->position++;
+    }
 
-function prefix(names, data) {
-  for (var _iterator = names, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
-    var _ref2;
+    public function key() {
+        return $this->position;
+    }
 
-    if (_isArray) {
-      if (_i >= _iterator.length) break;
-      _ref2 = _iterator[_i++];
-    } else {
-      _i = _iter
+    public function valid() {
+        return $this->position < $this->nodeList->length;
+    }
+
+    public function rewind() {
+        $this->position = 0;
+    }
+}

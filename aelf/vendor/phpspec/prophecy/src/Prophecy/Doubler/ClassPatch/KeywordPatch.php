@@ -1,117 +1,140 @@
 <?php
 
-namespace Hhxsv5\PhpMultiCurl;
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-class Curl
+namespace Prophecy\Doubler\ClassPatch;
+
+use Prophecy\Doubler\Generator\Node\ClassNode;
+
+/**
+ * Remove method functionality from the double which will clash with php keywords.
+ *
+ * @author Milan Magudia <milan@magudia.com>
+ */
+class KeywordPatch implements ClassPatchInterface
 {
-    protected $id;
-    protected $handle;
-
-    protected $meetPhp55 = false;
+    /**
+     * Support any class
+     *
+     * @param ClassNode $node
+     *
+     * @return boolean
+     */
+    public function supports(ClassNode $node)
+    {
+        return true;
+    }
 
     /**
-     * @var Response
+     * Remove methods that clash with php keywords
+     *
+     * @param ClassNode $node
      */
-    protected $response;
-
-    protected $multi = false;
-
-    protected $options = [];
-
-    protected static $defaultOptions = [
-        //bool
-        CURLOPT_HEADER         => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_RETURNTRANSFER => true,
-
-        //int
-        CURLOPT_MAXREDIRS      => 3,
-        CURLOPT_TIMEOUT        => 6,
-        CURLOPT_CONNECTTIMEOUT => 3,
-
-        //string
-        CURLOPT_USERAGENT      => 'Multi-cURL client v1.5.0',
-    ];
-
-    public function __construct($id = null, array $options = [])
+    public function apply(ClassNode $node)
     {
-        $this->id = $id;
-        $this->options = $options + self::$defaultOptions;
-        $this->meetPhp55 = version_compare(PHP_VERSION, '5.5.0', '>=');
-    }
-
-    protected function init()
-    {
-        if ($this->meetPhp55) {
-            if ($this->handle === null) {
-                $this->handle = curl_init();
-            } else {
-                curl_reset($this->handle); //Reuse cUrl handle: since 5.5.0
-            }
-        } else {
-            if ($this->handle !== null) {
-                curl_close($this->handle);
-            }
-            $this->handle = curl_init();
-        }
-        curl_setopt_array($this->handle, $this->options);
-    }
-
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    public function makeGet($url, $params = null, array $headers = [])
-    {
-        $this->init();
-
-        if (is_string($params) || is_array($params)) {
-            is_array($params) AND $params = http_build_query($params);
-            $url = rtrim($url, '?');
-            if (strpos($url, '?') !== false) {
-                $url .= '&' . $params;
-            } else {
-                $url .= '?' . $params;
-            }
-        }
-
-        curl_setopt_array($this->handle, [CURLOPT_URL => $url, CURLOPT_HTTPGET => true]);
-
-        if (!empty($headers)) {
-            curl_setopt($this->handle, CURLOPT_HTTPHEADER, $headers);
+        $methodNames = array_keys($node->getMethods());
+        $methodsToRemove = array_intersect($methodNames, $this->getKeywords());
+        foreach ($methodsToRemove as $methodName) {
+            $node->removeMethod($methodName);
         }
     }
 
-    public function makePost($url, $params = null, array $headers = [])
+    /**
+     * Returns patch priority, which determines when patch will be applied.
+     *
+     * @return int Priority number (higher - earlier)
+     */
+    public function getPriority()
     {
-        $this->init();
-
-        curl_setopt_array($this->handle, [CURLOPT_URL => $url, CURLOPT_POST => true]);
-
-        //CURLFile support
-        if (is_array($params)) {
-            $hasUploadFile = false;
-            if ($this->meetPhp55) {//CURLFile: since 5.5.0
-                foreach ($params as $k => $v) {
-                    if ($v instanceof \CURLFile) {
-                        $hasUploadFile = true;
-                        break;
-                    }
-                }
-            }
-            $hasUploadFile OR $params = http_build_query($params);
-        }
-
-        //$params: array => multipart/form-data, string => application/x-www-form-urlencoded
-        if (!empty($params)) {
-            curl_setopt($this->handle, CURLOPT_POSTFIELDS, $params);
-        }
-
-        if (!empty($headers)) {
-            curl_setopt($this->handle, CURLOPT_HTTPHEADER, $headers);
-        }
+        return 49;
     }
 
-  
+    /**
+     * Returns array of php keywords.
+     *
+     * @return array
+     */
+    private function getKeywords()
+    {
+        if (\PHP_VERSION_ID >= 70000) {
+            return array('__halt_compiler');
+        }
+
+        return array(
+            '__halt_compiler',
+            'abstract',
+            'and',
+            'array',
+            'as',
+            'break',
+            'callable',
+            'case',
+            'catch',
+            'class',
+            'clone',
+            'const',
+            'continue',
+            'declare',
+            'default',
+            'die',
+            'do',
+            'echo',
+            'else',
+            'elseif',
+            'empty',
+            'enddeclare',
+            'endfor',
+            'endforeach',
+            'endif',
+            'endswitch',
+            'endwhile',
+            'eval',
+            'exit',
+            'extends',
+            'final',
+            'finally',
+            'for',
+            'foreach',
+            'function',
+            'global',
+            'goto',
+            'if',
+            'implements',
+            'include',
+            'include_once',
+            'instanceof',
+            'insteadof',
+            'interface',
+            'isset',
+            'list',
+            'namespace',
+            'new',
+            'or',
+            'print',
+            'private',
+            'protected',
+            'public',
+            'require',
+            'require_once',
+            'return',
+            'static',
+            'switch',
+            'throw',
+            'trait',
+            'try',
+            'unset',
+            'use',
+            'var',
+            'while',
+            'xor',
+            'yield',
+        );
+    }
+}

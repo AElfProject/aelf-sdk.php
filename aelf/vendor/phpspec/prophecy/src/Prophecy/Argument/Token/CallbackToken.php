@@ -1,61 +1,75 @@
 <?php
 
-namespace StephenHill;
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use InvalidArgumentException;
+namespace Prophecy\Argument\Token;
 
-class BCMathService implements ServiceInterface
+use Prophecy\Exception\InvalidArgumentException;
+
+/**
+ * Callback-verified token.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class CallbackToken implements TokenInterface
 {
-    /**
-     * @var string
-     * @since v1.1.0
-     */
-    protected $alphabet;
+    private $callback;
 
     /**
-     * @var int
-     * @since v1.1.0
-     */
-    protected $base;
-
-    /**
-     * Constructor
+     * Initializes token.
      *
-     * @param string $alphabet optional
-     * @since v1.1.0
+     * @param callable $callback
+     *
+     * @throws \Prophecy\Exception\InvalidArgumentException
      */
-    public function __construct($alphabet = null)
+    public function __construct($callback)
     {
-        // Handle null alphabet
-        if (is_null($alphabet) === true) {
-            $alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+        if (!is_callable($callback)) {
+            throw new InvalidArgumentException(sprintf(
+                'Callable expected as an argument to CallbackToken, but got %s.',
+                gettype($callback)
+            ));
         }
 
-        // Type validation
-        if (is_string($alphabet) === false) {
-            throw new InvalidArgumentException('Argument $alphabet must be a string.');
-        }
-
-        // The alphabet must contain 58 characters
-        if (strlen($alphabet) !== 58) {
-            throw new InvalidArgumentException('Argument $alphabet must contain 58 characters.');
-        }
-
-        $this->alphabet = $alphabet;
-        $this->base = strlen($alphabet);
+        $this->callback = $callback;
     }
-    /**
-     * Encode a string into base58.
-     *
-     * @param  string $string The string you wish to encode.
-     * @since Release v1.1.0
-     * @return string The Base58 encoded string.
-     */
-    public function encode($string)
-    {
-        // Type validation
-        if (is_string($string) === false) {
-            throw new InvalidArgumentException('Argument $string must be a string.');
-        }
 
-        // If the string is empty, then the encoded stri
+    /**
+     * Scores 7 if callback returns true, false otherwise.
+     *
+     * @param $argument
+     *
+     * @return bool|int
+     */
+    public function scoreArgument($argument)
+    {
+        return call_user_func($this->callback, $argument) ? 7 : false;
+    }
+
+    /**
+     * Returns false.
+     *
+     * @return bool
+     */
+    public function isLast()
+    {
+        return false;
+    }
+
+    /**
+     * Returns string representation for token.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return 'callback()';
+    }
+}

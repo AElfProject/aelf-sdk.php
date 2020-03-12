@@ -1,64 +1,60 @@
 <?php
-namespace Yurun\Util\YurunHttp\Http\Psr7;
+/*
+ * This file is part of sebastian/comparator.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Yurun\Util\YurunHttp\Http\Psr7\Uri;
-use Psr\Http\Message\UriInterface;
-use Psr\Http\Message\RequestInterface;
-use Yurun\Util\YurunHttp\Http\Psr7\Consts\RequestMethod;
+namespace SebastianBergmann\Comparator;
 
-class Request extends AbstractMessage implements RequestInterface
+/**
+ * Compares values for type equality.
+ */
+class TypeComparator extends Comparator
 {
     /**
-     * 请求地址
-     * @var Yurun\Util\YurunHttp\Http\Psr7\Uri
+     * Returns whether the comparator can compare two values.
+     *
+     * @param mixed $expected The first value to compare
+     * @param mixed $actual   The second value to compare
+     *
+     * @return bool
      */
-    protected $uri;
-
-    /**
-     * 请求目标
-     * @var mixed
-     */
-    protected $requestTarget;
-
-    /**
-     * 请求方法
-     * @var string
-     */
-    protected $method;
-
-    /**
-     * 构造方法
-     * @param string|Yurun\Util\YurunHttp\Http\Psr7\Uri $url
-     * @param array $headers
-     * @param string $body
-     * @param string $method
-     * @param string $version
-     */
-    public function __construct($uri = null, array $headers = [], $body = '', $method = RequestMethod::GET, $version = '1.1')
+    public function accepts($expected, $actual)
     {
-        parent::__construct($body);
-        if(! $uri instanceof Uri)
-        {
-            $this->uri = new Uri($uri);
-        }
-        else if(null !== $uri)
-        {
-            $this->uri = $uri;
-        }
-        $this->setHeaders($headers);
-        $this->method = strtoupper($method);
-        $this->protocolVersion = $version;
+        return true;
     }
 
     /**
-     * Retrieves the message's request target.
+     * Asserts that two values are equal.
      *
-     * Retrieves the message's request-target either as it will appear (for
-     * clients), as it appeared at request (for servers), or as it was
-     * specified for the instance (see withRequestTarget()).
+     * @param mixed $expected     First value to compare
+     * @param mixed $actual       Second value to compare
+     * @param float $delta        Allowed numerical distance between two values to consider them equal
+     * @param bool  $canonicalize Arrays are sorted before comparison when set to true
+     * @param bool  $ignoreCase   Case is ignored when set to true
      *
-     * In most cases, this will be the origin-form of the composed URI,
-     * unless a value was provided to the concrete implementation (see
-     * withRequestTarget() below).
-     *
-     * If no URI is available, and no request-target has bee
+     * @throws ComparisonFailure
+     */
+    public function assertEquals($expected, $actual, $delta = 0.0, $canonicalize = false, $ignoreCase = false)
+    {
+        if (\gettype($expected) != \gettype($actual)) {
+            throw new ComparisonFailure(
+                $expected,
+                $actual,
+                // we don't need a diff
+                '',
+                '',
+                false,
+                \sprintf(
+                    '%s does not match expected type "%s".',
+                    $this->exporter->shortenedExport($actual),
+                    \gettype($expected)
+                )
+            );
+        }
+    }
+}

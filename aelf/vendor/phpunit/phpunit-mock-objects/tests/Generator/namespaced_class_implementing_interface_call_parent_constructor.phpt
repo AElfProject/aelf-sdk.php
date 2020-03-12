@@ -1,50 +1,83 @@
-on(
-                       "Invalid data type for int32 field");
-                }
-                if (bccomp($value, 4294967295) > 0) {
-                    throw new GPBDecodeException(
-                        "Uint32 too large");
-                }
-                return $value;
-            case GPBType::INT64:
-            case GPBType::SINT64:
-            case GPBType::SFIXED64:
-                if (is_null($value)) {
-                    return $this->defaultValue($field);
-                }
-                if (!is_numeric($value)) {
-                   throw new GPBDecodeException(
-                       "Invalid data type for int64 field");
-                }
-                if (is_string($value) && trim($value) !== $value) {
-                   throw new GPBDecodeException(
-                       "Invalid data type for int64 field");
-                }
-                if (bccomp($value, "9223372036854775807") > 0) {
-                    throw new GPBDecodeException(
-                        "Int64 too large");
-                }
-                if (bccomp($value, "-9223372036854775808") < 0) {
-                    throw new GPBDecodeException(
-                        "Int64 too small");
-                }
-                return $value;
-            case GPBType::UINT64:
-            case GPBType::FIXED64:
-                if (is_null($value)) {
-                    return $this->defaultValue($field);
-                }
-                if (!is_numeric($value)) {
-                   throw new GPBDecodeException(
-                       "Invalid data type for int64 field");
-                }
-                if (is_string($value) && trim($value) !== $value) {
-                   throw new GPBDecodeException(
-                       "Invalid data type for int64 field");
-                }
-                if (bccomp($value, "18446744073709551615") > 0) {
-                    throw new GPBDecodeException(
-                        "Uint64 too large");
-                }
-                if (bccomp($value, "9223372036854775807") > 0) {
-                   
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('NS\Foo', array(), 'MockFoo', true)
+--FILE--
+<?php
+namespace NS;
+
+interface IFoo
+{
+    public function __construct($bar);
+}
+
+class Foo implements IFoo
+{
+    public function __construct($bar)
+    {
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new \PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'NS\Foo',
+    array(),
+    'MockFoo',
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends NS\Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = [];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

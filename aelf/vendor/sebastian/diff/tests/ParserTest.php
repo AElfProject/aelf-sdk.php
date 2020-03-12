@@ -1,196 +1,151 @@
-<?php
+<?php declare(strict_types=1);
+/*
+ * This file is part of sebastian/diff.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace Mdanter\Ecc\Math;
+namespace SebastianBergmann\Diff;
 
-use Mdanter\Ecc\Primitives\GeneratorPoint;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Debug helper class to trace all calls to math functions along with the provided params and result.
+ * @covers SebastianBergmann\Diff\Parser
+ *
+ * @uses SebastianBergmann\Diff\Chunk
+ * @uses SebastianBergmann\Diff\Diff
+ * @uses SebastianBergmann\Diff\Line
  */
-class DebugDecorator implements GmpMathInterface
+final class ParserTest extends TestCase
 {
     /**
-     * @var GmpMathInterface
+     * @var Parser
      */
-    private $adapter;
+    private $parser;
 
-    /**
-     * @var callable
-     */
-    private $writer;
-
-    /**
-     * @param GmpMathInterface     $adapter
-     * @param callable|null        $callback
-     */
-    public function __construct(GmpMathInterface $adapter, callable $callback = null)
+    protected function setUp()
     {
-        $this->adapter = $adapter;
-        $this->writer = $callback ?: function ($message) {
-            echo $message;
-        };
+        $this->parser = new Parser;
     }
 
-    /**
-     *
-     * @param string $message
-     */
-    private function write($message)
+    public function testParse()
     {
-        call_user_func($this->writer, $message);
+        $content = \file_get_contents(__DIR__ . '/fixtures/patch.txt');
+
+        $diffs = $this->parser->parse($content);
+
+        $this->assertInternalType('array', $diffs);
+        $this->assertContainsOnlyInstancesOf(Diff::class, $diffs);
+        $this->assertCount(1, $diffs);
+
+        $chunks = $diffs[0]->getChunks();
+        $this->assertInternalType('array', $chunks);
+        $this->assertContainsOnlyInstancesOf(Chunk::class, $chunks);
+
+        $this->assertCount(1, $chunks);
+
+        $this->assertSame(20, $chunks[0]->getStart());
+
+        $this->assertCount(4, $chunks[0]->getLines());
     }
 
-    /**
-     *
-     * @param  string $func
-     * @param  array  $args
-     * @return mixed
-     */
-    private function call($func, $args)
+    public function testParseWithMultipleChunks()
     {
-        $strArgs = array_map(
-            function ($arg) {
-                if ($arg instanceof \GMP) {
-                    return var_export($this->adapter->toString($arg), true);
-                } else {
-                    return var_export($arg, true);
-                }
-            },
-            $args
-        );
+        $content = \file_get_contents(__DIR__ . '/fixtures/patch2.txt');
 
-        if (strpos($func, '::')) {
-            list(, $func) = explode('::', $func);
-        }
+        $diffs = $this->parser->parse($content);
 
-        $this->write($func.'('.implode(', ', $strArgs).')');
+        $this->assertCount(1, $diffs);
 
-        $res = call_user_func_array([ $this->adapter, $func ], $args);
+        $chunks = $diffs[0]->getChunks();
+        $this->assertCount(3, $chunks);
 
-        if ($res instanceof \GMP) {
-            $this->write(' => ' . var_export($this->adapter->toString($res), true) . PHP_EOL);
-        } else {
-            $this->write(' => ' . var_export($res, true) . PHP_EOL);
-        }
+        $this->assertSame(20, $chunks[0]->getStart());
+        $this->assertSame(320, $chunks[1]->getStart());
+        $this->assertSame(600, $chunks[2]->getStart());
 
-        return $res;
+        $this->assertCount(5, $chunks[0]->getLines());
+        $this->assertCount(5, $chunks[1]->getLines());
+        $this->assertCount(4, $chunks[2]->getLines());
     }
 
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Math\GmpMathInterface::cmp()
-     */
-    public function cmp(\GMP $first, \GMP $other): int
+    public function testParseWithRemovedLines()
     {
-        $func = __METHOD__;
-        $args = func_get_args();
+        $content = <<<A
+diff --git a/Test.txt b/Test.txt
+index abcdefg..abcdefh 100644
+--- a/Test.txt
++++ b/Test.txt
+@@ -49,9 +49,8 @@
+ A
+-B
+A;
+        $diffs = $this->parser->parse($content);
+        $this->assertInternalType('array', $diffs);
+        $this->assertContainsOnlyInstancesOf(Diff::class, $diffs);
+        $this->assertCount(1, $diffs);
 
-        return call_user_func(
-            array(
-            $this,
-            'call',
-            ),
-            $func,
-            $args
-        );
+        $chunks = $diffs[0]->getChunks();
+
+        $this->assertInternalType('array', $chunks);
+        $this->assertContainsOnlyInstancesOf(Chunk::class, $chunks);
+        $this->assertCount(1, $chunks);
+
+        $chunk = $chunks[0];
+        $this->assertSame(49, $chunk->getStart());
+        $this->assertSame(49, $chunk->getEnd());
+        $this->assertSame(9, $chunk->getStartRange());
+        $this->assertSame(8, $chunk->getEndRange());
+
+        $lines = $chunk->getLines();
+        $this->assertInternalType('array', $lines);
+        $this->assertContainsOnlyInstancesOf(Line::class, $lines);
+        $this->assertCount(2, $lines);
+
+        /** @var Line $line */
+        $line = $lines[0];
+        $this->assertSame('A', $line->getContent());
+        $this->assertSame(Line::UNCHANGED, $line->getType());
+
+        $line = $lines[1];
+        $this->assertSame('B', $line->getContent());
+        $this->assertSame(Line::REMOVED, $line->getType());
     }
 
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Math\GmpMathInterface::cmp()
-     */
-    public function equals(\GMP $first, \GMP $other): bool
+    public function testParseDiffForMulitpleFiles()
     {
-        $func = __METHOD__;
-        $args = func_get_args();
+        $content = <<<A
+diff --git a/Test.txt b/Test.txt
+index abcdefg..abcdefh 100644
+--- a/Test.txt
++++ b/Test.txt
+@@ -1,3 +1,2 @@
+ A
+-B
 
-        return call_user_func(
-            array(
-                $this,
-                'call',
-            ),
-            $func,
-            $args
-        );
+diff --git a/Test123.txt b/Test123.txt
+index abcdefg..abcdefh 100644
+--- a/Test2.txt
++++ b/Test2.txt
+@@ -1,2 +1,3 @@
+ A
++B
+A;
+        $diffs = $this->parser->parse($content);
+        $this->assertCount(2, $diffs);
+
+        /** @var Diff $diff */
+        $diff = $diffs[0];
+        $this->assertSame('a/Test.txt', $diff->getFrom());
+        $this->assertSame('b/Test.txt', $diff->getTo());
+        $this->assertCount(1, $diff->getChunks());
+
+        $diff = $diffs[1];
+        $this->assertSame('a/Test2.txt', $diff->getFrom());
+        $this->assertSame('b/Test2.txt', $diff->getTo());
+        $this->assertCount(1, $diff->getChunks());
     }
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Math\GmpMathInterface::mod()
-     */
-    public function mod(\GMP $number, \GMP $modulus): \GMP
-    {
-        $func = __METHOD__;
-        $args = func_get_args();
-
-        return call_user_func(
-            array(
-            $this,
-            'call',
-            ),
-            $func,
-            $args
-        );
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Math\GmpMathInterface::add()
-     */
-    public function add(\GMP $augend, \GMP $addend): \GMP
-    {
-        $func = __METHOD__;
-        $args = func_get_args();
-
-        return call_user_func(
-            array(
-            $this,
-            'call',
-            ),
-            $func,
-            $args
-        );
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Math\GmpMathInterface::sub()
-     */
-    public function sub(\GMP $minuend, \GMP $subtrahend): \GMP
-    {
-        $func = __METHOD__;
-        $args = func_get_args();
-
-        return call_user_func(
-            array(
-            $this,
-            'call',
-            ),
-            $func,
-            $args
-        );
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Math\GmpMathInterface::mul()
-     */
-    public function mul(\GMP $multiplier, \GMP $multiplicand): \GMP
-    {
-        $func = __METHOD__;
-        $args = func_get_args();
-
-        return call_user_func(
-            array(
-            $this,
-            'call',
-            ),
-            $func,
-            $args
-        );
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Math\GmpMathInterface::div()
+}

@@ -1,61 +1,99 @@
-d->isMap()) {
-                $value_field = $field->getMessageType()->getFieldByNumber(2);
-                if ($value_field->getType() != GPBType::MESSAGE) {
-                    continue;
-                }
-                $getter = $field->getGetter();
-                $map = $this->$getter();
-                foreach ($map as $key => $value) {
-                    $value->discardUnknownFields();
-                }
-            } else if ($field->getLabel() === GPBLabel::REPEATED) {
-                $getter = $field->getGetter();
-                $arr = $this->$getter();
-                foreach ($arr as $sub) {
-                    $sub->discardUnknownFields();
-                }
-            } else if ($field->getLabel() === GPBLabel::OPTIONAL) {
-                $getter = $field->getGetter();
-                $sub = $this->$getter();
-                if (!is_null($sub)) {
-                    $sub->discardUnknownFields();
-                }
-            }
-        }
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('NS\Foo', array(), 'MockFoo', true, true)
+--FILE--
+<?php
+namespace NS;
+
+interface Foo
+{
+    public function bar(Foo $foo);
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new \PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'NS\Foo',
+    array(),
+    'MockFoo',
+    true,
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo implements PHPUnit_Framework_MockObject_MockObject, NS\Foo
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = ['bar'];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
     }
 
-    /**
-     * Merges the contents of the specified message into current message.
-     *
-     * This method merges the contents of the specified message into the
-     * current message. Singular fields that are set in the specified message
-     * overwrite the corresponding fields in the current message.  Repeated
-     * fields are appended. Map fields key-value pairs are overwritten.
-     * Singular/Oneof sub-messages are recursively merged. All overwritten
-     * sub-messages are deep-copied.
-     *
-     * @param object $msg Protobuf message to be merged from.
-     * @return null.
-     */
-    public function mergeFrom($msg)
+    public function bar(NS\Foo $foo)
     {
-        if (get_class($this) !== get_class($msg)) {
-            user_error("Cannot merge messages with different class.");
-            return;
+        $arguments = array($foo);
+        $count     = func_num_args();
+
+        if ($count > 1) {
+            $_arguments = func_get_args();
+
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
         }
 
-        foreach ($this->desc->getField() as $field) {
-            $setter = $field->getSetter();
-            $getter = $field->getGetter();
-            if ($field->isMap()) {
-                if (count($msg->$getter()) != 0) {
-                    $value_field = $field->getMessageType()->getFieldByNumber(2);
-                    foreach ($msg->$getter() as $key => $value) {
-                        if ($value_field->getType() == GPBType::MESSAGE) {
-                            $klass = $value_field->getMessageType()->getClass();
-                            $copy = new $klass;
-                            $copy->mergeFrom($value);
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'NS\Foo', 'bar', $arguments, '', $this, true
+            )
+        );
 
-                            $this->kvUpdateHelper($field, $key, $copy);
-                        } else {
-                            $this->kv
+        return $result;
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

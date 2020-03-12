@@ -1,1 +1,25 @@
-module.exports={A:{A:{"1":"E A B","2":"K D G iB"},B:{"1":"2 C d J M H I"},C:{"2":"0 1 2 3 4 6 7 8 9 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB ZB YB"},D:{"2":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB"},E:{"2":"5 F N K D G E A B C RB IB TB UB VB WB XB p aB"},F:{"2":"0 1 5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z bB cB dB eB p AB gB"},G:{"2":"G IB hB EB jB KB lB mB nB oB pB qB rB sB tB uB"},H:{"2":"vB"},I:{"2":"4 DB F wB xB yB zB EB 0B 1B"},J:{"2":"D A"},K:
+<?php
+
+namespace PharIo\Manifest;
+
+class LicenseElementTest extends \PHPUnit_Framework_TestCase {
+    /**
+     * @var LicenseElement
+     */
+    private $license;
+
+    protected function setUp() {
+        $dom = new \DOMDocument();
+        $dom->loadXML('<?xml version="1.0" ?><license xmlns="https://phar.io/xml/manifest/1.0" type="BSD-3" url="https://some.tld/LICENSE" />');
+        $this->license = new LicenseElement($dom->documentElement);
+    }
+
+    public function testTypeCanBeRetrieved() {
+        $this->assertEquals('BSD-3', $this->license->getType());
+    }
+
+    public function testUrlCanBeRetrieved() {
+        $this->assertEquals('https://some.tld/LICENSE', $this->license->getUrl());
+    }
+
+}

@@ -1,65 +1,128 @@
-     *             // Detached comment for corge paragraph 2.
-     *             optional string corge = 5;
-     *             /&#42; Block comment attached
-     *              * to corge.  Leading asterisks
-     *              * will be removed. *&#47;
-     *             /&#42; Block comment attached to
-     *              * grault. *&#47;
-     *             optional int32 grault = 6;
-     *             // ignored detached comments.
-     *     @type string $trailing_comments
-     *     @type string[]|\Google\Protobuf\Internal\RepeatedField $leading_detached_comments
-     * }
+<?php declare(strict_types = 1);
+namespace TheSeer\Tokenizer;
+
+class TokenCollection implements \ArrayAccess, \Iterator, \Countable {
+
+    /**
+     * @var Token[]
      */
-    public function __construct($data = NULL) {
-        \GPBMetadata\Google\Protobuf\Internal\Descriptor::initOnce();
-        parent::__construct($data);
+    private $tokens = [];
+
+    /**
+     * @var int
+     */
+    private $pos;
+
+    /**
+     * @param Token $token
+     */
+    public function addToken(Token $token) {
+        $this->tokens[] = $token;
     }
 
     /**
-     * Identifies which part of the FileDescriptorProto was defined at this
-     * location.
-     * Each element is a field number or an index.  They form a path from
-     * the root FileDescriptorProto to the place where the definition.  For
-     * example, this path:
-     *   [ 4, 3, 2, 7, 1 ]
-     * refers to:
-     *   file.message_type(3)  // 4, 3
-     *       .field(7)         // 2, 7
-     *       .name()           // 1
-     * This is because FileDescriptorProto.message_type has field number 4:
-     *   repeated DescriptorProto message_type = 4;
-     * and DescriptorProto.field has field number 2:
-     *   repeated FieldDescriptorProto field = 2;
-     * and FieldDescriptorProto.name has field number 1:
-     *   optional string name = 1;
-     * Thus, the above path gives the location of a field name.  If we removed
-     * the last element:
-     *   [ 4, 3, 2, 7 ]
-     * this path refers to the whole field declaration (from the beginning
-     * of the label to the terminating semicolon).
+     * @return Token
+     */
+    public function current(): Token {
+        return current($this->tokens);
+    }
+
+    /**
+     * @return int
+     */
+    public function key(): int {
+        return key($this->tokens);
+    }
+
+    /**
+     * @return void
+     */
+    public function next() {
+        next($this->tokens);
+        $this->pos++;
+    }
+
+    /**
+     * @return bool
+     */
+    public function valid(): bool {
+        return $this->count() > $this->pos;
+    }
+
+    /**
+     * @return void
+     */
+    public function rewind() {
+        reset($this->tokens);
+        $this->pos = 0;
+    }
+
+    /**
+     * @return int
+     */
+    public function count(): int {
+        return count($this->tokens);
+    }
+
+    /**
+     * @param mixed $offset
      *
-     * Generated from protobuf field <code>repeated int32 path = 1 [packed = true];</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return bool
      */
-    public function getPath()
-    {
-        return $this->path;
+    public function offsetExists($offset): bool {
+        return isset($this->tokens[$offset]);
     }
 
     /**
-     * Identifies which part of the FileDescriptorProto was defined at this
-     * location.
-     * Each element is a field number or an index.  They form a path from
-     * the root FileDescriptorProto to the place where the definition.  For
-     * example, this path:
-     *   [ 4, 3, 2, 7, 1 ]
-     * refers to:
-     *   file.message_type(3)  // 4, 3
-     *       .field(7)         // 2, 7
-     *       .name()           // 1
-     * This is because FileDescriptorProto.message_type has field number 4:
-     *   repeated DescriptorProto message_type = 4;
-     * and DescriptorProto.field has field number 2:
-     *   repeated FieldDescriptorProto field = 2;
-     * a
+     * @param mixed $offset
+     *
+     * @return Token
+     * @throws TokenCollectionException
+     */
+    public function offsetGet($offset): Token {
+        if (!$this->offsetExists($offset)) {
+            throw new TokenCollectionException(
+                sprintf('No Token at offest %s', $offset)
+            );
+        }
+
+        return $this->tokens[$offset];
+    }
+
+    /**
+     * @param mixed $offset
+     * @param Token $value
+     *
+     * @throws TokenCollectionException
+     */
+    public function offsetSet($offset, $value) {
+        if (!is_int($offset)) {
+            $type = gettype($offset);
+            throw new TokenCollectionException(
+                sprintf(
+                    'Offset must be of type integer, %s given',
+                    $type === 'object' ? get_class($value) : $type
+                )
+            );
+        }
+        if (!$value instanceof Token) {
+            $type = gettype($value);
+            throw new TokenCollectionException(
+                sprintf(
+                    'Value must be of type %s, %s given',
+                    Token::class,
+                    $type === 'object' ? get_class($value) : $type
+                )
+            );
+        }
+        $this->tokens[$offset] = $value;
+    }
+
+    /**
+     * @param mixed $offset
+     */
+    public function offsetUnset($offset) {
+        unset($this->tokens[$offset]);
+    }
+
+}

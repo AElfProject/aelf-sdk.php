@@ -1,35 +1,64 @@
-y array.
-     */
-    public function getHeader($name)
-    {
-        $lowerName = strtolower($name);
-        if(isset($this->headerNames[$lowerName]))
-        {
-            $name = $this->headerNames[$lowerName];
-        }
-        if(isset($this->headers[$name]))
-        {
-            return $this->headers[$name];
-        }
-        else
-        {
-            return [];
-        }
-    }
+--TEST--
+phpunit ExceptionStackTest ../_files/ExceptionStackTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = 'ExceptionStackTest';
+$_SERVER['argv'][3] = __DIR__ . '/../_files/ExceptionStackTest.php';
 
-    /**
-     * Retrieves a comma-separated string of the values for a single header.
-     *
-     * This method returns all of the header values of the given
-     * case-insensitive header name as a string concatenated together using
-     * a comma.
-     *
-     * NOTE: Not all header values may be appropriately represented using
-     * comma concatenation. For such headers, use getHeader() instead
-     * and supply your own delimiter when concatenating.
-     *
-     * If the header does not appear in the message, this method MUST return
-     * an empty string.
-     *
-     * @param string $name Case-insensitive header field name.
-     * @return string A string o
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+EE                                                                  2 / 2 (100%)
+
+Time: %s, Memory: %s
+
+There were 2 errors:
+
+1) ExceptionStackTest::testPrintingChildException
+PHPUnit\Framework\Exception: Child exception
+message
+Failed asserting that two arrays are equal.
+--- Expected
++++ Actual
+@@ @@
+ Array (
+-    0 => 1
++    0 => 2
+ )
+
+
+%s:%i
+
+Caused by
+message
+Failed asserting that two arrays are equal.
+--- Expected
++++ Actual
+@@ @@
+ Array (
+-    0 => 1
++    0 => 2
+ )
+
+%s:%i
+
+2) ExceptionStackTest::testNestedExceptions
+Exception: One
+
+%s:%i
+
+Caused by
+InvalidArgumentException: Two
+
+%s:%i
+
+Caused by
+Exception: Three
+
+%s:%i
+
+ERRORS!
+Tests: 2, Assertions: 1, Errors: 2.

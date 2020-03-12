@@ -1,1 +1,19 @@
-module.exports={A:{A:{"1":"E A B","2":"K D iB","129":"G"},B:{"1":"2 C d J M H I"},C:{"1":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB ZB YB","2":"fB DB"},D:{"1":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB"},E:{"1":"5 F N K D G E A B C TB UB VB WB XB p aB","2":"RB IB"},F:{"1":"0 1 5 6 B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z dB eB 
+<?php
+
+namespace PharIo\Manifest;
+
+use DOMDocument;
+
+class ExtElementCollectionTest extends \PHPUnit_Framework_TestCase {
+    public function testComponentElementCanBeRetrievedFromCollection() {
+        $dom = new DOMDocument();
+        $dom->loadXML('<?xml version="1.0" ?><ext xmlns="https://phar.io/xml/manifest/1.0" />');
+        $collection = new ExtElementCollection($dom->childNodes);
+
+        foreach($collection as $position => $extElement) {
+            $this->assertInstanceOf(ExtElement::class, $extElement);
+            $this->assertEquals(0, $position);
+        }
+    }
+
+}

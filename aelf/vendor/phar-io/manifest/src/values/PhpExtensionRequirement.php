@@ -1,25 +1,32 @@
-ags    Tag block to parse.
-     * @param Types\Context $context Context of the parsed Tag
-     *
-     * @return DocBlock\Tag[]
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PharIo\Manifest;
+
+class PhpExtensionRequirement implements Requirement {
+    /**
+     * @var string
      */
-    private function parseTagBlock(string $tags, Types\Context $context) : array
-    {
-        $tags = $this->filterTagBlock($tags);
-        if ($tags === null) {
-            return [];
-        }
+    private $extension;
 
-        $result = [];
-        $lines  = $this->splitTagBlockIntoTagLines($tags);
-        foreach ($lines as $key => $tagLine) {
-            $result[$key] = $this->tagFactory->create(trim($tagLine), $context);
-        }
-
-        return $result;
+    /**
+     * @param string $extension
+     */
+    public function __construct($extension) {
+        $this->extension = $extension;
     }
 
     /**
-     * @return string[]
+     * @return string
      */
-    private function splitTagBlockIntoTagLines(string $tags) : a
+    public function __toString() {
+        return $this->extension;
+    }
+}

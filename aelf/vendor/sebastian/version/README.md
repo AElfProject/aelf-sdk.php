@@ -1,75 +1,43 @@
-<?php
-/*
- * This file is part of the PHPASN1 library.
- *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+# Version
 
-namespace FG\ASN1\Universal;
+**Version** is a library that helps with managing the version number of Git-hosted PHP projects.
 
-use Exception;
-use FG\ASN1\Base128;
-use FG\ASN1\OID;
-use FG\ASN1\ASNObject;
-use FG\ASN1\Parsable;
-use FG\ASN1\Identifier;
-use FG\ASN1\Exception\ParserException;
+## Installation
 
-class ObjectIdentifier extends ASNObject implements Parsable
-{
-    protected $subIdentifiers;
-    protected $value;
+You can add this library as a local, per-project dependency to your project using [Composer](https://getcomposer.org/):
 
-    public function __construct($value)
-    {
-        $this->subIdentifiers = explode('.', $value);
-        $nrOfSubIdentifiers = count($this->subIdentifiers);
+    composer require sebastian/version
 
-        for ($i = 0; $i < $nrOfSubIdentifiers; $i++) {
-            if (is_numeric($this->subIdentifiers[$i])) {
-                // enforce the integer type
-                $this->subIdentifiers[$i] = intval($this->subIdentifiers[$i]);
-            } else {
-                throw new Exception("[{$value}] is no valid object identifier (sub identifier ".($i + 1).' is not numeric)!');
-            }
-        }
+If you only need this library during development, for instance to run your project's test suite, then you should add it as a development-time dependency:
 
-        // Merge the first to arcs of the OID registration tree (per ASN definition!)
-        if ($nrOfSubIdentifiers >= 2) {
-            $this->subIdentifiers[1] = ($this->subIdentifiers[0] * 40) + $this->subIdentifiers[1];
-            unset($this->subIdentifiers[0]);
-        }
+    composer require --dev sebastian/version
 
-        $this->value = $value;
-    }
+## Usage
 
-    public function getContent()
-    {
-        return $this->value;
-    }
+The constructor of the `SebastianBergmann\Version` class expects two parameters:
 
-    public function getType()
-    {
-        return Identifier::OBJECT_IDENTIFIER;
-    }
+* `$release` is the version number of the latest release (`X.Y.Z`, for instance) or the name of the release series (`X.Y`) when no release has been made from that branch / for that release series yet.
+* `$path` is the path to the directory (or a subdirectory thereof) where the sourcecode of the project can be found. Simply passing `__DIR__` here usually suffices.
 
-    protected function calculateContentLength()
-    {
-        $length = 0;
-        foreach ($this->subIdentifiers as $subIdentifier) {
-            do {
-                $subIdentifier = $subIdentifier >> 7;
-                $length++;
-            } while ($subIdentifier > 0);
-        }
+Apart from the constructor, the `SebastianBergmann\Version` class has a single public method: `getVersion()`.
 
-        return $length;
-    }
+Here is a contrived example that shows the basic usage:
 
-    protected function getEncodedValue()
-    {
-        $encodedValue = '';
-        foreach ($this->subIdentifiers a
+    <?php
+    $version = new SebastianBergmann\Version(
+      '3.7.10', '/usr/local/src/phpunit'
+    );
+
+    var_dump($version->getVersion());
+    ?>
+
+    string(18) "3.7.10-17-g00f3408"
+
+When a new release is prepared, the string that is passed to the constructor as the first argument needs to be updated.
+
+### How SebastianBergmann\Version::getVersion() works
+
+* If `$path` is not (part of) a Git repository and `$release` is in `X.Y.Z` format then `$release` is returned as-is.
+* If `$path` is not (part of) a Git repository and `$release` is in `X.Y` format then `$release` is returned suffixed with `-dev`.
+* If `$path` is (part of) a Git repository and `$release` is in `X.Y.Z` format then the output of `git describe --tags` is returned as-is.
+* If `$path` is (part of) a Git repository and `$release` is in `X.Y` format then a string is returned that begins with `X.Y` and ends with information from `git describe --tags`.

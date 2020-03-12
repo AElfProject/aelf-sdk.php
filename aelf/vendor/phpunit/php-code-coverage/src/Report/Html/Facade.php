@@ -1,282 +1,190 @@
-alidArgumentException('Package '.$package->getPrettyName().' is missing reference information');
-}
-
-$this->io->write("  - Installing <info>" . $package->getName() . "</info> (<comment>" . VersionParser::formatVersion($package) . "</comment>)");
-$this->filesystem->removeDirectory($path);
-$this->doDownload($package, $path);
-$this->io->write('');
-}
-
-
-
-
-public function update(PackageInterface $initial, PackageInterface $target, $path)
-{
-if (!$target->getSourceReference()) {
-throw new \InvalidArgumentException('Package '.$target->getPrettyName().' is missing reference information');
-}
-
-$name = $target->getName();
-if ($initial->getPrettyVersion() == $target->getPrettyVersion()) {
-if ($target->getSourceType() === 'svn') {
-$from = $initial->getSourceReference();
-$to = $target->getSourceReference();
-} else {
-$from = substr($initial->getSourceReference(), 0, 7);
-$to = substr($target->getSourceReference(), 0, 7);
-}
-$name .= ' '.$initial->getPrettyVersion();
-} else {
-$from = VersionParser::formatVersion($initial);
-$to = VersionParser::formatVersion($target);
-}
-
-$this->io->write("  - Updating <info>" . $name . "</info> (<comment>" . $from . "</comment> => <comment>" . $to . "</comment>)");
-
-$this->cleanChanges($path, true);
-try {
-$this->doUpdate($initial, $target, $path);
-} catch (\Exception $e) {
-
- $this->reapplyChanges($path);
-
-throw $e;
-}
-$this->reapplyChanges($path);
-
-
- if ($this->io->isVerbose()) {
-$message = 'Pulling in changes:';
-$logs = $this->getCommitLogs($initial->getSourceReference(), $target->getSourceReference(), $path);
-
-if (!trim($logs)) {
-$message = 'Rolling back changes:';
-$logs = $this->getCommitLogs($target->getSourceReference(), $initial->getSourceReference(), $path);
-}
-
-if (trim($logs)) {
-$logs = implode("\n", array_map(function ($line) {
-return '      ' . $line;
-}, explode("\n", $logs)));
-
-$this->io->write('    '.$message);
-$this->io->write($logs);
-}
-}
-
-$this->io->write('');
-}
-
-
-
-
-public function remove(PackageInterface $package, $path)
-{
-$this->io->write("  - Removing <info>" . $package->getName() . "</info> (<comment>" . $package->getPrettyVersion() . "</comment>)");
-$this->cleanChanges($path, false);
-if (!$this->filesystem->removeDirectory($path)) {
-
- if (!defined('PHP_WINDOWS_VERSION_BUILD') || (usleep(250) && !$this->filesystem->removeDirectory($path))) {
-throw new \RuntimeException('Could not completely delete '.$path.', aborting.');
-}
-}
-}
-
-
-
-
-
-public function setOutputProgress($outputProgress)
-{
-return $this;
-}
-
-
-
-
-
-
-
-
-
-protected function cleanChanges($path, $update)
-{
-
- if (null !== $this->getLocalChanges($path)) {
-throw new \RuntimeException('Source directory ' . $path . ' has uncommitted changes.');
-}
-}
-
-
-
-
-
-
-
-protected function reapplyChanges($path)
-{
-}
-
-
-
-
-
-
-
-abstract protected function doDownload(PackageInterface $package, $path);
-
-
-
-
-
-
-
-
-abstract protected function doUpdate(PackageInterface $initial, PackageInterface $target, $path);
-
-
-
-
-
-
-
-abstract public function getLocalChanges($path);
-
-
-
-
-
-
-
-
-
-abstract protected function getCommitLogs($fromReference, $toReference, $path);
-}
 <?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
+namespace SebastianBergmann\CodeCoverage\Report\Html;
 
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Node\Directory as DirectoryNode;
+use SebastianBergmann\CodeCoverage\RuntimeException;
 
-
-
-
-
-
-
-
-
-namespace Composer\Downloader;
-
-use Composer\Config;
-use Composer\Cache;
-use Composer\IO\IOInterface;
-use Composer\Package\PackageInterface;
-use Composer\Package\Version\VersionParser;
-use Composer\Util\Filesystem;
-use Composer\Util\GitHub;
-use Composer\Util\RemoteFilesystem;
-
-
-
-
-
-
-
-
-class FileDownloader implements DownloaderInterface
+/**
+ * Generates an HTML report from a code coverage object.
+ */
+class Facade
 {
-private static $cacheCollected = false;
-protected $io;
-protected $config;
-protected $rfs;
-protected $filesystem;
-protected $cache;
-protected $outputProgress = true;
+    /**
+     * @var string
+     */
+    private $templatePath;
 
+    /**
+     * @var string
+     */
+    private $generator;
 
+    /**
+     * @var int
+     */
+    private $lowUpperBound;
 
+    /**
+     * @var int
+     */
+    private $highLowerBound;
 
+    /**
+     * Constructor.
+     *
+     * @param int    $lowUpperBound
+     * @param int    $highLowerBound
+     * @param string $generator
+     */
+    public function __construct($lowUpperBound = 50, $highLowerBound = 90, $generator = '')
+    {
+        $this->generator      = $generator;
+        $this->highLowerBound = $highLowerBound;
+        $this->lowUpperBound  = $lowUpperBound;
+        $this->templatePath   = __DIR__ . '/Renderer/Template/';
+    }
 
+    /**
+     * @param CodeCoverage $coverage
+     * @param string       $target
+     */
+    public function process(CodeCoverage $coverage, $target)
+    {
+        $target = $this->getDirectory($target);
+        $report = $coverage->getReport();
+        unset($coverage);
 
+        if (!isset($_SERVER['REQUEST_TIME'])) {
+            $_SERVER['REQUEST_TIME'] = \time();
+        }
 
+        $date = \date('D M j G:i:s T Y', $_SERVER['REQUEST_TIME']);
 
+        $dashboard = new Dashboard(
+            $this->templatePath,
+            $this->generator,
+            $date,
+            $this->lowUpperBound,
+            $this->highLowerBound
+        );
 
+        $directory = new Directory(
+            $this->templatePath,
+            $this->generator,
+            $date,
+            $this->lowUpperBound,
+            $this->highLowerBound
+        );
 
-public function __construct(IOInterface $io, Config $config, Cache $cache = null, RemoteFilesystem $rfs = null, Filesystem $filesystem = null)
-{
-$this->io = $io;
-$this->config = $config;
-$this->rfs = $rfs ?: new RemoteFilesystem($io);
-$this->filesystem = $filesystem ?: new Filesystem();
-$this->cache = $cache;
+        $file = new File(
+            $this->templatePath,
+            $this->generator,
+            $date,
+            $this->lowUpperBound,
+            $this->highLowerBound
+        );
 
-if ($this->cache && !self::$cacheCollected && !mt_rand(0, 50)) {
-$this->cache->gc($config->get('cache-ttl'), $config->get('cache-files-maxsize'));
+        $directory->render($report, $target . 'index.html');
+        $dashboard->render($report, $target . 'dashboard.html');
+
+        foreach ($report as $node) {
+            $id = $node->getId();
+
+            if ($node instanceof DirectoryNode) {
+                if (!\file_exists($target . $id)) {
+                    \mkdir($target . $id, 0777, true);
+                }
+
+                $directory->render($node, $target . $id . '/index.html');
+                $dashboard->render($node, $target . $id . '/dashboard.html');
+            } else {
+                $dir = \dirname($target . $id);
+
+                if (!\file_exists($dir)) {
+                    \mkdir($dir, 0777, true);
+                }
+
+                $file->render($node, $target . $id . '.html');
+            }
+        }
+
+        $this->copyFiles($target);
+    }
+
+    /**
+     * @param string $target
+     */
+    private function copyFiles($target)
+    {
+        $dir = $this->getDirectory($target . '.css');
+
+        \file_put_contents(
+            $dir . 'bootstrap.min.css',
+            \str_replace(
+                'url(../fonts/',
+                'url(../.fonts/',
+                \file_get_contents($this->templatePath . 'css/bootstrap.min.css')
+            )
+
+        );
+
+        \copy($this->templatePath . 'css/nv.d3.min.css', $dir . 'nv.d3.min.css');
+        \copy($this->templatePath . 'css/style.css', $dir . 'style.css');
+
+        $dir = $this->getDirectory($target . '.fonts');
+        \copy($this->templatePath . 'fonts/glyphicons-halflings-regular.eot', $dir . 'glyphicons-halflings-regular.eot');
+        \copy($this->templatePath . 'fonts/glyphicons-halflings-regular.svg', $dir . 'glyphicons-halflings-regular.svg');
+        \copy($this->templatePath . 'fonts/glyphicons-halflings-regular.ttf', $dir . 'glyphicons-halflings-regular.ttf');
+        \copy($this->templatePath . 'fonts/glyphicons-halflings-regular.woff', $dir . 'glyphicons-halflings-regular.woff');
+        \copy($this->templatePath . 'fonts/glyphicons-halflings-regular.woff2', $dir . 'glyphicons-halflings-regular.woff2');
+
+        $dir = $this->getDirectory($target . '.js');
+        \copy($this->templatePath . 'js/bootstrap.min.js', $dir . 'bootstrap.min.js');
+        \copy($this->templatePath . 'js/d3.min.js', $dir . 'd3.min.js');
+        \copy($this->templatePath . 'js/holder.min.js', $dir . 'holder.min.js');
+        \copy($this->templatePath . 'js/html5shiv.min.js', $dir . 'html5shiv.min.js');
+        \copy($this->templatePath . 'js/jquery.min.js', $dir . 'jquery.min.js');
+        \copy($this->templatePath . 'js/nv.d3.min.js', $dir . 'nv.d3.min.js');
+        \copy($this->templatePath . 'js/respond.min.js', $dir . 'respond.min.js');
+        \copy($this->templatePath . 'js/file.js', $dir . 'file.js');
+    }
+
+    /**
+     * @param string $directory
+     *
+     * @return string
+     *
+     * @throws RuntimeException
+     */
+    private function getDirectory($directory)
+    {
+        if (\substr($directory, -1, 1) != DIRECTORY_SEPARATOR) {
+            $directory .= DIRECTORY_SEPARATOR;
+        }
+
+        if (\is_dir($directory)) {
+            return $directory;
+        }
+
+        if (@\mkdir($directory, 0777, true)) {
+            return $directory;
+        }
+
+        throw new RuntimeException(
+            \sprintf(
+                'Directory "%s" does not exist.',
+                $directory
+            )
+        );
+    }
 }
-self::$cacheCollected = true;
-}
-
-
-
-
-public function getInstallationSource()
-{
-return 'dist';
-}
-
-
-
-
-public function download(PackageInterface $package, $path)
-{
-$url = $package->getDistUrl();
-if (!$url) {
-throw new \InvalidArgumentException('The given package is missing url information');
-}
-
-$this->filesystem->ensureDirectoryExists($path);
-
-$fileName = $this->getFileName($package, $path);
-
-$this->io->write("  - Installing <info>" . $package->getName() . "</info> (<comment>" . VersionParser::formatVersion($package) . "</comment>)");
-
-$processedUrl = $this->processUrl($package, $url);
-$hostname = parse_url($processedUrl, PHP_URL_HOST);
-
-if (strpos($hostname, '.github.com') === (strlen($hostname) - 11)) {
-$hostname = 'github.com';
-}
-
-try {
-try {
-if (!$this->cache || !$this->cache->copyTo($this->getCacheKey($package), $fileName)) {
-if (!$this->outputProgress) {
-$this->io->write('    Downloading');
-}
-
-
- $retries = 3;
-while ($retries--) {
-try {
-$this->rfs->copy($hostname, $processedUrl, $fileName, $this->outputProgress);
-break;
-} catch (TransportException $e) {
-
- if (0 !== $e->getCode() || !$retries) {
-throw $e;
-}
-if ($this->io->isVerbose()) {
-$this->io->write('    Download failed, retrying...');
-}
-usleep(500000);
-}
-}
-
-if ($this->cache) {
-$this->cache->copyFrom($this->getCacheKey($package), $fileName);
-}
-} else {
-$this->io->write('    Loading from cache');
-}
-} catch (TransportException $e) {
-if (in_array($e->getCode(), array(404, 403)) && 'github.com' === $hostname && !$this->io->hasAuthentication($hostname)) {
-$message = "\n".'Could not fetch '.$processedUrl.', enter your GitHub credentials '.($e->getCode() === 404 ? 'to access p

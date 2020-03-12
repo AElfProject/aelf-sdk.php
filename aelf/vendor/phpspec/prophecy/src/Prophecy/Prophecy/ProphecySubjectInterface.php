@@ -1,5 +1,34 @@
-xUÛnÓ@åÙ_1H–ê„D- „Ô’Ğ‚
-êªÔ"õ!©¢½nVrv­İ1MiûïìÍ—8±¡øexæÌÌ™3³ËL,áİû_}úœ¯ò HhœI#…’Å¸À‡œªÉÛÁIp²¦*'1…/oˆÊçúŒãóŸ’pEbd‚ÏHPHm_¨]ËëX²çî¸aÈ©R©L5®öÑ±•ÿá«È2jQ=(ĞR(8[êôtÀ‹à1@?‡Ã¡=a§9‘dûCÎn!d</PyóC{æÅ2c1¤·áa±ˆ×!‹#"%y(½ÖüÑ9»¸pú‹H¸0 >mDQ„¡7ùÙß˜İT®©”Ä+ˆ|B@”“©5€:L	1Ù-L€Óû­€B7ÍšçÙÑb^C\15š„&0¿Î³olC“3SÕñq*ÅÚ¾F&Ã¤$SÔãxŒ&µ’b!ùVlÒ—Úæ1.¤¤£6m§Nm<­L]{‚»¾2Š4ÕéúĞpúÒ´œûwŠ‘GïÖT³ÏRˆ^7suşç¦PUí~áJŠ{Ûªùe—éáwô|ÓÜÌMt`‰ 
-¸@-uv°¿…{èÚ-¡“7ïİ5½L§‘fÇµ¬iéÕt-:#ëµ[mŠ‚–Ie0º€®––K´Sg­($²–HãCFù®Úâ±ıíåBéA#«?‹=ûîàÚ
-õŞ2…U<Œ§w¯ÙoMg]QVhÁ@½qyz‚Ğ!úÚœ5duUpdëmMı"KÀA
-	ªCVur½›Áö~áª¯]ÆSnsFz½²õéÉØ^$¦eóİkõ¶‚Y¶³TÊÜl›FpÔ º‰Ü¾ïâ€ğŞİ^/×I’hÿğU ;êQZ(—OY1E»ß­ºBëúìn˜7Om8³ß÷_"¾Âÿ£ÍÎ«ØéçÒ^Á•m³9½m×“ïæ:î÷
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Prophecy;
+
+/**
+ * Controllable doubles interface.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+interface ProphecySubjectInterface
+{
+    /**
+     * Sets subject prophecy.
+     *
+     * @param ProphecyInterface $prophecy
+     */
+    public function setProphecy(ProphecyInterface $prophecy);
+
+    /**
+     * Returns subject prophecy.
+     *
+     * @return ProphecyInterface
+     */
+    public function getProphecy();
+}

@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/5.7/phpunit.xsd"
+         bootstrap="src/autoload.php"
+         backupGlobals="false"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutTodoAnnotatedTests="true"
+         verbose="true">
+    <testsuite>
+        <directory suffix="Test.php">tests</directory>
+    </testsuite>
 
-<project name="buffertools/package" default="build">
-    <target name="build" depends="lint,phpunit,phpcs" />
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">src</directory>
+        </whitelist>
+    </filter>
 
-    <target name="lint"
-        description="Check the syntax of PHP files">
-        <mkdir dir="${project.basedir}/build/cache" />
-        <phplint cachefile="${project.basedir}/build/cache/phplint.cache">
-            <fileset dir="${project.basedir}/src">
-                <include name="**/*.php"/>
-            </fileset>
-        </phplint>
-    </target>
+    <logging>
+        <log type="coverage-html" target="build/coverage/html" title="phpDox"
+             charset="UTF-8" highlight="true" lowUpperBound="60" highLowerBound="90"/>
+    </logging>
 
-    <target name="phpunit">
-        <delete dir="${project.basedir}/build/docs/code-coverage" />
-        <mkdir dir="${project.basedir}/build/docs/code-coverage" />
-        <exec executable="${project.basedir}/vendor/bin/phpunit" passthru="true">
-            <arg value="-c" />
-            <arg path="${project.basedir}" />
-            <arg value="--debug" />
-        </exec>
-    
+</phpunit>

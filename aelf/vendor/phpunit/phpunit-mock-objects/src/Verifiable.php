@@ -1,27 +1,25 @@
 <?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+use PHPUnit\Framework\ExpectationFailedException;
 
-namespace BitWasp\Bitcoin\Key\Deterministic\Slip132;
-
-class PrefixRegistry
+/**
+ * Interface for classes which must verify a given expectation.
+ */
+interface PHPUnit_Framework_MockObject_Verifiable
 {
     /**
-     * @var array
+     * Verifies that the current expectation is valid. If everything is OK the
+     * code should just return, if not it must throw an exception.
+     *
+     * @throws ExpectationFailedException
      */
-    private $registry = [];
-
-    /**
-     * PrefixRegistry constructor.
-     * @param array $registry
-     */
-    public function __construct(array $registry)
-    {
-        foreach ($registry as $scriptType => $prefixes) {
-            if (!is_string($scriptType)) {
-                throw new \InvalidArgumentException("Expecting script type as key");
-            }
-            if (count($prefixes) !== 2) {
-                throw new \InvalidArgumentException("Expecting two BIP32 prefixes");
-            }
-            // private
+    public function verify();
+}

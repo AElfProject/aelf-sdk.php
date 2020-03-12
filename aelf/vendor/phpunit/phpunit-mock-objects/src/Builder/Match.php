@@ -1,1 +1,25 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"1":"2 d J M H I","16":"C"},C:{"1":"0 1 3 4 6 7 8 9 S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB","2":"2 fB DB F N K D G E A B C d J M H I O P Q R ZB YB"},D:{"1":"0 1 3 4 6 7 8 9 T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"2 F N K D G E A B C d J M H I O P Q R S"},E:{"1":"5 D G E A B C UB VB WB XB p aB","2":"F N RB IB TB","16":"K"},F:{"1":"0 1 6 J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z","2":"5 E B C bB cB dB eB p AB gB"},G:{"1":"G lB mB nB oB pB qB rB sB tB uB","2":"IB hB EB jB KB"},H:{"2":"vB"},I:{"1":"4 0B 1B","2":"DB F wB xB yB zB EB"},J:
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+/**
+ * Builder interface for invocation order matches.
+ */
+interface PHPUnit_Framework_MockObject_Builder_Match extends PHPUnit_Framework_MockObject_Builder_Stub
+{
+    /**
+     * Defines the expectation which must occur before the current is valid.
+     *
+     * @param string $id The identification of the expectation that should
+     *                   occur before this one.
+     *
+     * @return PHPUnit_Framework_MockObject_Builder_Stub
+     */
+    public function after($id);
+}

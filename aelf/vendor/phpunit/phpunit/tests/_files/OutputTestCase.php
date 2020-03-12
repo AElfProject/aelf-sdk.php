@@ -1,7 +1,29 @@
-"use strict";
+<?php
+use PHPUnit\Framework\TestCase;
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+class OutputTestCase extends TestCase
+{
+    public function testExpectOutputStringFooActualFoo()
+    {
+        $this->expectOutputString('foo');
+        print 'foo';
+    }
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+    public function testExpectOutputStringFooActualBar()
+    {
+        $this->expectOutputString('foo');
+        print 'bar';
+    }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj,
+    public function testExpectOutputRegexFooActualFoo()
+    {
+        $this->expectOutputRegex('/foo/');
+        print 'foo';
+    }
+
+    public function testExpectOutputRegexFooActualBar()
+    {
+        $this->expectOutputRegex('/foo/');
+        print 'bar';
+    }
+}

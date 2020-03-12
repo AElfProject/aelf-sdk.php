@@ -1,1 +1,69 @@
-b17242b3e62fee072a3445d9328389dcd4e41c1bd8e732aca83e86b981310f02ba9308bbc6748d765f59059ae85ef10f9fdf5eab31c9c3f8","unCompressedAddr":"1KQdBbKsUrPCMvpuKFm7b4K789bwoD3AMs"},{"privKey":"c423c12a5ddcf45ace8e83961209a3c0bdc748f8bf0a02a3ea4a11fbf428022d","compressedPubKey":"033a3693ce07a85c87c4da914263d736029cb2536f163793795cf477371acf17bc","compressedAddr":"14pDAASU3fQ9RPjefpKjshrGPS4Dv3ExiR","unCompressedPubKey":"043a3693ce07a85c87c4da914263d736029cb2536f163793795cf477371acf17bcff743c7e189bfa1669eafd60fa6d13580659786af54930c495daae0e50e5f8fb","unCompressedAddr":"1H75eePjpjzFAmYXFwVKMb7A4n7qvWTftC"},{"privKey":"1435797e2fc7ffac0572b7a103d517ac077684b6a51876ab0b80ba109eb2c85c","compressedPubKey":"03f130736f7e758f595412e4f4cb5d4bd08e9245db6e4a8508ec3953f90d32dcfd","compressedAddr":"1Pvfe6KJzaZPrL8yweFPAiYA5c85zSUriV","unCompressedPubKey":"04f130736f7e758f595412e4f4cb5d4bd08e9245db6e4a8508ec3953f90d32dcfd2309cc12be5bc67d19f7730b464d6c521b859b35bce0166021f08612b784d859","unCompressedAddr":"1LpEQ98bCGefLFFDCVtRkWFL1UL9xfJgD8"},{"privKey":"d3a35c2132c80dedb5329476442ac5a7107f94abfac981debabdb596fc4e27ce","compressedPubKey":"034d5fc73b839c42f08f033162f44f93328732352756d3b2e976cdddebb3995e01","compressedAddr":"17DYTC2dJYHqGq772rpQwQpx2zgLc6uMFM","unCompressedPubKey":"044d5fc73b839c42f08f033162f44f93328732352756d3b2e976cdddebb3995e01a6768d2fb08a1f19129b92c89a4ab53a825bf6f1ab7723a744b060c5b9dd55cb","unCompressedAddr":"19YbtUE54tY8MrgywTvHhePixcGEuCR13s"},{"privKey":"dcd5206069ee6e48a9b65bf53e8e805575a7d3efc48f82f75b309c4dd8a598c9","compressedPubKey":"0318741fab05df20512ec939251a73b43c9bcdbc3443b0070272062d9b086726de","compressedAddr":"1CJcDWMN9qzfAEeJgKuxjA6o5e3wmC2f3W","unCompressedPubKey":"0418741fab05df20512ec939251a73b43c9bcdbc3443b0070272062d9b086726de004dd2774f293a74fd1abfc58d2a75ce16615c1f2b41d14d700c3477b0ec57e7","unCompressedAddr":"1GdFpkLmorNo3kjaLMydZ81veAUpgxVPMn"},{"privKey":"67be429abbaabbb710a72dad2e55dc4a1b10c68fbd75de4fb1cbb70d980c75a7","compressedPubKey":"0323d8d98ebc260b656907110d4702f92f7cb79098a382d6054af45c19575f18df","compressedAddr":"1FFzXN9udbZmwrjLv4svgDL6VXUuV9aTDL","unCompressedPubKey":"0423d8d98ebc260b6569
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PHPUnit\Framework\Constraint;
+
+use PHPUnit\Framework\TestCase;
+
+class ArraySubsetTest extends TestCase
+{
+    /**
+     * @param bool              $expected
+     * @param array|Traversable $subset
+     * @param array|Traversable $other
+     * @param bool              $strict
+     * @dataProvider evaluateDataProvider
+     */
+    public function testEvaluate($expected, $subset, $other, $strict)
+    {
+        $constraint = new ArraySubset($subset, $strict);
+
+        $this->assertSame($expected, $constraint->evaluate($other, '', true));
+    }
+
+    public static function evaluateDataProvider()
+    {
+        return [
+            'loose array subset and array other' => [
+                'expected' => true,
+                'subset'   => ['bar' => 0],
+                'other'    => ['foo' => '', 'bar' => '0'],
+                'strict'   => false
+            ],
+            'strict array subset and array other' => [
+                'expected' => false,
+                'subset'   => ['bar' => 0],
+                'other'    => ['foo' => '', 'bar' => '0'],
+                'strict'   => true
+            ],
+            'loose array subset and ArrayObject other' => [
+                'expected' => true,
+                'subset'   => ['bar' => 0],
+                'other'    => new \ArrayObject(['foo' => '', 'bar' => '0']),
+                'strict'   => false
+            ],
+            'strict ArrayObject subset and array other' => [
+                'expected' => true,
+                'subset'   => new \ArrayObject(['bar' => 0]),
+                'other'    => ['foo' => '', 'bar' => 0],
+                'strict'   => true
+            ],
+        ];
+    }
+
+    public function testEvaluateWithArrayAccess()
+    {
+        $arrayAccess = new \ArrayAccessible(['foo' => 'bar']);
+
+        $constraint = new ArraySubset(['foo' => 'bar']);
+
+        $this->assertTrue($constraint->evaluate($arrayAccess, '', true));
+    }
+}

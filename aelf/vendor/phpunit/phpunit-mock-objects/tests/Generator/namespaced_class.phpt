@@ -1,106 +1,127 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('NS\Foo', array(), 'MockFoo', true, true)
+--FILE--
 <?php
+namespace NS;
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Serializer\Transaction;
-
-use BitWasp\Bitcoin\Script\Opcodes;
-use BitWasp\Bitcoin\Serializer\Script\ScriptWitnessSerializer;
-use BitWasp\Bitcoin\Serializer\Types;
-use BitWasp\Bitcoin\Transaction\Transaction;
-use BitWasp\Bitcoin\Transaction\TransactionInterface;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Parser;
-
-class TransactionSerializer implements TransactionSerializerInterface
+class Foo
 {
-    const NO_WITNESS = 1;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\Int32
-     */
-    protected $int32le;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\Uint32
-     */
-    protected $uint32le;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\VarInt
-     */
-    protected $varint;
-
-    /**
-     * @var TransactionInputSerializer
-     */
-    protected $inputSerializer;
-
-    /**
-     * @var TransactionOutputSerializer
-     */
-    protected $outputSerializer;
-
-    /**
-     * @var ScriptWitnessSerializer
-     */
-    protected $witnessSerializer;
-
-    public function __construct(TransactionInputSerializer $inputSerializer = null, TransactionOutputSerializer $outputSerializer = null, ScriptWitnessSerializer $witnessSerializer = null)
+    public function bar(Foo $foo)
     {
-        $this->int32le = Types::int32le();
-        $this->uint32le = Types::uint32le();
-        $this->varint = Types::varint();
-
-        if ($inputSerializer === null || $outputSerializer === null) {
-            $opcodes = new Opcodes();
-            if (!$inputSerializer) {
-                $inputSerializer = new TransactionInputSerializer(new OutPointSerializer(), $opcodes);
-            }
-            if (!$outputSerializer) {
-                $outputSerializer = new TransactionOutputSerializer($opcodes);
-            }
-        }
-
-        if (!$witnessSerializer) {
-            $witnessSerializer = new ScriptWitnessSerializer();
-        }
-
-        $this->inputSerializer = $inputSerializer;
-        $this->outputSerializer = $outputSerializer;
-        $this->witnessSerializer = $witnessSerializer;
     }
 
-    /**
-     * @param Parser $parser
-     * @return TransactionInterface
-     */
-    public function fromParser(Parser $parser): TransactionInterface
+    public function baz(Foo $foo)
     {
-        $version = (int) $this->int32le->read($parser);
+    }
+}
 
-        $vin = [];
-        $vinCount = $this->varint->read($parser);
-        for ($i = 0; $i < $vinCount; $i++) {
-            $vin[] = $this->inputSerializer->fromParser($parser);
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new \PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'NS\Foo',
+    array(),
+    'MockFoo',
+    true,
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends NS\Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = ['bar', 'baz'];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+    }
+
+    public function bar(NS\Foo $foo)
+    {
+        $arguments = array($foo);
+        $count     = func_num_args();
+
+        if ($count > 1) {
+            $_arguments = func_get_args();
+
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
         }
 
-        $vout = [];
-        $flags = 0;
-        if (count($vin) === 0) {
-            $flags = (int) $this->varint->read($parser);
-            if ($flags !== 0) {
-                $vinCount = $this->varint->read($parser);
-                for ($i = 0; $i < $vinCount; $i++) {
-                    $vin[] = $this->inputSerializer->fromParser($parser);
-                }
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'NS\Foo', 'bar', $arguments, '', $this, true
+            )
+        );
 
-                $voutCount = $this->varint->read($parser);
-                for ($i = 0; $i < $voutCount; $i++) {
-                    $vout[] = $this->outputSerializer->fromParser($parser);
-                }
+        return $result;
+    }
+
+    public function baz(NS\Foo $foo)
+    {
+        $arguments = array($foo);
+        $count     = func_num_args();
+
+        if ($count > 1) {
+            $_arguments = func_get_args();
+
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
             }
-        } else {
-            $voutCount = $this->varint->read($parser);
-            for ($i = 0; $i < $voutCount; $i++) {
-                $vout[] = $
+        }
+
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'NS\Foo', 'baz', $arguments, '', $this, true
+            )
+        );
+
+        return $result;
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

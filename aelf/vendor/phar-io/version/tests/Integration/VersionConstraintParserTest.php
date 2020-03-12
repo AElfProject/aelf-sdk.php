@@ -1,134 +1,125 @@
 <?php
-declare(strict_types=1);
-
-namespace Mdanter\Ecc\Primitives;
-
-use Mdanter\Ecc\Exception\PointException;
-use Mdanter\Ecc\Exception\PointNotOnCurveException;
-use Mdanter\Ecc\Math\GmpMathInterface;
-use Mdanter\Ecc\Math\ModularArithmetic;
-
-/**
- * *********************************************************************
- * Copyright (C) 2012 Matyas Danter
+/*
+ * This file is part of PharIo\Version.
  *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
- * OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- * ***********************************************************************
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
+namespace PharIo\Version;
+
+use PHPUnit\Framework\TestCase;
+
 /**
- * This class is where the elliptic curve arithmetic takes place.
- * The important methods are:
- * - add: adds two points according to ec arithmetic
- * - double: doubles a point on the ec field mod p
- * - mul: uses double and add to achieve multiplication The rest of the methods are there for supporting the ones above.
+ * @covers \PharIo\Version\VersionConstraintParser
  */
-class Point implements PointInterface
-{
+class VersionConstraintParserTest extends TestCase {
     /**
-     * @var CurveFpInterface
-     */
-    private $curve;
-
-    /**
-     * @var GmpMathInterface
-     */
-    private $adapter;
-
-    /**
-     * @var ModularArithmetic
-     */
-    private $modAdapter;
-
-    /**
-     * @var \GMP
-     */
-    private $x;
-
-    /**
-     * @var \GMP
-     */
-    private $y;
-
-    /**
-     * @var \GMP
-     */
-    private $order;
-
-    /**
-     * @var bool
-     */
-    private $infinity = false;
-
-    /**
-     * Initialize a new instance
+     * @dataProvider versionStringProvider
      *
-     * @param GmpMathInterface     $adapter
-     * @param CurveFpInterface     $curve
-     * @param \GMP                 $x
-     * @param \GMP                 $y
-     * @param \GMP                 $order
-     * @param bool                 $infinity
+     * @param string            $versionString
+     * @param VersionConstraint $expectedConstraint
+     */
+    public function testReturnsExpectedConstraint($versionString, VersionConstraint $expectedConstraint) {
+        $parser = new VersionConstraintParser;
+
+        $this->assertEquals($expectedConstraint, $parser->parse($versionString));
+    }
+
+    /**
+     * @dataProvider unsupportedVersionStringProvider
      *
-     * @throws \RuntimeException    when either the curve does not contain the given coordinates or
-     *                                      when order is not null and P(x, y) * order is not equal to infinity.
+     * @param string $versionString
      */
-    public function __construct(GmpMathInterface $adapter, CurveFpInterface $curve, \GMP $x, \GMP $y, \GMP $order = null, bool $infinity = false)
-    {
-        $this->adapter    = $adapter;
-        $this->modAdapter = $curve->getModAdapter();
-        $this->curve      = $curve;
-        $this->x          = $x;
-        $this->y          = $y;
-        $this->order      = $order !== null ? $order : gmp_init(0, 10);
-        $this->infinity   = (bool) $infinity;
-        if (! $infinity && ! $curve->contains($x, $y)) {
-            throw new PointNotOnCurveException($x, $y, $curve);
-        }
+    public function testThrowsExceptionIfVersionStringIsNotSupported($versionString) {
+        $parser = new VersionConstraintParser;
 
-        if (!is_null($order)) {
-            $mul = $this->mul($order);
-            if (!$mul->isInfinity()) {
-                throw new PointException("SELF * ORDER MUST EQUAL INFINITY. (" . (string)$mul . " found instead)");
-            }
-        }
+        $this->expectException(UnsupportedVersionConstraintException::class);
+
+        $parser->parse($versionString);
     }
 
     /**
-     * @return GmpMathInterface
+     * @return array
      */
-    public function getAdapter(): GmpMathInterface
-    {
-        return $this->adapter;
+    public function versionStringProvider() {
+        return [
+            ['1.0.2', new ExactVersionConstraint('1.0.2')],
+            [
+                '~4.6',
+                new AndVersionConstraintGroup(
+                    '~4.6',
+                    [
+                        new GreaterThanOrEqualToVersionConstraint('~4.6', new Version('4.6')),
+                        new SpecificMajorVersionConstraint('~4.6', 4)
+                    ]
+                )
+            ],
+            [
+                '~4.6.2',
+                new AndVersionConstraintGroup(
+                    '~4.6.2',
+                    [
+                        new GreaterThanOrEqualToVersionConstraint('~4.6.2', new Version('4.6.2')),
+                        new SpecificMajorAndMinorVersionConstraint('~4.6.2', 4, 6)
+                    ]
+                )
+            ],
+            [
+                '^2.6.1',
+                new AndVersionConstraintGroup(
+                    '^2.6.1',
+                    [
+                        new GreaterThanOrEqualToVersionConstraint('^2.6.1', new Version('2.6.1')),
+                        new SpecificMajorVersionConstraint('^2.6.1', 2)
+                    ]
+                )
+            ],
+            ['5.1.*', new SpecificMajorAndMinorVersionConstraint('5.1.*', 5, 1)],
+            ['5.*', new SpecificMajorVersionConstraint('5.*', 5)],
+            ['*', new AnyVersionConstraint()],
+            [
+                '1.0.2 || 1.0.5',
+                new OrVersionConstraintGroup(
+                    '1.0.2 || 1.0.5',
+                    [
+                        new ExactVersionConstraint('1.0.2'),
+                        new ExactVersionConstraint('1.0.5')
+                    ]
+                )
+            ],
+            [
+                '^5.6 || ^7.0',
+                new OrVersionConstraintGroup(
+                    '^5.6 || ^7.0',
+                    [
+                        new AndVersionConstraintGroup(
+                            '^5.6', [
+                                new GreaterThanOrEqualToVersionConstraint('^5.6', new Version('5.6')),
+                                new SpecificMajorVersionConstraint('^5.6', 5)
+                            ]
+                        ),
+                        new AndVersionConstraintGroup(
+                            '^7.0', [
+                                new GreaterThanOrEqualToVersionConstraint('^7.0', new Version('7.0')),
+                                new SpecificMajorVersionConstraint('^7.0', 7)
+                            ]
+                        )
+                    ]
+                )
+            ]
+        ];
     }
 
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Primitives\PointInterface::isInfinity()
-     */
-    public function isInfinity(): bool
-    {
-        return (bool) $this->infinity;
+    public function unsupportedVersionStringProvider() {
+        return [
+            ['foo'],
+            ['+1.0.2'],
+            ['>=2.0'],
+            ['^5.6 || >= 7.0'],
+            ['2.0 || foo']
+        ];
     }
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Primitives\PointInterface::getCurve()
-     */
-    public function getCurve(): CurveFp
+}

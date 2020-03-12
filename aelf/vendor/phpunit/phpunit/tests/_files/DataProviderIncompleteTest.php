@@ -1,20 +1,39 @@
-            if(!isset($result))
-                    {
-                        $result = null;
-                    }
-                    if(isset($task['channel']))
-                    {
-                        $task['channel']->push([
-                            'param'     =>  $param,
-                            'result'    =>  $result,
-                        ]);
-                    }
-                    else if(isset($task['callback']))
-                    {
-                        ($this->createCoCallable)(function() use($task, $param, $result){
-                            $task['callback']($param, $result);
-                        });
-                    }
-                }
-            }
-       
+<?php
+use PHPUnit\Framework\TestCase;
+
+class DataProviderIncompleteTest extends TestCase
+{
+    /**
+     * @dataProvider incompleteTestProviderMethod
+     */
+    public function testIncomplete($a, $b, $c)
+    {
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @dataProvider providerMethod
+     */
+    public function testAdd($a, $b, $c)
+    {
+        $this->assertEquals($c, $a + $b);
+    }
+
+    public function incompleteTestProviderMethod()
+    {
+        $this->markTestIncomplete('incomplete');
+
+        return [
+          [0, 0, 0],
+          [0, 1, 1],
+        ];
+    }
+
+    public static function providerMethod()
+    {
+        return [
+          [0, 0, 0],
+          [0, 1, 1],
+        ];
+    }
+}

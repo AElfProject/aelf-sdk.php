@@ -1,51 +1,67 @@
-ndor folder
-        uses: actions/cache@v1
-        with:
-          path: vendor
-          key: all-build-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            all-build-${{ hashFiles('**/composer.lock') }}
-            all-build-
-      - name: Code style check
-        uses: phpDocumentor/coding-standard@master
-        with:
-          args: -s
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework\Constraint;
 
-  phpstan:
-    runs-on: ubuntu-latest
-    needs: [setup, phpunit]
-    steps:
-      - uses: actions/checkout@master
-      - name: Restore/cache vendor folder
-        uses: actions/cache@v1
-        with:
-          path: vendor
-          key: all-build-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            all-build-${{ hashFiles('**/composer.lock') }}
-            all-build-
-      - name: PHPStan
-        uses: phpDocumentor/phpstan-ga@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: analyse src --configuration phpstan.neon
+use Countable;
 
-  psalm:
-    runs-on: ubuntu-latest
-    needs: [setup, phpunit]
-    steps:
-      - uses: actions/checkout@master
-      - name: Restore/cache vendor folder
-        uses: actions/cache@v1
-        with:
-          path: vendor
-          key: all-build-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            all-build-${{ hashFiles('**/composer.lock') }}
-            all-build-
-      - name: Restore/cache tools folder
-        uses: actions/cache@v1
-        with:
-          path: tools
-          key: all-t
+/**
+ * Constraint that checks whether a variable is empty().
+ */
+class IsEmpty extends Constraint
+{
+    /**
+     * Evaluates the constraint for parameter $other. Returns true if the
+     * constraint is met, false otherwise.
+     *
+     * @param mixed $other Value or object to evaluate.
+     *
+     * @return bool
+     */
+    protected function matches($other)
+    {
+        if ($other instanceof Countable) {
+            return \count($other) === 0;
+        }
+
+        return empty($other);
+    }
+
+    /**
+     * Returns a string representation of the constraint.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return 'is empty';
+    }
+
+    /**
+     * Returns the description of the failure
+     *
+     * The beginning of failure messages is "Failed asserting that" in most
+     * cases. This method should return the second part of that sentence.
+     *
+     * @param mixed $other Evaluated value or object.
+     *
+     * @return string
+     */
+    protected function failureDescription($other)
+    {
+        $type = \gettype($other);
+
+        return \sprintf(
+            '%s %s %s',
+            $type[0] == 'a' || $type[0] == 'o' ? 'an' : 'a',
+            $type,
+            $this->toString()
+        );
+    }
+}

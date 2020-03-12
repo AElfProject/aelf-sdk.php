@@ -1,1 +1,26 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"2":"2 C d J M H I"},C:{"2":"0 1 2 3 4 6 7 8 9 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB ZB YB"},D:{"2":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB"},E:{"2":"F N K D G E A B RB IB TB UB VB WB XB","129":"5 C p aB"},F:{"2":"0 1 5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z bB cB dB eB p AB gB"},G:{"1":"sB tB uB","2":"G IB hB EB jB KB lB mB nB oB pB qB rB"},H:{"2":"vB"},I:{"2":"4 DB F wB xB yB zB EB 0B 1B"},J:{"2":"D A"},K:{"2":"5 A B C L p AB"},L:{"2":"JB"},M:{"2":"3"},N:{"2":"A B"},O:{"2":"2B"},P:{"2":"F 3B 4B 5B 6B 7B"},Q:{"2":"8B"},R:{"2":"9B"
+--TEST--
+phpunit -c ../_files/configuration.custom-printer.xml --debug BankAccountTest ../_files/BankAccountTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '-c';
+$_SERVER['argv'][2] = __DIR__ . '/../_files/configuration.custom-printer.xml';
+$_SERVER['argv'][3] = '--debug';
+$_SERVER['argv'][4] = 'BankAccountTest';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/BankAccountTest.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+
+Starting test 'BankAccountTest::testBalanceIsInitiallyZero'.
+.
+Starting test 'BankAccountTest::testBalanceCannotBecomeNegative'.
+.
+Starting test 'BankAccountTest::testBalanceCannotBecomeNegative2'.
+.                                                                 3 / 3 (100%)
+
+Time: %s, Memory: %s
+
+OK (3 tests, 3 assertions)

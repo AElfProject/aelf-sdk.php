@@ -1,17 +1,51 @@
-## Pure PHP Elliptic Curve DSA and DH
+<?php
+/*
+ * This file is part of object-reflector.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-[![Build Status](https://travis-ci.org/phpecc/phpecc.svg?branch=master)](https://travis-ci.org/phpecc/phpecc)
+declare(strict_types=1);
 
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/phpecc/phpecc/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/phpecc/phpecc?branch=master)
-[![Code Coverage](https://scrutinizer-ci.com/g/phpecc/phpecc/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/phpecc/phpecc/?branch=master)
+namespace SebastianBergmann\ObjectReflector;
 
-[![Latest Stable Version](https://poser.pugx.org/mdanter/ecc/v/stable.png)](https://packagist.org/packages/mdanter/ecc)
-[![Total Downloads](https://poser.pugx.org/mdanter/ecc/downloads.png)](https://packagist.org/packages/mdanter/ecc)
-[![Latest Unstable Version](https://poser.pugx.org/mdanter/ecc/v/unstable.png)](https://packagist.org/packages/mdanter/ecc)
-[![License](https://poser.pugx.org/mdanter/ecc/license.png)](https://packagist.org/packages/mdanter/ecc)
+class ObjectReflector
+{
+    /**
+     * @param object $object
+     *
+     * @return array
+     *
+     * @throws InvalidArgumentException
+     */
+    public function getAttributes($object): array
+    {
+        if (!is_object($object)) {
+            throw new InvalidArgumentException;
+        }
 
-### Information
+        $attributes = [];
+        $className  = get_class($object);
 
-This library is a rewrite/update of Matyas Danter's ECC library. All credit goes to him.
+        foreach ((array) $object as $name => $value) {
+            $name = explode("\0", (string) $name);
 
-For more information on Elliptic Curve Cryptography please read [this fine article](http://www.matyasdanter.com/2010/12/
+            if (count($name) === 1) {
+                $name = $name[0];
+            } else {
+                if ($name[1] !== $className) {
+                    $name = $name[1] . '::' . $name[2];
+                } else {
+                    $name = $name[2];
+                }
+            }
+
+            $attributes[$name] = $value;
+        }
+
+        return $attributes;
+    }
+}

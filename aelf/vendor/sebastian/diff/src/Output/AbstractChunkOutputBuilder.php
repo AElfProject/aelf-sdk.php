@@ -1,65 +1,56 @@
-<?php
+<?php declare(strict_types=1);
+/*
+ * This file is part of sebastian/diff.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace SebastianBergmann\Diff\Output;
 
-namespace BitWasp\Bitcoin\Crypto;
-
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use lastguest\Murmur;
-
-class Hash
+abstract class AbstractChunkOutputBuilder implements DiffOutputBuilderInterface
 {
     /**
-     * Calculate Sha256(RipeMd160()) on the given data
+     * Takes input of the diff array and returns the common parts.
+     * Iterates through diff line by line.
      *
-     * @param BufferInterface $data
-     * @return BufferInterface
+     * @param array $diff
+     * @param int   $lineThreshold
+     *
+     * @return array
      */
-    public static function sha256ripe160(BufferInterface $data): BufferInterface
+    protected function getCommonChunks(array $diff, int $lineThreshold = 5): array
     {
-        return new Buffer(hash('ripemd160', hash('sha256', $data->getBinary(), true), true), 20);
-    }
+        $diffSize     = \count($diff);
+        $capturing    = false;
+        $chunkStart   = 0;
+        $chunkSize    = 0;
+        $commonChunks = [];
 
-    /**
-     * Perform SHA256
-     *
-     * @param BufferInterface $data
-     * @return BufferInterface
-     */
-    public static function sha256(BufferInterface $data): BufferInterface
-    {
-        return new Buffer(hash('sha256', $data->getBinary(), true), 32);
-    }
+        for ($i = 0; $i < $diffSize; ++$i) {
+            if ($diff[$i][1] === 0 /* OLD */) {
+                if ($capturing === false) {
+                    $capturing  = true;
+                    $chunkStart = $i;
+                    $chunkSize  = 0;
+                } else {
+                    ++$chunkSize;
+                }
+            } elseif ($capturing !== false) {
+                if ($chunkSize >= $lineThreshold) {
+                    $commonChunks[$chunkStart] = $chunkStart + $chunkSize;
+                }
 
-    /**
-     * Perform SHA256 twice
-     *
-     * @param BufferInterface $data
-     * @return BufferInterface
-     */
-    public static function sha256d(BufferInterface $data): BufferInterface
-    {
-        return new Buffer(hash('sha256', hash('sha256', $data->getBinary(), true), true), 32);
-    }
+                $capturing = false;
+            }
+        }
 
-    /**
-     * RIPEMD160
-     *
-     * @param BufferInterface $data
-     * @return BufferInterface
-     */
-    public static function ripemd160(BufferInterface $data): BufferInterface
-    {
-        return new Buffer(hash('ripemd160', $data->getBinary(), true), 20);
-    }
+        if ($capturing !== false && $chunkSize >= $lineThreshold) {
+            $commonChunks[$chunkStart] = $chunkStart + $chunkSize;
+        }
 
-    /**
-     * RIPEMD160 twice
-     *
-     * @param BufferInterface $data
-     * @return BufferInterface
-     */
-    public static function ripemd160d(BufferInterface $data): BufferInterface
-    {
-        return new Buffer(hash('ripemd160', hash('ripemd16
+        return $commonChunks;
+    }
+}

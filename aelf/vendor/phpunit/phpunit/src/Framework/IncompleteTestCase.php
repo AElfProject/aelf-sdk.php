@@ -1,58 +1,83 @@
-     }
-        return $this->cache[__FUNCTION__];
-    }
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework;
 
+/**
+ * An incomplete test case
+ */
+class IncompleteTestCase extends TestCase
+{
     /**
-     * Add a little-endian Int128 serializer to the template
-     *
-     * @return Int128
+     * @var string
      */
-    public function int128le(): Int128
-    {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
-    }
+    protected $message = '';
 
     /**
-     * Add a int256 serializer to the template
-     *
-     * @return Int256
+     * @var bool
      */
-    public function int256(): Int256
-    {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
-    }
+    protected $backupGlobals = false;
 
     /**
-     * Add a little-endian Int256 serializer to the template
-     *
-     * @return Int256
+     * @var bool
      */
-    public function int256le(): Int256
-    {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
-    }
+    protected $backupStaticAttributes = false;
 
     /**
-     * Add a VarInt serializer to the template
-     *
-     * @return VarInt
+     * @var bool
      */
-    public function varint(): VarInt
+    protected $runTestInSeparateProcess = false;
+
+    /**
+     * @var bool
+     */
+    protected $useErrorHandler = false;
+
+    /**
+     * @var bool
+     */
+    protected $useOutputBuffering = false;
+
+    /**
+     * @param string $className
+     * @param string $methodName
+     * @param string $message
+     */
+    public function __construct($className, $methodName, $message = '')
     {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
+        $this->message = $message;
+        parent::__construct($className . '::' . $methodName);
     }
 
     /**
-     * Add a V
+     * @throws Exception
+     */
+    protected function runTest()
+    {
+        $this->markTestIncomplete($this->message);
+    }
+
+    /**
+     * @return string
+     */
+    public function getMessage()
+    {
+        return $this->message;
+    }
+
+    /**
+     * Returns a string representation of the test case.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return $this->getName();
+    }
+}

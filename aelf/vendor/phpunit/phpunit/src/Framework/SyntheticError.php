@@ -1,55 +1,80 @@
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PHPUnit\Framework;
 
-namespace BitWasp\Buffertools;
-
-use BitWasp\Buffertools\Types\ByteString;
-use BitWasp\Buffertools\Types\Int128;
-use BitWasp\Buffertools\Types\Int16;
-use BitWasp\Buffertools\Types\Int256;
-use BitWasp\Buffertools\Types\Int32;
-use BitWasp\Buffertools\Types\Int64;
-use BitWasp\Buffertools\Types\Int8;
-use BitWasp\Buffertools\Types\Uint128;
-use BitWasp\Buffertools\Types\Uint16;
-use BitWasp\Buffertools\Types\Uint256;
-use BitWasp\Buffertools\Types\Uint32;
-use BitWasp\Buffertools\Types\Uint64;
-use BitWasp\Buffertools\Types\Uint8;
-use BitWasp\Buffertools\Types\VarInt;
-use BitWasp\Buffertools\Types\VarString;
-use BitWasp\Buffertools\Types\Vector;
-
-class CachingTypeFactory extends TypeFactory
+/**
+ * Creates a synthetic failed assertion.
+ */
+class SyntheticError extends AssertionFailedError
 {
-    protected $cache = [];
+    /**
+     * The synthetic file.
+     *
+     * @var string
+     */
+    protected $syntheticFile = '';
 
     /**
-     * Add a Uint8 serializer to the template
+     * The synthetic line number.
      *
-     * @return Uint8
+     * @var int
      */
-    public function uint8(): Uint8
+    protected $syntheticLine = 0;
+
+    /**
+     * The synthetic trace.
+     *
+     * @var array
+     */
+    protected $syntheticTrace = [];
+
+    /**
+     * Constructor.
+     *
+     * @param string $message
+     * @param int    $code
+     * @param string $file
+     * @param int    $line
+     * @param array  $trace
+     */
+    public function __construct($message, $code, $file, $line, $trace)
     {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
+        parent::__construct($message, $code);
+
+        $this->syntheticFile  = $file;
+        $this->syntheticLine  = $line;
+        $this->syntheticTrace = $trace;
     }
 
     /**
-     * Add a little-endian Uint8 serializer to the template
-     *
-     * @return Uint8
+     * @return string
      */
-    public function uint8le(): Uint8
+    public function getSyntheticFile()
     {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
+        return $this->syntheticFile;
     }
 
     /**
-     * Add a Uint16 
+     * @return int
+     */
+    public function getSyntheticLine()
+    {
+        return $this->syntheticLine;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSyntheticTrace()
+    {
+        return $this->syntheticTrace;
+    }
+}

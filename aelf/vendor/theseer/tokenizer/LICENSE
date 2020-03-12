@@ -1,60 +1,30 @@
-<?php
+Tokenizer
 
-declare(strict_types=1);
+Copyright (c) 2017 Arne Blankerts <arne@blankerts.de> and contributors
+All rights reserved.
 
-namespace BitWasp\Buffertools;
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
 
-class Buffertools
-{
-    /**
-     * @param int $decimal
-     * @return string
-     * @throws \Exception
-     */
-    public static function numToVarIntBin(int $decimal): string
-    {
-        if ($decimal < 0xfd) {
-            $bin = chr($decimal);
-        } elseif ($decimal <= 0xffff) {
-            // Uint16
-            $bin = pack("Cv", 0xfd, $decimal);
-        } elseif ($decimal <= 0xffffffff) {
-            // Uint32
-            $bin = pack("CV", 0xfe, $decimal);
-        } else {
-            // Todo, support for 64bit integers
-            throw new \Exception('numToVarInt(): Integer too large');
-        }
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
 
-        return $bin;
-    }
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-    /**
-     * Convert a decimal number into a VarInt Buffer
-     *
-     * @param  integer $decimal
-     * @return BufferInterface
-     * @throws \Exception
-     */
-    public static function numToVarInt(int $decimal): BufferInterface
-    {
-        return new Buffer(static::numToVarIntBin($decimal));
-    }
+* Neither the name of Arne Blankerts nor the names of contributors
+  may be used to endorse or promote products derived from this software
+  without specific prior written permission.
 
-    /**
-     * Flip byte order of this binary string. Accepts a string or Buffer,
-     * and will return whatever type it was given.
-     *
-     * @param  string|BufferInterface $bytes
-     * @return string|BufferInterface
-     */
-    public static function flipBytes($bytes)
-    {
-        $isBuffer = $bytes instanceof BufferInterface;
-        if ($isBuffer) {
-            $bytes = $bytes->getBinary();
-        }
-
-        $flipped = implode('', array_reverse(str_split($bytes, 1)));
-        if ($isBuffer) {
-       
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT  * NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.

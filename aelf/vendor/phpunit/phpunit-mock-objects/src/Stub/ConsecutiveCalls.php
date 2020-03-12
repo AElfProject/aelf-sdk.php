@@ -1,17 +1,46 @@
-1f4b0c1115e88784a321fa5574a9688ea4d7e646	refs/heads/master
-1f4b0c1115e88784a321fa5574a9688ea4d7e646	refs/remotes/origin/HEAD
-430ba54a3c3144f03e8a03e1679e672c688cb8a6	refs/remotes/origin/ImprovedInvalidBase58Exception
-e60ac4d2cc2b2635e507291ec84f6286d6af2d7e	refs/remotes/origin/WhatIsBase58
-1f4b0c1115e88784a321fa5574a9688ea4d7e646	refs/remotes/origin/master
-f65f142cf590039c9f70ff892f4f43a77a0bbe95	refs/remotes/origin/php-7.x
-cbb0cde3fcf1d7b21c03dd8f4fa2fbeac9d25d55	refs/remotes/origin/setAlphabet
-7bb705ff49ae33883010949c1e80c15a74a85522	refs/remotes/origin/static
-4ee69d0ce08d0ee731874b4a087e458f3cf2be0a	refs/remotes/origin/travis-7.1
-bd9fc19c788160a2f85ba0a19cd800eaf5ba5e99	refs/remotes/origin/v1.1.5
-1f4b0c1115e88784a321fa5574a9688ea4d7e646	refs/remotes/origin/v2
-274d55246cf97770aa80f894f03f5a3985b74685	refs/tags/v1.0.0
-3ee9fac3f339888c60cda16081ee32aba4903504	refs/tags/v1.0.0^{}
-116e9fa7df5ec62a5b7ee33006500947954066ec	refs/tags/v1.0.1
-c80e79b2a5e57eec7eccf84d6f65231ab79c8234	refs/tags/v1.0.1^{}
-04e81574a1ee81325f8e5c97ea8f94b612a10c17	refs/tags/v1.0.2
-3cd02b3eb73665dec8f2efdce89fbc94d463ee2c	refs/tags/v1.0
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+use SebastianBergmann\Exporter\Exporter;
+
+/**
+ * Stubs a method by returning a user-defined stack of values.
+ */
+class PHPUnit_Framework_MockObject_Stub_ConsecutiveCalls implements PHPUnit_Framework_MockObject_Stub
+{
+    protected $stack;
+    protected $value;
+
+    public function __construct($stack)
+    {
+        $this->stack = $stack;
+    }
+
+    public function invoke(PHPUnit_Framework_MockObject_Invocation $invocation)
+    {
+        $this->value = array_shift($this->stack);
+
+        if ($this->value instanceof PHPUnit_Framework_MockObject_Stub) {
+            $this->value = $this->value->invoke($invocation);
+        }
+
+        return $this->value;
+    }
+
+    public function toString()
+    {
+        $exporter = new Exporter;
+
+        return sprintf(
+            'return user-specified value %s',
+            $exporter->export($this->value)
+        );
+    }
+}

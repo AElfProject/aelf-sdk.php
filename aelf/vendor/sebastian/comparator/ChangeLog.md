@@ -1,34 +1,33 @@
-<?php
-declare(strict_types=1);
+# ChangeLog
 
-namespace Mdanter\Ecc\Primitives;
+All notable changes are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-use Mdanter\Ecc\Crypto\Key\PrivateKeyInterface;
-use Mdanter\Ecc\Crypto\Key\PublicKeyInterface;
-use Mdanter\Ecc\Math\GmpMathInterface;
-use Mdanter\Ecc\Crypto\Key\PrivateKey;
-use Mdanter\Ecc\Crypto\Key\PublicKey;
-use Mdanter\Ecc\Random\RandomGeneratorFactory;
-use Mdanter\Ecc\Random\RandomNumberGeneratorInterface;
+## [2.1.3] - 2018-02-01
 
-/**
- * Curve point from which public and private keys can be derived.
- */
-class GeneratorPoint extends Point
-{
-    /**
-     * @var RandomNumberGeneratorInterface
-     */
-    private $generator;
+### Changed
 
-    /**
-     * @param GmpMathInterface               $adapter
-     * @param CurveFpInterface               $curve
-     * @param \GMP                           $x
-     * @param \GMP                           $y
-     * @param \GMP                           $order
-     * @param RandomNumberGeneratorInterface $generator
-     */
-    public function __construct(
-        GmpMathInterface $adapter,
-        CurveFpInterfa
+* This component is now compatible with version 3 of `sebastian/diff`
+
+## [2.1.2] - 2018-01-12
+
+### Fixed
+
+* Fix comparison of DateTimeImmutable objects
+
+## [2.1.1] - 2017-12-22
+
+### Fixed
+
+* Fixed [phpunit/#2923](https://github.com/sebastianbergmann/phpunit/issues/2923): Unexpected failed date matching
+
+## [2.1.0] - 2017-11-03
+
+### Added
+
+* Added `SebastianBergmann\Comparator\Factory::reset()` to unregister all non-default comparators
+* Added support for `phpunit/phpunit-mock-objects` version `^5.0`
+
+[2.1.3]: https://github.com/sebastianbergmann/comparator/compare/2.1.2...2.1.3
+[2.1.2]: https://github.com/sebastianbergmann/comparator/compare/2.1.1...2.1.2
+[2.1.1]: https://github.com/sebastianbergmann/comparator/compare/2.1.0...2.1.1
+[2.1.0]: https://github.com/sebastianbergmann/comparator/compare/2.0.2...2.1.0

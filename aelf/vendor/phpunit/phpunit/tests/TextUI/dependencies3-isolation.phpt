@@ -1,25 +1,19 @@
+--TEST--
+phpunit --process-isolation MultiDependencyTest ../_files/MultiDependencyTest.php
+--FILE--
 <?php
-namespace Yurun\Util\YurunHttp\Http\Psr7\Consts;
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--process-isolation';
+$_SERVER['argv'][3] = 'MultiDependencyTest';
+$_SERVER['argv'][4] = __DIR__ . '/../_files/MultiDependencyTest.php';
 
-/**
- * 常见的媒体类型
- */
-abstract class MediaType
-{
-    const ALL = '*/*';
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
 
-    const APPLICATION_ATOM_XML = 'application/atom+xml';
+...                                                                 3 / 3 (100%)
 
-    const APPLICATION_FORM_URLENCODED = 'application/x-www-form-urlencoded';
+Time: %s, Memory: %s
 
-    const APPLICATION_JSON = 'application/json';
-
-    const APPLICATION_JSON_UTF8 = 'application/json;charset=UTF-8';
-
-    const APPLICATION_OCTET_STREAM = 'application/octet-stream';
-
-    const APPLICATION_PDF = 'application/pdf';
-
-    const APPLICATION_PROBLEM_JSON = 'application/problem+json';
-
-  
+OK (3 tests, 4 assertions)

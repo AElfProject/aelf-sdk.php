@@ -1,43 +1,77 @@
-"use strict";
+<?php
+use PHPUnit\Framework\TestCase;
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var Declaration = require('../declaration');
-
-var utils = require('../utils');
-
-var BackgroundClip =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(BackgroundClip, _Declaration);
-
-  function BackgroundClip(name, prefixes, all) {
-    var _this;
-
-    _this = _Declaration.call(this, name, prefixes, all) || this;
-
-    if (_this.prefixes) {
-      _this.prefixes = utils.uniq(_this.prefixes.map(function (i) {
-        return i === '-ms-' ? '-webkit-' : i;
-      }));
+class MultipleDataProviderTest extends TestCase
+{
+    /**
+     * @dataProvider providerA
+     * @dataProvider providerB
+     * @dataProvider providerC
+     */
+    public function testOne()
+    {
     }
 
-    return _this;
-  }
+    /**
+     * @dataProvider providerD
+     * @dataProvider providerE
+     * @dataProvider providerF
+     */
+    public function testTwo()
+    {
+    }
 
-  var _proto = BackgroundClip.prototype;
+    public static function providerA()
+    {
+        return [
+            ['ok', null, null],
+            ['ok', null, null],
+            ['ok', null, null]
+        ];
+    }
 
-  _proto.check = function check(decl) {
-    return decl.value.toLowerCase() === 'text';
-  };
+    public static function providerB()
+    {
+        return [
+            [null, 'ok', null],
+            [null, 'ok', null],
+            [null, 'ok', null]
+        ];
+    }
 
-  return BackgroundClip;
-}(Declaration);
+    public static function providerC()
+    {
+        return [
+            [null, null, 'ok'],
+            [null, null, 'ok'],
+            [null, null, 'ok']
+        ];
+    }
 
-_defineProperty(BackgroundClip, "names", ['background-clip']);
+    public static function providerD()
+    {
+        yield ['ok', null, null];
+        yield ['ok', null, null];
+        yield ['ok', null, null];
+    }
 
-module.exports = Bac
+    public static function providerE()
+    {
+        yield [null, 'ok', null];
+        yield [null, 'ok', null];
+        yield [null, 'ok', null];
+    }
+
+    public static function providerF()
+    {
+        $object = new ArrayObject(
+            [
+                [null, null, 'ok'],
+                [null, null, 'ok'],
+                [null, null, 'ok']
+            ]
+        );
+
+        return $object->getIterator();
+    }
+}

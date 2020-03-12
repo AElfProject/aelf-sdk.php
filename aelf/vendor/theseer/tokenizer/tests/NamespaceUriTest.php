@@ -1,48 +1,29 @@
-<?php
+<?php declare(strict_types = 1);
+namespace TheSeer\Tokenizer;
 
-declare(strict_types=1);
+use PHPUnit\Framework\TestCase;
 
-namespace BitWasp\Bitcoin\Serializer\Key\HierarchicalKey;
+/**
+ * @covers \TheSeer\Tokenizer\NamespaceUri
+ */
+class NamespaceUriTest extends TestCase {
 
-use BitWasp\Buffertools\BufferInterface;
+    public function testCanBeConstructedWithValidNamespace() {
+        $this->assertInstanceOf(
+            NamespaceUri::class,
+            new NamespaceUri('a:b')
+        );
+    }
 
-class RawKeyParams
-{
-    /**
-     * @var string
-     */
-    private $prefix;
+    public function testInvalidNamespaceThrowsException() {
+        $this->expectException(NamespaceUriException::class);
+        new NamespaceUri('invalid-no-colon');
+    }
 
-    /**
-     * @var int
-     */
-    private $depth;
-
-    /**
-     * @var int
-     */
-    private $parentFpr;
-
-    /**
-     * @var int
-     */
-    private $sequence;
-
-    /**
-     * @var BufferInterface
-     */
-    private $chainCode;
-
-    /**
-     * @var BufferInterface
-     */
-    private $keyData;
-
-    /**
-     * RawKeyParams constructor.
-     * @param string $prefix
-     * @param int $depth
-     * @param int $parentFingerprint
-     * @param int $sequence
-     * @param BufferInterface $chainCode
-     * @param
+    public function testStringRepresentationCanBeRetrieved() {
+        $this->assertEquals(
+            'a:b',
+            (new NamespaceUri('a:b'))->asString()
+        );
+    }
+}

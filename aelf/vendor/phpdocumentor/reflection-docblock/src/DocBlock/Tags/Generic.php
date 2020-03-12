@@ -1,98 +1,82 @@
 <?php
 
-namespace Hhxsv5\PhpMultiCurl;
+declare(strict_types=1);
 
-class Response
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\DocBlock\Tags;
+
+use InvalidArgumentException;
+use phpDocumentor\Reflection\DocBlock\Description;
+use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
+use phpDocumentor\Reflection\DocBlock\StandardTagFactory;
+use phpDocumentor\Reflection\Types\Context as TypeContext;
+use Webmozart\Assert\Assert;
+use function preg_match;
+
+/**
+ * Parses a tag definition for a DocBlock.
+ */
+final class Generic extends BaseTag implements Factory\StaticMethod
 {
-    protected $url;
-    protected $httpCode;
-    protected $headers = [];
-    protected $body    = '';
+    /**
+     * Parses a tag and populates the member variables.
+     *
+     * @param string      $name        Name of the tag.
+     * @param Description $description The contents of the given tag.
+     */
+    public function __construct(string $name, ?Description $description = null)
+    {
+        $this->validateTagName($name);
+
+        $this->name        = $name;
+        $this->description = $description;
+    }
 
     /**
-     * [errno, errstr]
-     * @var array
+     * Creates a new tag that represents any unknown tag type.
+     *
+     * @return static
      */
-    protected $error = [];
+    public static function create(
+        string $body,
+        string $name = '',
+        ?DescriptionFactory $descriptionFactory = null,
+        ?TypeContext $context = null
+    ) : self {
+        Assert::stringNotEmpty($name);
+        Assert::notNull($descriptionFactory);
 
-    public function __construct($url = null, $httpCode = 0, $body = '', array $headers = [], array $error = [])
-    {
-        $this->url = $url;
-        $this->httpCode = $httpCode;
-        $this->headers = array_change_key_case($headers, CASE_LOWER);
-        $this->body = $body;
-        $this->error = $error;
+        $description = $body !== '' ? $descriptionFactory->create($body, $context) : null;
+
+        return new static($name, $description);
     }
 
-    public function getUrl()
+    /**
+     * Returns the tag as a serialized string
+     */
+    public function __toString() : string
     {
-        return $this->url;
+        return $this->description ? $this->description->render() : '';
     }
 
-    public function getHttpCode()
+    /**
+     * Validates if the tag name matches the expected format, otherwise throws an exception.
+     */
+    private function validateTagName(string $name) : void
     {
-        return $this->httpCode;
-    }
-
-    public function getHeader($key)
-    {
-        $key = strtolower($key);
-        return isset($this->headers[$key]) ? $this->headers[$key] : null;
-    }
-
-    public function getHeaders()
-    {
-        return $this->headers;
-    }
-
-    public function getBody()
-    {
-        return $this->body;
-    }
-
-    public function hasError()
-    {
-        return !empty($this->error[0]) || !empty($this->error[1]);
-    }
-
-    public function getError()
-    {
-        return $this->error;
-    }
-
-    public function __toString()
-    {
-        return $this->body;
-    }
-
-    public static function parse($responseStr, $headerSize)
-    {
-        $header = substr($responseStr, 0, $headerSize);
-        $body = substr($responseStr, $headerSize);
-        $lines = explode("\n", $header);
-        array_shift($lines);//Remove status
-
-        $headers = [];
-        foreach ($lines as $part) {
-            $middle = explode(':', $part);
-            $key = trim($middle[0]);
-            if ($key === '') {
-                continue;
-            }
-            if (isset($headers[$key])) {
-                $headers[$key] = (array)$headers[$key];
-                $headers[$key][] = isset($middle[1]) ? trim($middle[1]) : '';
-            } else {
-                $headers[$key] = isset($middle[1]) ? trim($middle[1]) : '';
-            }
+        if (!preg_match('/^' . StandardTagFactory::REGEX_TAGNAME . '$/u', $name)) {
+            throw new InvalidArgumentException(
+                'The tag name "' . $name . '" is not wellformed. Tags may only consist of letters, underscores, '
+                . 'hyphens and backslashes.'
+            );
         }
-        return [$headers, $body];
     }
-
-    public static function make($url, $code, $responseStr, $headerSize, array $error)
-    {
-        if (!empty($error[0]) || !empty($error[1])) {
-            $headers = [];
-            $body = '';
-        } else {
-            list($headers, $body) = static::parse($responseStr, $heade
+}

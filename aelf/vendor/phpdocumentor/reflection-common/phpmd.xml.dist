@@ -1,36 +1,23 @@
-<?php
-
-namespace Elliptic\Curve\MontCurve;
-
-use BN\BN;
-
-class Point extends \Elliptic\Curve\BaseCurve\Point
-{
-    public $x;
-    public $z;
-
-    function __construct($curve, $x, $z)
-    {
-        parent::__construct($curve, "projective");
-        if( $x == null && $z == null )
-        {
-            $this->x = $this->curve->one;
-            $this->z = $this->curve->zero;
-        }
-        else
-        {
-            $this->x = new BN($x, 16);
-            $this->z = new BN($z, 16);
-            if( !$this->x->red )
-                $this->x = $this->x->toRed($this->curve->red);
-            if( !$this->z->red )
-                $this->z = $this->z->toRed($this->curve->red);
-        }
-    }
-
-    public function precompute($power = null) {
-        // No-op
-    }
-
-    protected function _encode($compact) {
-        return $this->getX()->toArray
+<?xml version="1.0" encoding="UTF-8" ?>
+<ruleset
+    name="ProxyManager rules"
+    xmlns="http://pmd.sf.net/ruleset/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+    xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd"
+>
+    <rule ref="rulesets/codesize.xml"/>
+    <rule ref="rulesets/unusedcode.xml"/>
+    <rule ref="rulesets/design.xml">
+        <!-- eval is needed to generate runtime classes -->
+        <exclude name="EvalExpression"/>
+    </rule>
+    <rule ref="rulesets/naming.xml">
+        <exclude name="LongVariable"/>
+    </rule>
+    <rule ref="rulesets/naming.xml/LongVariable">
+        <properties>
+            <property name="minimum">40</property>
+        </properties>
+    </rule>
+</ruleset>

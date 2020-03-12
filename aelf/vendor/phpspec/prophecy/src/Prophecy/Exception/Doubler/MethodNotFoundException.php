@@ -1,55 +1,60 @@
-s streamed.
-     *
-     * Generated from protobuf field <code>bool request_streaming = 3;</code>
-     * @param bool $var
-     * @return $this
-     */
-    public function setRequestStreaming($var)
-    {
-        GPBUtil::checkBool($var);
-        $this->request_streaming = $var;
+<?php
 
-        return $this;
-    }
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Exception\Doubler;
+
+class MethodNotFoundException extends DoubleException
+{
+    /**
+     * @var string|object
+     */
+    private $classname;
 
     /**
-     * The URL of the output message type.
-     *
-     * Generated from protobuf field <code>string response_type_url = 4;</code>
-     * @return string
+     * @var string
      */
-    public function getResponseTypeUrl()
-    {
-        return $this->response_type_url;
-    }
+    private $methodName;
 
     /**
-     * The URL of the output message type.
-     *
-     * Generated from protobuf field <code>string response_type_url = 4;</code>
-     * @param string $var
-     * @return $this
+     * @var array
      */
-    public function setResponseTypeUrl($var)
-    {
-        GPBUtil::checkString($var, True);
-        $this->response_type_url = $var;
-
-        return $this;
-    }
+    private $arguments;
 
     /**
-     * If true, the response is streamed.
-     *
-     * Generated from protobuf field <code>bool response_streaming = 5;</code>
-     * @return bool
+     * @param string $message
+     * @param string|object $classname
+     * @param string $methodName
+     * @param null|Argument\ArgumentsWildcard|array $arguments
      */
-    public function getResponseStreaming()
+    public function __construct($message, $classname, $methodName, $arguments = null)
     {
-        return $this->response_streaming;
+        parent::__construct($message);
+
+        $this->classname  = $classname;
+        $this->methodName = $methodName;
+        $this->arguments = $arguments;
     }
 
-    /**
-     * If true, the response is streamed.
-     *
-     *
+    public function getClassname()
+    {
+        return $this->classname;
+    }
+
+    public function getMethodName()
+    {
+        return $this->methodName;
+    }
+
+    public function getArguments()
+    {
+        return $this->arguments;
+    }
+}

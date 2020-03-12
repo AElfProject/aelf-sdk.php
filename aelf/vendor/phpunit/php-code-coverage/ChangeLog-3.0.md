@@ -1,40 +1,31 @@
-<?php
+# Changes in PHP_CodeCoverage 3.0
 
-namespace Elliptic\Curve;
+All notable changes of the PHP_CodeCoverage 3.0 release series are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-use Elliptic\Utils;
-use \Exception;
-use BN\BN;
+## [3.0.2] - 2015-11-12
 
-abstract class BaseCurve
-{
-    public $type;
-    public $p;
-    public $red;
-    public $zero;
-    public $one;
-    public $two;
-    public $n;
-    public $g;
-    protected $_wnafT1;
-    protected $_wnafT2;
-    protected $_wnafT3;
-    protected $_wnafT4;
-    public $redN;
-    public $_maxwellTrick;
+### Changed
 
-    function __construct($type, $conf)
-    {
-        $this->type = $type;
-        $this->p = new BN($conf["p"], 16);
+* It is now optional that `@deprecated` code is ignored
 
-        //Use Montgomery, when there is no fast reduction for the prime
-        $this->red = isset($conf["prime"]) ? BN::red($conf["prime"]) : BN::mont($this->p);
+## [3.0.1] - 2015-10-06
 
-        //Useful for many curves
-        $this->zero = (new BN(0))->toRed($this->red);
-        $this->one = (new BN(1))->toRed($this->red);
-        $this->two = (new BN(2))->toRed($this->red);
+### Fixed
 
-        //Curve configuration, optional
-        $th
+* Fixed [#391](https://github.com/sebastianbergmann/php-code-coverage/pull/391): Missing `</abbr>` tag
+
+## [3.0.0] - 2015-10-02
+
+### Changed
+
+* It is now mandatory to configure a whitelist
+
+### Removed
+
+* The blacklist functionality has been removed
+* PHP_CodeCoverage is no longer supported on PHP 5.3, PHP 5.4, and PHP 5.5
+
+[3.0.2]: https://github.com/sebastianbergmann/php-code-coverage/compare/3.0.1...3.0.2
+[3.0.1]: https://github.com/sebastianbergmann/php-code-coverage/compare/3.0.0...3.0.1
+[3.0.0]: https://github.com/sebastianbergmann/php-code-coverage/compare/2.2...3.0.0
+

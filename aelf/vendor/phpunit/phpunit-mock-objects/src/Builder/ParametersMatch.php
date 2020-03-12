@@ -1,43 +1,47 @@
-"use strict";
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+/**
+ * Builder interface for parameter matchers.
+ */
+interface PHPUnit_Framework_MockObject_Builder_ParametersMatch extends PHPUnit_Framework_MockObject_Builder_Match
+{
+    /**
+     * Sets the parameters to match for, each parameter to this function will
+     * be part of match. To perform specific matches or constraints create a
+     * new PHPUnit_Framework_Constraint and use it for the parameter.
+     * If the parameter value is not a constraint it will use the
+     * PHPUnit_Framework_Constraint_IsEqual for the value.
+     *
+     * Some examples:
+     * <code>
+     * // match first parameter with value 2
+     * $b->with(2);
+     * // match first parameter with value 'smock' and second identical to 42
+     * $b->with('smock', new PHPUnit_Framework_Constraint_IsEqual(42));
+     * </code>
+     *
+     * @return PHPUnit_Framework_MockObject_Builder_ParametersMatch
+     */
+    public function with(...$arguments);
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var OldValue = require('../old-value');
-
-var Value = require('../value');
-
-var Pixelated =
-/*#__PURE__*/
-function (_Value) {
-  _inheritsLoose(Pixelated, _Value);
-
-  function Pixelated() {
-    return _Value.apply(this, arguments) || this;
-  }
-
-  var _proto = Pixelated.prototype;
-
-  /**
-   * Use non-standard name for WebKit and Firefox
-   */
-  _proto.replace = function replace(string, prefix) {
-    if (prefix === '-webkit-') {
-      return string.replace(this.regexp(), '$1-webkit-optimize-contrast');
-    }
-
-    if (prefix === '-moz-') {
-      return string.replace(this.regexp(), '$1-moz-crisp-edges');
-    }
-
-    return _Value.prototype.replace.call(this, string, prefix);
-  }
-  /**
-   * Different name for WebKit and Firefox
-   */
-  ;
-
-  _proto.old = function 
+    /**
+     * Sets a matcher which allows any kind of parameters.
+     *
+     * Some examples:
+     * <code>
+     * // match any number of parameters
+     * $b->withAnyParameters();
+     * </code>
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_AnyParameters
+     */
+    public function withAnyParameters();
+}

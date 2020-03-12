@@ -1,58 +1,48 @@
- }
+<?php
+/*
+ * This file is part of sebastian/comparator.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-    return "{$hrp}1" . implode('', $encoded);
-}
+namespace SebastianBergmann\Comparator;
 
 /**
- * @throws Bech32Exception
- * @param string $sBech - the bech32 encoded string
- * @return array - returns [$hrp, $dataChars]
+ * Compares PHPUnit_Framework_MockObject_MockObject instances for equality.
  */
-function decodeRaw($sBech)
+class MockObjectComparator extends ObjectComparator
 {
-    $length = strlen($sBech);
-    if ($length < 8) {
-        throw new Bech32Exception("Bech32 string is too short");
+    /**
+     * Returns whether the comparator can compare two values.
+     *
+     * @param mixed $expected The first value to compare
+     * @param mixed $actual   The second value to compare
+     *
+     * @return bool
+     */
+    public function accepts($expected, $actual)
+    {
+        return ($expected instanceof \PHPUnit_Framework_MockObject_MockObject || $expected instanceof \PHPUnit\Framework\MockObject\MockObject) &&
+               ($actual instanceof \PHPUnit_Framework_MockObject_MockObject || $actual instanceof \PHPUnit\Framework\MockObject\MockObject);
     }
 
-    $chars = array_values(unpack('C*', $sBech));
+    /**
+     * Converts an object to an array containing all of its private, protected
+     * and public properties.
+     *
+     * @param object $object
+     *
+     * @return array
+     */
+    protected function toArray($object)
+    {
+        $array = parent::toArray($object);
 
-    $haveUpper = false;
-    $haveLower = false;
-    $positionOne = -1;
+        unset($array['__phpunit_invocationMocker']);
 
-    for ($i = 0; $i < $length; $i++) {
-        $x = $chars[$i];
-        if ($x < 33 || $x > 126) {
-            throw new Bech32Exception('Out of range character in bech32 string');
-        }
-
-        if ($x >= 0x61 && $x <= 0x7a) {
-            $haveLower = true;
-        }
-
-        if ($x >= 0x41 && $x <= 0x5a) {
-            $haveUpper = true;
-            $x = $chars[$i] = $x + 0x20;
-        }
-
-        // find location of last '1' character
-        if ($x === 0x31) {
-            $positionOne = $i;
-        }
+        return $array;
     }
-
-    if ($haveUpper && $haveLower) {
-        throw new Bech32Exception('Data contains mixture of higher/lower case characters');
-    }
-
-    if ($positionOne === -1) {
-        throw new Bech32Exception("Missing separator character");
-    }
-
-    if ($positionOne < 1) {
-        throw new Bech32Exception("Empty HRP");
-    }
-
-    if (($positionOne + 7) > $length) {
-        throw new 
+}

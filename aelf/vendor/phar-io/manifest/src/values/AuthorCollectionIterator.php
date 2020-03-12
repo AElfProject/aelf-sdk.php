@@ -1,36 +1,56 @@
-tTransactionPoolStatus();
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PharIo\Manifest;
+
+class AuthorCollectionIterator implements \Iterator {
+    /**
+     * @var Author[]
+     */
+    private $authors = [];
+
+    /**
+     * @var int
+     */
+    private $position;
+
+    public function __construct(AuthorCollection $authors) {
+        $this->authors = $authors->getAuthors();
+    }
+
+    public function rewind() {
+        $this->position = 0;
     }
 
     /**
-     * Call a read-only method of a contract. wa:/api/blockChain/executeTransaction
+     * @return bool
      */
-    public function executeTransaction($input){
-        return $this->getBlockChainSdkObj()->executeTransaction($input);
+    public function valid() {
+        return $this->position < count($this->authors);
     }
 
     /**
-     * Creates an unsigned serialized transaction wa:/api/blockChain/rawTransaction.
+     * @return int
      */
-    public function createRawTransaction($input)
-       {
-        return $this->getBlockChainSdkObj()->createRawTransaction($input);
+    public function key() {
+        return $this->position;
     }
 
     /**
-     * Call a method of a contract by given serialized str wa:/api/blockChain/executeRawTransaction.
+     * @return Author
      */
-    public function executeRawTransaction($input){
-        return $this->getBlockChainSdkObj()->executeRawTransaction($input);
+    public function current() {
+        return $this->authors[$this->position];
     }
 
-    /**
-     * Broadcast a serialized transaction. wa:/api/blockChain/sendRawTransaction
-     */
-    public function sendRawTransaction($input){
-        return $this->getBlockChainSdkObj()->sendRawTransaction($input);
+    public function next() {
+        $this->position++;
     }
-
-    /**
-     * Broadcast a transaction wa:/api/blockChain/sendTransaction.
-     */
-    public function sendT
+}

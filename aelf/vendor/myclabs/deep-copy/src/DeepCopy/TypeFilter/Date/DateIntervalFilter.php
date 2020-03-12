@@ -1,26 +1,33 @@
 <?php
-/*
- * This file is part of Object Enumerator.
- *
- * (c) Sebastian Bergmann <sebastian@phpunit.de>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
 
-namespace SebastianBergmann\ObjectEnumerator;
+namespace DeepCopy\TypeFilter\Date;
 
-use SebastianBergmann\ObjectReflector\ObjectReflector;
-use SebastianBergmann\RecursionContext\Context;
+use DateInterval;
+use DeepCopy\TypeFilter\TypeFilter;
 
 /**
- * Traverses array structures and object graphs
- * to enumerate all referenced objects.
+ * @final
+ *
+ * @deprecated Will be removed in 2.0. This filter will no longer be necessary in PHP 7.1+.
  */
-class Enumerator
+class DateIntervalFilter implements TypeFilter
 {
+
     /**
-     * Returns an array of all objects referenced either
-     * directly or indirectly by a variable.
+     * {@inheritdoc}
      *
-     * @param arr
+     * @param DateInterval $element
+     *
+     * @see http://news.php.net/php.bugs/205076
+     */
+    public function apply($element)
+    {
+        $copy = new DateInterval('P0D');
+
+        foreach ($element as $propertyName => $propertyValue) {
+            $copy->{$propertyName} = $propertyValue;
+        }
+
+        return $copy;
+    }
+}

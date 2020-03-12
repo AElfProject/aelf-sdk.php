@@ -1,125 +1,137 @@
 <?php
-
-namespace Mdanter\Ecc\Math;
-
-/***********************************************************************
-     * Copyright (C) 2012 Matyas Danter
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining
-     * a copy of this software and associated documentation files (the "Software"),
-     * to deal in the Software without restriction, including without limitation
-     * the rights to use, copy, modify, merge, publish, distribute, sublicense,
-     * and/or sell copies of the Software, and to permit persons to whom the
-     * Software is furnished to do so, subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included
-     * in all copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-     * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-     * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
-     * OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-     * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-     * OTHER DEALINGS IN THE SOFTWARE.
-     ************************************************************************/
-
-/**
- * Implementation of some number theoretic algorithms
+/*
+ * This file is part of sebastian/global-state.
  *
- * @author Matyas Danter
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-use Mdanter\Ecc\Exception\NumberTheoryException;
-use Mdanter\Ecc\Exception\SquareRootException;
+declare(strict_types=1);
+
+namespace SebastianBergmann\GlobalState;
+
+use ReflectionProperty;
 
 /**
- * Rewritten to take a MathAdaptor to handle different environments. Has
- * some desireable functions for public key compression/recovery.
+ * Restorer of snapshots of global state.
  */
-class NumberTheory
+class Restorer
 {
     /**
-     * @var GmpMathInterface
+     * Deletes function definitions that are not defined in a snapshot.
+     *
+     * @throws RuntimeException when the uopz_delete() function is not available
+     *
+     * @see    https://github.com/krakjoe/uopz
      */
-    private $adapter;
-
-    /**
-     * @param GmpMathInterface $adapter
-     */
-    public function __construct(GmpMathInterface $adapter)
+    public function restoreFunctions(Snapshot $snapshot)
     {
-        $this->adapter = $adapter;
-        $this->zero = gmp_init(0, 10);
-        $this->one = gmp_init(1, 10);
-        $this->two = gmp_init(2, 10);
-    }
-
-    /**
-     * @param \GMP[] $poly
-     * @param \GMP[] $polymod
-     * @param \GMP $p
-     * @return \GMP[]
-     */
-    public function polynomialReduceMod(array $poly, array $polymod, \GMP $p): array
-    {
-        $adapter = $this->adapter;
-
-        // Only enter if last value is set, implying count > 0
-        if ((($last = end($polymod)) instanceof \GMP) && $adapter->equals($last, $this->one)) {
-            $count_polymod = count($polymod);
-            while (count($poly) >= $count_polymod) {
-                if (!$adapter->equals(end($poly), $this->zero)) {
-                    for ($i = 2; $i < $count_polymod + 1; $i++) {
-                        $poly[count($poly) - $i] =
-                            $adapter->mod(
-                                $adapter->sub(
-                                    $poly[count($poly) - $i],
-                                    $adapter->mul(
-                                        end($poly),
-                                        $polymod[$count_polymod - $i]
-                                    )
-                                ),
-                                $p
-                            );
-                    }
-                }
-
-                $poly = array_slice($poly, 0, count($poly) - 1);
-            }
-
-            return $poly;
+        if (!\function_exists('uopz_delete')) {
+            throw new RuntimeException('The uopz_delete() function is required for this operation');
         }
 
-        throw new NumberTheoryException('Unable to calculate polynomialReduceMod');
+        $functions = \get_defined_functions();
+
+        foreach (\array_diff($functions['user'], $snapshot->functions()) as $function) {
+            uopz_delete($function);
+        }
     }
 
     /**
-     * @param \GMP[] $m1
-     * @param \GMP[] $m2
-     * @param \GMP[] $polymod
-     * @param \GMP $p
-     * @return \GMP[]
+     * Restores all global and super-global variables from a snapshot.
      */
-    public function polynomialMultiplyMod(array $m1, array $m2, array $polymod, \GMP $p): array
+    public function restoreGlobalVariables(Snapshot $snapshot)
     {
-        $prod = array();
-        $cm1 = count($m1);
-        $cm2 = count($m2);
+        $superGlobalArrays = $snapshot->superGlobalArrays();
 
-        for ($i = 0; $i < $cm1; $i++) {
-            for ($j = 0; $j < $cm2; $j++) {
-                $index = $i + $j;
-                if (!isset($prod[$index])) {
-                    $prod[$index] = $this->zero;
+        foreach ($superGlobalArrays as $superGlobalArray) {
+            $this->restoreSuperGlobalArray($snapshot, $superGlobalArray);
+        }
+
+        $globalVariables = $snapshot->globalVariables();
+
+        foreach (\array_keys($GLOBALS) as $key) {
+            if ($key != 'GLOBALS' &&
+                !\in_array($key, $superGlobalArrays) &&
+                !$snapshot->blacklist()->isGlobalVariableBlacklisted($key)) {
+                if (\array_key_exists($key, $globalVariables)) {
+                    $GLOBALS[$key] = $globalVariables[$key];
+                } else {
+                    unset($GLOBALS[$key]);
                 }
-                $prod[$index] =
-                    $this->adapter->mod(
-                        $this->adapter->add(
-                            $prod[$index],
-                            $this->adapter->mul(
-                                $m1[$i],
-                                $m2[$j]
-                            )
-                        ),
-          
+            }
+        }
+    }
+
+    /**
+     * Restores all static attributes in user-defined classes from this snapshot.
+     */
+    public function restoreStaticAttributes(Snapshot $snapshot)
+    {
+        $current    = new Snapshot($snapshot->blacklist(), false, false, false, false, true, false, false, false, false);
+        $newClasses = \array_diff($current->classes(), $snapshot->classes());
+
+        unset($current);
+
+        foreach ($snapshot->staticAttributes() as $className => $staticAttributes) {
+            foreach ($staticAttributes as $name => $value) {
+                $reflector = new ReflectionProperty($className, $name);
+                $reflector->setAccessible(true);
+                $reflector->setValue($value);
+            }
+        }
+
+        foreach ($newClasses as $className) {
+            $class    = new \ReflectionClass($className);
+            $defaults = $class->getDefaultProperties();
+
+            foreach ($class->getProperties() as $attribute) {
+                if (!$attribute->isStatic()) {
+                    continue;
+                }
+
+                $name = $attribute->getName();
+
+                if ($snapshot->blacklist()->isStaticAttributeBlacklisted($className, $name)) {
+                    continue;
+                }
+
+                if (!isset($defaults[$name])) {
+                    continue;
+                }
+
+                $attribute->setAccessible(true);
+                $attribute->setValue($defaults[$name]);
+            }
+        }
+    }
+
+    /**
+     * Restores a super-global variable array from this snapshot.
+     */
+    private function restoreSuperGlobalArray(Snapshot $snapshot, string $superGlobalArray)
+    {
+        $superGlobalVariables = $snapshot->superGlobalVariables();
+
+        if (isset($GLOBALS[$superGlobalArray]) &&
+            \is_array($GLOBALS[$superGlobalArray]) &&
+            isset($superGlobalVariables[$superGlobalArray])) {
+            $keys = \array_keys(
+                \array_merge(
+                    $GLOBALS[$superGlobalArray],
+                    $superGlobalVariables[$superGlobalArray]
+                )
+            );
+
+            foreach ($keys as $key) {
+                if (isset($superGlobalVariables[$superGlobalArray][$key])) {
+                    $GLOBALS[$superGlobalArray][$key] = $superGlobalVariables[$superGlobalArray][$key];
+                } else {
+                    unset($GLOBALS[$superGlobalArray][$key]);
+                }
+            }
+        }
+    }
+}

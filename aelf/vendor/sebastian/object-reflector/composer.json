@@ -1,34 +1,33 @@
-language: php
-
-php:
-    - 7.0
-    - 7.1
-    - 7.2
-    - nightly
-
-env:
-    # The default env behaviour: phpunit, no coverage, no style checks
-  - PHPUNIT=true
-
-matrix:
-  fast_finish: true
-
-  exclude:
-      # Disable standard phpunit test on 7.0, reenable with FULL, and with COVERAGE
-    - php: 7.2
-      env: PHPUNIT=true
-  include:
-      # This reenables php7.0/phpunit test with COVERAGE
-    - php: 7.2
-      env: PHPUNIT=true COVERAGE_SHARDS=5 COVERAGE=true
-      # This reenables php7.0/phpunit test with extended tests (wycheproof)
-    - php: 7.2
-      env: FULL=true
-      # This runs phpcs on php7.0 - only code style and examples
-    - php: 7.0
-      env: CODESTYLE=true EXAMPLES=true
-
-sudo: false
-
-before_script:
-    - travis_retry composer s
+{
+    "name": "sebastian/object-reflector",
+    "description": "Allows reflection of object attributes, including inherited and non-public ones",
+    "homepage": "https://github.com/sebastianbergmann/object-reflector/",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Sebastian Bergmann",
+            "email": "sebastian@phpunit.de"
+        }
+    ],
+    "require": {
+        "php": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.0"
+    },
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/_fixture/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.1-dev"
+        }
+    }
+}

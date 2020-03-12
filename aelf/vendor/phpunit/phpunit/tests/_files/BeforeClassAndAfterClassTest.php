@@ -1,9 +1,37 @@
-, 'hardly', 'horizon', 'invisible',
-            'journey', 'midnight', 'mud', 'nod', 'pause', 'relax', 'shiver',
-            'sudden', 'value', 'youth', 'abuse', 'admire', 'blink', 'breast',
-            'bruise', 'constantly', 'couple', 'creep', 'curve', 'difference',
-            'dumb', 'emptiness', 'gotta', 'honor', 'plain', 'planet', 'recall',
-            'rub', 'ship', 'slam', 'soar', 'somebody', 'tightly', 'weather',
-            'adore', 'approach', 'bond', 'bread', 'burst', 'candle', 'coffee',
-            'cousin', 'crime', 'desert', 'flutter', 'frozen', 'grand', 'heel',
-            'hello', 'language', 'level', 'movement', 'pleasure', 'powerf
+<?php
+use PHPUnit\Framework\TestCase;
+
+class BeforeClassAndAfterClassTest extends TestCase
+{
+    public static $beforeClassWasRun = 0;
+    public static $afterClassWasRun  = 0;
+
+    public static function resetProperties()
+    {
+        self::$beforeClassWasRun = 0;
+        self::$afterClassWasRun  = 0;
+    }
+
+    /**
+     * @beforeClass
+     */
+    public static function initialClassSetup()
+    {
+        self::$beforeClassWasRun++;
+    }
+
+    /**
+     * @afterClass
+     */
+    public static function finalClassTeardown()
+    {
+        self::$afterClassWasRun++;
+    }
+
+    public function test1()
+    {
+    }
+    public function test2()
+    {
+    }
+}

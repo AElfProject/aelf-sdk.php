@@ -1,41 +1,53 @@
-<?php
-declare(strict_types=1);
-namespace Mdanter\Ecc\Random;
-
-use Mdanter\Ecc\Crypto\Key\PrivateKeyInterface;
-
-use Mdanter\Ecc\Math\MathAdapterFactory;
-
-class RandomGeneratorFactory
 {
-    /**
-     * @param bool $debug
-     * @return DebugDecorator|RandomNumberGeneratorInterface
-     */
-    public static function getRandomGenerator(bool $debug = false): RandomNumberGeneratorInterface
-    {
-        return self::wrapAdapter(
-            new RandomNumberGenerator(
-                MathAdapterFactory::getAdapter($debug)
-            ),
-            'random_bytes',
-            $debug
-        );
+    "name": "sebastian/exporter",
+    "description": "Provides the functionality to export PHP variables for visualization",
+    "keywords": ["exporter","export"],
+    "homepage": "http://www.github.com/sebastianbergmann/exporter",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Sebastian Bergmann",
+            "email": "sebastian@phpunit.de"
+        },
+        {
+            "name": "Jeff Welch",
+            "email": "whatthejeff@gmail.com"
+        },
+        {
+            "name": "Volker Dusch",
+            "email": "github@wallbash.com"
+        },
+        {
+            "name": "Adam Harvey",
+            "email": "aharvey@php.net"
+        },
+        {
+            "name": "Bernhard Schussek",
+            "email": "bschussek@gmail.com"
+        }
+    ],
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "prefer-stable": true,
+    "require": {
+        "php": "^7.0",
+        "sebastian/recursion-context": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.0",
+        "ext-mbstring": "*"
+    },
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "3.1.x-dev"
+        }
     }
+}
 
-    /**
-     * @param PrivateKeyInterface $privateKey
-     * @param \GMP                $messageHash
-     * @param string              $algorithm
-     * @param bool                $debug
-     * @return DebugDecorator|RandomNumberGeneratorInterface
-     */
-    public static function getHmacRandomGenerator(PrivateKeyInterface $privateKey, \GMP $messageHash, string $algorithm, bool $debug = false): RandomNumberGeneratorInterface
-    {
-        return self::wrapAdapter(
-            new HmacRandomNumberGenerator(
-                MathAdapterFactory::getAdapter($debug),
-                $privateKey,
-                $messageHash,
-                $algorithm
-            ),

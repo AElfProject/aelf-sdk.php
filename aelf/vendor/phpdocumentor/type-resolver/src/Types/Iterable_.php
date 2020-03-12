@@ -1,39 +1,36 @@
 <?php
-namespace Yurun\Util\YurunHttp\Http\Psr7;
 
-use Yurun\Util\YurunHttp\Http\Psr7\UploadedFile;
-use Psr\Http\Message\ServerRequestInterface;
-use Yurun\Util\YurunHttp;
-use Yurun\Util\YurunHttp\Http\Psr7\Consts\MediaType;
-use Yurun\Util\YurunHttp\Http\Psr7\Consts\RequestHeader;
-use Yurun\Util\YurunHttp\Http\Psr7\Consts\RequestMethod;
+declare(strict_types=1);
 
-class ServerRequest extends Request implements ServerRequestInterface
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\Types;
+
+/**
+ * Value Object representing iterable type
+ */
+final class Iterable_ extends AbstractList
 {
     /**
-     * 服务器信息
-     * @var array
+     * Returns a rendered output of the Type as it would be used in a DocBlock.
      */
-    protected $server = [];
+    public function __toString() : string
+    {
+        if ($this->keyType) {
+            return 'iterable<' . $this->keyType . ',' . $this->valueType . '>';
+        }
 
-    /**
-     * cookie数据
-     * @var array
-     */
-    protected $cookies = [];
-    
-    /**
-     * get数据
-     * @var array
-     */
-    protected $get = [];
+        if ($this->valueType instanceof Mixed_) {
+            return 'iterable';
+        }
 
-    /**
-     * post数据
-     * @var array
-     */
-    protected $post = [];
-
-    /**
-     * 上传的文件
-     * @var \Yurun\Util\YurunHttp
+        return 'iterable<' . $this->valueType . '>';
+    }
+}

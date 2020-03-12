@@ -1,25 +1,28 @@
-<?php
-require '../vendor/autoload.php';
+<?php declare(strict_types = 1);
+namespace TheSeer\Tokenizer;
 
-use Hhxsv5\PhpMultiCurl\Curl;
-use Hhxsv5\PhpMultiCurl\MultiCurl;
+class NamespaceUri {
 
-$getUrl = 'http://www.weather.com.cn/data/cityinfo/101270101.html';
-$postUrl = 'https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=yourtoken';
+    /** @var string */
+    private $value;
 
-//Single http request
-$options = [//The custom options of cURL
-    CURLOPT_TIMEOUT        => 10,
-    CURLOPT_CONNECTTIMEOUT => 5,
-    CURLOPT_USERAGENT      => 'Multi-cURL client v1.5.0',
-];
+    /**
+     * @param string $value
+     */
+    public function __construct(string $value) {
+        $this->ensureValidUri($value);
+        $this->value = $value;
+    }
 
-$c = new Curl(null, $options);
-$c->makeGet($getUrl);
-$response = $c->exec();
-if ($response->hasError()) {
-    //Fail
-    var_dump($response->getError());
-} else {
-    //Success
- 
+    public function asString(): string {
+        return $this->value;
+    }
+
+    private function ensureValidUri($value) {
+        if (strpos($value, ':') === false) {
+            throw new NamespaceUriException(
+                sprintf("Namespace URI '%s' must contain at least one colon", $value)
+            );
+        }
+    }
+}

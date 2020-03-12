@@ -1,36 +1,47 @@
-ition'],
-    feature: 'css-sticky',
-    browsers: browsers
-  });
-}); // Pointer Events
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-f(require('caniuse-lite/data/features/pointer'), function (browsers) {
-  return prefix(['touch-action'], {
-    feature: 'pointer',
-    browsers: browsers
-  });
-}); // Text decoration
+namespace PharIo\Manifest;
 
-var decoration = require('caniuse-lite/data/features/text-decoration');
+class Url {
+    /**
+     * @var string
+     */
+    private $url;
 
-f(decoration, function (browsers) {
-  return prefix(['text-decoration-style', 'text-decoration-color', 'text-decoration-line', 'text-decoration'], {
-    feature: 'text-decoration',
-    browsers: browsers
-  });
-});
-f(decoration, {
-  match: /x.*#[235]/
-}, function (browsers) {
-  return prefix(['text-decoration-skip', 'text-decoration-skip-ink'], {
-    feature: 'text-decoration',
-    browsers: browsers
-  });
-}); // Text Size Adjust
+    /**
+     * @param string $url
+     *
+     * @throws InvalidUrlException
+     */
+    public function __construct($url) {
+        $this->ensureUrlIsValid($url);
 
-f(require('caniuse-lite/data/features/text-size-adjust'), function (browsers) {
-  return prefix(['text-size-adjust'], {
-    feature: 'text-size-adjust',
-    browsers: browsers
-  });
-}); // 
+        $this->url = $url;
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString() {
+        return $this->url;
+    }
+
+    /**
+     * @param string $url
+     *
+     * @throws InvalidUrlException
+     */
+    private function ensureUrlIsValid($url) {
+        if (filter_var($url, \FILTER_VALIDATE_URL) === false) {
+            throw new InvalidUrlException;
+        }
+    }
+}

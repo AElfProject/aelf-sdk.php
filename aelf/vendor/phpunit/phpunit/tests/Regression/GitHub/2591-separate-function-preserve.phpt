@@ -1,1 +1,20 @@
-module.exports={A:{A:{"644":"K D G E iB","772":"A B"},B:{"1":"I","260":"2 C d J M H"},C:{"1":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB ZB YB","8":"fB DB"},D:{"1":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB"},E:{"1":"5 F N K D G E A B C RB IB TB UB VB WB XB p aB"},F:{"1":"0 1 5 6 C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z","8":"E B bB cB dB eB p AB gB"},G:{"
+--TEST--
+GH-2591: Test method process isolation with preserving global state and with loaded bootstrap.
+--FILE--
+<?php
+
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--bootstrap';
+$_SERVER['argv'][3] = __DIR__ . '/2591/bootstrapWithBootstrap.php';
+$_SERVER['argv'][4] = __DIR__ . '/2591/SeparateFunctionPreserveTest.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+..                                                                  2 / 2 (100%)
+
+Time: %s, Memory: %s
+
+OK (2 tests, 2 assertions)

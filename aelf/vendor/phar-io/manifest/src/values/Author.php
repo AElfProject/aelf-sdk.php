@@ -1,35 +1,57 @@
-blic function getAddressFromPrivateKey($privateKey) {
-        $aelfkey = new BitcoinECDSA();
-        $aelfkey->setPrivateKey($privateKey);
-        $address = $aelfkey->getUncompressedAddress();
-        return $address;
-    }
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
+namespace PharIo\Manifest;
+
+class Author {
     /**
-     * Get the private sha256 signature.
+     * @var string
      */
-    public function getSignatureWithPrivateKey($privateKey,$txData){
-        $secp256k1 = new Secp256k1();
-     
-        $signature = $secp256k1->sign($txData, $privateKey);
-        // get r
-        $r = $signature->getR();
-        // get s
-        $s = $signature->getS();
-        // get recovery param
-        $v = $signature->getRecoveryParam();
-        // encode to hex
-        $serializer = new HexSignatureSerializer();
-        $signatureString = $serializer->serialize($signature);
-        
-        // or you can call toHex
-        $signatureString = $signature->toHex();
-       
-        if(strlen((string)$v)==1){
-            $v = "0".$v;
-        }
-        return $signatureString.$v;
+    private $name;
+
+    /**
+     * @var Email
+     */
+    private $email;
+
+    /**
+     * @param string $name
+     * @param Email  $email
+     */
+    public function __construct($name, Email $email) {
+        $this->name  = $name;
+        $this->email = $email;
     }
 
     /**
-     * Verify whether $this sdk succ
+     * @return string
+     */
+    public function getName() {
+        return $this->name;
+    }
+
+    /**
+     * @return Email
+     */
+    public function getEmail() {
+        return $this->email;
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString() {
+        return sprintf(
+            '%s <%s>',
+            $this->name,
+            $this->email
+        );
+    }
+}

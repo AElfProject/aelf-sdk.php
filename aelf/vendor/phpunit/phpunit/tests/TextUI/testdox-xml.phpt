@@ -1,82 +1,62 @@
+--TEST--
+phpunit --testdox-xml php://stdout StatusTest ../_files/StatusTest.php
+--FILE--
 <?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--testdox-xml';
+$_SERVER['argv'][3] = 'php://stdout';
+$_SERVER['argv'][4] = 'StatusTest';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/StatusTest.php';
 
-declare(strict_types=1);
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
 
-namespace BitWasp\Bitcoin\Address;
+.FEISRW                                                             7 / 7 (100%)<?xml version="1.0" encoding="UTF-8"?>
+<tests>
+  <test className="vendor\project\StatusTest" methodName="testSuccess" prettifiedClassName="vendor\project\Status" prettifiedMethodName="Success" status="0" time="%s" size="-1" groups="default"/>
+  <test className="vendor\project\StatusTest" methodName="testFailure" prettifiedClassName="vendor\project\Status" prettifiedMethodName="Failure" status="3" time="%s" size="-1" groups="default" exceptionLine="16" exceptionMessage="Failed asserting that false is true."/>
+  <test className="vendor\project\StatusTest" methodName="testError" prettifiedClassName="vendor\project\Status" prettifiedMethodName="Error" status="4" time="%s" size="-1" groups="default" exceptionMessage=""/>
+  <test className="vendor\project\StatusTest" methodName="testIncomplete" prettifiedClassName="vendor\project\Status" prettifiedMethodName="Incomplete" status="2" time="%s" size="-1" groups="default"/>
+  <test className="vendor\project\StatusTest" methodName="testSkipped" prettifiedClassName="vendor\project\Status" prettifiedMethodName="Skipped" status="1" time="%s" size="-1" groups="default"/>
+  <test className="vendor\project\StatusTest" methodName="testRisky" prettifiedClassName="vendor\project\Status" prettifiedMethodName="Risky" status="5" time="%s" size="-1" groups="default"/>
+  <test className="vendor\project\StatusTest" methodName="testWarning" prettifiedClassName="vendor\project\Status" prettifiedMethodName="Warning" status="6" time="%s" size="-1" groups="default"/>
+</tests>
 
-use BitWasp\Bitcoin\Base58;
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Exceptions\UnrecognizedAddressException;
-use BitWasp\Bitcoin\Network\NetworkInterface;
-use BitWasp\Bitcoin\Script\Classifier\OutputClassifier;
-use BitWasp\Bitcoin\Script\P2shScript;
-use BitWasp\Bitcoin\Script\ScriptInterface;
-use BitWasp\Bitcoin\Script\ScriptType;
-use BitWasp\Bitcoin\Script\WitnessProgram;
-use BitWasp\Bitcoin\Script\WitnessScript;
-use BitWasp\Bitcoin\SegwitBech32;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
 
-class AddressCreator extends BaseAddressCreator
-{
-    /**
-     * @param string $strAddress
-     * @param NetworkInterface $network
-     * @return Base58Address|null
-     */
-    protected function readBase58Address(string $strAddress, NetworkInterface $network)
-    {
-        try {
-            $data = Base58::decodeCheck($strAddress);
-            $prefixByte = $data->slice(0, $network->getP2shPrefixLength())->getHex();
+Time: %s, Memory: %s
 
-            if ($prefixByte === $network->getP2shByte()) {
-                return new ScriptHashAddress($data->slice(1));
-            } else if ($prefixByte === $network->getAddressByte()) {
-                return new PayToPubKeyHashAddress($data->slice($network->getAddressPrefixLength()));
-            }
-        } catch (\Exception $e) {
-            // Just return null
-        }
+There was 1 error:
 
-        return null;
-    }
+1) vendor\project\StatusTest::testError
+RuntimeException:%s
 
-    /**
-     * @param string $strAddress
-     * @param NetworkInterface $network
-     * @return SegwitAddress|null
-     */
-    protected function readSegwitAddress(string $strAddress, NetworkInterface $network)
-    {
-        try {
-            list ($version, $program) = \BitWasp\Bech32\decodeSegwit($network->getSegwitBech32Prefix(), $strAddress);
+%s%eStatusTest.php:%d
 
-            if (0 === $version) {
-                $wp = WitnessProgram::v0(new Buffer($program));
-            } else {
-                $wp = new WitnessProgram($version, new Buffer($program));
-            }
+--
 
-            return new SegwitAddress($wp);
-        } catch (\Exception $e) {
-            // Just return null
-        }
+There was 1 warning:
 
-        return null;
-    }
+1) vendor\project\StatusTest::testWarning
 
-    /**
-     * @param ScriptInterface $outputScript
-     * @return Address
-     */
-    public function fromOutputScript(ScriptInterface $outputScript): Address
-    {
-        if ($outputScript instanceof P2shScript || $outputScript instanceof WitnessScript) {
-            throw new \RuntimeException("P2shScript & WitnessScript's are not accepted by fromOutputScript");
-        }
+%s%eStatusTest.php:%d
 
-        $wp = null;
-        if ($outputScript->isWitness($wp)) {
-            /** @var WitnessP
+--
+
+There was 1 failure:
+
+1) vendor\project\StatusTest::testFailure
+Failed asserting that false is true.
+
+%s%eStatusTest.php:%d
+
+--
+
+There was 1 risky test:
+
+1) vendor\project\StatusTest::testRisky
+This test did not perform any assertions
+
+ERRORS!
+Tests: 7, Assertions: 2, Errors: 1, Failures: 1, Warnings: 1, Skipped: 1, Incomplete: 1, Risky: 1.

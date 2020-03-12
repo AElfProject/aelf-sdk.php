@@ -1,96 +1,39 @@
-lue) {
-    return decl.parent.some(function (i) {
-      return i.prop === prop && i.value === value;
-    });
-  }
-  /**
-   * Add declaration if it is not exist
-   */
-  ;
+--TEST--
+phpunit --teamcity ExceptionStackTest ../_files/ExceptionStackTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--teamcity';
+$_SERVER['argv'][3] = 'ExceptionStackTest';
+$_SERVER['argv'][4] = __DIR__ . '/../_files/ExceptionStackTest.php';
 
-  _proto.cloneBefore = function cloneBefore(decl, prop, value) {
-    if (!this.already(decl, prop, value)) {
-      decl.cloneBefore({
-        prop: prop,
-        value: value
-      });
-    }
-  }
-  /**
-   * Show transition-property warning
-   */
-  ;
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
 
-  _proto.checkForWarning = function checkForWarning(result, decl) {
-    if (decl.prop !== 'transition-property') {
-      return;
-    }
 
-    decl.parent.each(function (i) {
-      if (i.type !== 'decl') {
-        return undefined;
-      }
+##teamcity[testCount count='2' flowId='%d']
 
-      if (i.prop.indexOf('transition-') !== 0) {
-        return undefined;
-      }
+##teamcity[testSuiteStarted name='ExceptionStackTest' locationHint='php_qn://%s%etests%e_files%eExceptionStackTest.php::\ExceptionStackTest' flowId='%d']
 
-      if (i.prop === 'transition-property') {
-        return undefined;
-      }
+##teamcity[testStarted name='testPrintingChildException' locationHint='php_qn://%s%etests%e_files%eExceptionStackTest.php::\ExceptionStackTest::testPrintingChildException' flowId='%d']
 
-      if (list.comma(i.value).length > 1) {
-        decl.warn(result, 'Replace transition-property to transition, ' + 'because Autoprefixer could not support ' + 'any cases of transition-property ' + 'and other transition-*');
-      }
+##teamcity[testFailed name='testPrintingChildException' message='Child exception|nmessage|nFailed asserting that two arrays are equal.|n--- Expected|n+++ Actual|n@@ @@|n Array (|n-    0 => 1|n+    0 => 2|n )|n' details=' %s%etests%e_files%eExceptionStackTest.php:14|n |n Caused by|n message|n Failed asserting that two arrays are equal.|n --- Expected|n +++ Actual|n @@ @@|n  Array (|n -    0 => 1|n +    0 => 2|n  )|n |n %s%etests%e_files%eExceptionStackTest.php:10|n ' flowId='%d']
 
-      return false;
-    });
-  }
-  /**
-   * Process transition and remove all unnecessary properties
-   */
-  ;
+##teamcity[testFinished name='testPrintingChildException' duration='%d' flowId='%d']
 
-  _proto.remove = function remove(decl) {
-    var _this2 = this;
+##teamcity[testStarted name='testNestedExceptions' locationHint='php_qn://%s%etests%e_files%eExceptionStackTest.php::\ExceptionStackTest::testNestedExceptions' flowId='%d']
 
-    var params = this.parse(decl.value);
-    params = params.filter(function (i) {
-      var prop = _this2.prefixes.remove[_this2.findProp(i)];
+##teamcity[testFailed name='testNestedExceptions' message='One' details=' %s%etests%e_files%eExceptionStackTest.php:22|n |n Caused by|n InvalidArgumentException: Two|n |n %s%etests%e_files%eExceptionStackTest.php:21|n |n Caused by|n Exception: Three|n |n %s%etests%e_files%eExceptionStackTest.php:20|n ' flowId='%d']
 
-      return !prop || !prop.remove;
-    });
-    var value = this.stringify(params);
+##teamcity[testFinished name='testNestedExceptions' duration='%d' flowId='%d']
 
-    if (decl.value === value) {
-      return;
-    }
+##teamcity[testSuiteFinished name='ExceptionStackTest' flowId='%d']
 
-    if (params.length === 0) {
-      decl.remove();
-      return;
-    }
 
-    var double = decl.parent.some(function (i) {
-      return i.prop === decl.prop && i.value === value;
-    });
-    var smaller = decl.parent.some(function (i) {
-      return i !== decl && i.prop === decl.prop && i.value.length > value.length;
-    });
+Time: %s, Memory: %s
 
-    if (double || smaller) {
-      decl.remove();
-      return;
-    }
 
-    decl.value = value;
-  }
-  /**
-   * Parse properties list to array
-   */
-  ;
-
-  _proto.parse = function parse(value) {
-    var ast = parser(value);
-    var result = [];
-  
+ERRORS!
+Tests: 2, Assertions: 1, Errors: 2.

@@ -1,1 +1,21 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"2":"2 C d J M H I"},C:{"1":"0 1 3 4 7 8 9 f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB","2":"2 6 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e ZB YB"},D:{"1":"3 4 8 9 GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"0 1 2 6 7 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB"},E:{"2":"F N K D G E RB IB TB UB VB WB","132":"5 A B C XB p aB"},F:{"1":"0 1 r s t u v w x y z","2":"5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q bB cB dB eB p AB gB"},G:{"2":"G IB hB EB jB KB lB mB nB oB","132":"pB qB rB sB tB uB"},H:{"2":"vB"},I:{"1":"4","2":"DB F wB 
+--TEST--
+GH-2591: Test class process isolation with preserving global state and with loaded bootstrap.
+Expected result is to have a global variable modified in first test to be the same in the second.
+--FILE--
+<?php
+
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--bootstrap';
+$_SERVER['argv'][3] = __DIR__ . '/2591/bootstrapWithBootstrap.php';
+$_SERVER['argv'][4] = __DIR__ . '/2591/SeparateClassPreserveTest.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+...                                                                 3 / 3 (100%)
+
+Time: %s, Memory: %s
+
+OK (3 tests, 3 assertions)

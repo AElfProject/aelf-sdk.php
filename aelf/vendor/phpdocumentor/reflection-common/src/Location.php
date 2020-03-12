@@ -1,35 +1,52 @@
-m 0001-01-01T00:00:00Z to
-     * 9999-12-31T23:59:59Z inclusive.
-     *
-     * Generated from protobuf field <code>int64 seconds = 1;</code>
-     */
-    private $seconds = 0;
-    /**
-     * Non-negative fractions of a second at nanosecond resolution. Negative
-     * second values with fractions must still have non-negative nanos values
-     * that count forward in time. Must be from 0 to 999,999,999
-     * inclusive.
-     *
-     * Generated from protobuf field <code>int32 nanos = 2;</code>
-     */
-    private $nanos = 0;
+<?php
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @copyright 2010-2018 Mike van Riel<mike@phpdoc.org>
+ * @license   http://www.opensource.org/licenses/mit-license.php MIT
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection;
+
+/**
+ * The location where an element occurs within a file.
+ */
+final class Location
+{
+    /** @var int */
+    private $lineNumber = 0;
+
+    /** @var int */
+    private $columnNumber = 0;
 
     /**
-     * Constructor.
-     *
-     * @param array $data {
-     *     Optional. Data for populating the Message object.
-     *
-     *     @type int|string $seconds
-     *           Represents seconds of UTC time since Unix epoch
-     *           1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-     *           9999-12-31T23:59:59Z inclusive.
-     *     @type int $nanos
-     *           Non-negative fractions of a second at nanosecond resolution. Negative
-     *           second values with fractions must still have non-negative nanos values
-     *           that count forward in time. Must be from 0 to 999,999,999
-     *           inclusive.
-     * }
+     * Initializes the location for an element using its line number in the file and optionally the column number.
      */
-    public function __construct($data = NULL) {
-       
+    public function __construct(int $lineNumber, int $columnNumber = 0)
+    {
+        $this->lineNumber = $lineNumber;
+        $this->columnNumber = $columnNumber;
+    }
+
+    /**
+     * Returns the line number that is covered by this location.
+     */
+    public function getLineNumber(): int
+    {
+        return $this->lineNumber;
+    }
+
+    /**
+     * Returns the column number (character position on a line) for this location object.
+     */
+    public function getColumnNumber(): int
+    {
+        return $this->columnNumber;
+    }
+}

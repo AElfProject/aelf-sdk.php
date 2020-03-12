@@ -1,28 +1,14 @@
-<?php
+     <tr>
+      <td class="{{classes_level}}">{{name}}</td>
+      <td class="{{classes_level}} big">{{classes_bar}}</td>
+      <td class="{{classes_level}} small"><div align="right">{{classes_tested_percent}}</div></td>
+      <td class="{{classes_level}} small"><div align="right">{{classes_number}}</div></td>
+      <td class="{{methods_level}} big">{{methods_bar}}</td>
+      <td class="{{methods_level}} small"><div align="right">{{methods_tested_percent}}</div></td>
+      <td class="{{methods_level}} small"><div align="right">{{methods_number}}</div></td>
+      <td class="{{methods_level}} small">{{crap}}</td>
+      <td class="{{lines_level}} big">{{lines_bar}}</td>
+      <td class="{{lines_level}} small"><div align="right">{{lines_executed_percent}}</div></td>
+      <td class="{{lines_level}} small"><div align="right">{{lines_number}}</div></td>
+     </tr>
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Signature;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\EcSerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Signature\DerSignatureSerializerInterface;
-use BitWasp\Bitcoin\Serializer\Signature\TransactionSignatureSerializer;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class TransactionSignatureFactory
-{
-    /**
-     * @param string $string
-     * @param EcAdapterInterface|null $ecAdapter
-     * @return TransactionSignatureInterface
-     * @throws \Exception
-     */
-    public static function fromHex(string $string, EcAdapterInterface $ecAdapter = null): TransactionSignatureInterface
-    {
-        return self::fromBuffer(Buffer::hex($string), $ecAdapter);
-    }
-
-    /**
-     * @param BufferInterface $buffer

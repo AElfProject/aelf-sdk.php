@@ -1,89 +1,103 @@
-ion": "Provides the functionality to compare PHP values for equality",
-            "homepage": "http://www.github.com/sebastianbergmann/comparator",
-            "keywords": [
-                "comparator",
-                "compare",
-                "equality"
-            ],
-            "time": "2017-01-29T09:50:25+00:00"
-        },
-        {
-            "name": "sebastian/diff",
-            "version": "1.4.3",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/diff.git",
-                "reference": "7f066a26a962dbe58ddea9f72a4e82874a3975a4"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/diff/zipball/7f066a26a962dbe58ddea9f72a4e82874a3975a4",
-                "reference": "7f066a26a962dbe58ddea9f72a4e82874a3975a4",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^5.3.3 || ^7.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^4.8.35 || ^5.7 || ^6.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.4-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Kore Nordmann",
-                    "email": "mail@kore-nordmann.de"
-                },
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Diff implementation",
-            "homepage": "https://github.com/sebastianbergmann/diff",
-            "keywords": [
-                "diff"
-            ],
-            "time": "2017-05-22T07:24:03+00:00"
-        },
-        {
-            "name": "sebastian/environment",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/environment.git",
-                "reference": "5795ffe5dc5b02460c3e34222fee8cbe245d8fac"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/5795ffe5dc5b02460c3e34222fee8cbe245d8fac",
-                "reference": "5795ffe5dc5b02460c3e34222fee8cbe245d8fac",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^5.6 || ^7.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^5.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-           
+<?php
+
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\DocBlock\Tags;
+
+use phpDocumentor\Reflection\DocBlock\Description;
+use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
+use phpDocumentor\Reflection\Types\Context as TypeContext;
+use Webmozart\Assert\Assert;
+use function preg_match;
+
+/**
+ * Reflection class for a {@}source tag in a Docblock.
+ */
+final class Source extends BaseTag implements Factory\StaticMethod
+{
+    /** @var string */
+    protected $name = 'source';
+
+    /** @var int The starting line, relative to the structural element's location. */
+    private $startingLine;
+
+    /** @var int|null The number of lines, relative to the starting line. NULL means "to the end". */
+    private $lineCount;
+
+    /**
+     * @param int|string      $startingLine should be a to int convertible value
+     * @param int|string|null $lineCount    should be a to int convertible value
+     */
+    public function __construct($startingLine, $lineCount = null, ?Description $description = null)
+    {
+        Assert::integerish($startingLine);
+        Assert::nullOrIntegerish($lineCount);
+
+        $this->startingLine = (int) $startingLine;
+        $this->lineCount    = $lineCount !== null ? (int) $lineCount : null;
+        $this->description  = $description;
+    }
+
+    public static function create(
+        string $body,
+        ?DescriptionFactory $descriptionFactory = null,
+        ?TypeContext $context = null
+    ) : self {
+        Assert::stringNotEmpty($body);
+        Assert::notNull($descriptionFactory);
+
+        $startingLine = 1;
+        $lineCount    = null;
+        $description  = null;
+
+        // Starting line / Number of lines / Description
+        if (preg_match('/^([1-9]\d*)\s*(?:((?1))\s+)?(.*)$/sux', $body, $matches)) {
+            $startingLine = (int) $matches[1];
+            if (isset($matches[2]) && $matches[2] !== '') {
+                $lineCount = (int) $matches[2];
+            }
+
+            $description = $matches[3];
+        }
+
+        return new static($startingLine, $lineCount, $descriptionFactory->create($description??'', $context));
+    }
+
+    /**
+     * Gets the starting line.
+     *
+     * @return int The starting line, relative to the structural element's
+     *     location.
+     */
+    public function getStartingLine() : int
+    {
+        return $this->startingLine;
+    }
+
+    /**
+     * Returns the number of lines.
+     *
+     * @return int|null The number of lines, relative to the starting line. NULL
+     *     means "to the end".
+     */
+    public function getLineCount() : ?int
+    {
+        return $this->lineCount;
+    }
+
+    public function __toString() : string
+    {
+        return $this->startingLine
+            . ($this->lineCount !== null ? ' ' . $this->lineCount : '')
+            . ($this->description ? ' ' . (string) $this->description : '');
+    }
+}

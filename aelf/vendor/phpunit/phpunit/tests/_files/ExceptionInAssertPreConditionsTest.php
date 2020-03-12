@@ -1,26 +1,37 @@
 <?php
+use PHPUnit\Framework\TestCase;
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+class ExceptionInAssertPreConditionsTest extends TestCase
+{
+    public $setUp                = false;
+    public $assertPreConditions  = false;
+    public $assertPostConditions = false;
+    public $tearDown             = false;
+    public $testSomething        = false;
 
-use Yurun\Swoole\CoPool\CoPool;
-use Yurun\Swoole\CoPool\Interfaces\ICoTask;
-use Yurun\Swoole\CoPool\Interfaces\ITaskParam;
+    protected function setUp()
+    {
+        $this->setUp = true;
+    }
 
-Swoole\Runtime::enableCoroutine();
+    protected function assertPreConditions()
+    {
+        $this->assertPreConditions = true;
+        throw new Exception;
+    }
 
-go(function(){
-    $coCount = 10; // 同时工作协程数，可以改小改大，看一下执行速度
-    $queueLength = 1024; // 队列长度
-    $pool = new CoPool($coCount, $queueLength,
-        // 定义任务匿名类，当然你也可以定义成普通类，传入完整类名
-        new class implements ICoTask
-        {
-            /**
-             * 执行任务
-             *
-             * @param ITaskParam $param
-             * @return mixed
-             */
-            public function run(ITaskParam $param)
-            {
-                usleep
+    public function testSomething()
+    {
+        $this->testSomething = true;
+    }
+
+    protected function assertPostConditions()
+    {
+        $this->assertPostConditions = true;
+    }
+
+    protected function tearDown()
+    {
+        $this->tearDown = true;
+    }
+}

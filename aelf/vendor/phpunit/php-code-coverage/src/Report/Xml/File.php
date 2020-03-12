@@ -1,72 +1,88 @@
-aram mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace SebastianBergmann\CodeCoverage\Report\Xml;
+
+class File
+{
+    /**
+     * @var \DOMDocument
      */
-    public static function notWhitespaceOnly($value, $message = '')
+    private $dom;
+
+    /**
+     * @var \DOMElement
+     */
+    private $contextNode;
+
+    public function __construct(\DOMElement $context)
     {
-        if (\preg_match('/^\s*$/', $value)) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected a non-whitespace string. Got: %s',
-                static::valueToString($value)
-            ));
-        }
+        $this->dom         = $context->ownerDocument;
+        $this->contextNode = $context;
     }
 
     /**
-     * @param mixed  $value
-     * @param string $prefix
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
+     * @return \DOMElement
      */
-    public static function startsWith($value, $prefix, $message = '')
+    protected function getContextNode()
     {
-        if (0 !== \strpos($value, $prefix)) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected a value to start with %2$s. Got: %s',
-                static::valueToString($value),
-                static::valueToString($prefix)
-            ));
-        }
+        return $this->contextNode;
     }
 
     /**
-     * @param mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
+     * @return \DOMDocument
      */
-    public static function startsWithLetter($value, $message = '')
+    protected function getDomDocument()
     {
-        static::string($value);
-
-        $valid = isset($value[0]);
-
-        if ($valid) {
-            $locale = \setlocale(LC_CTYPE, 0);
-            \setlocale(LC_CTYPE, 'C');
-            $valid = \ctype_alpha($value[0]);
-            \setlocale(LC_CTYPE, $locale);
-        }
-
-        if (!$valid) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected a value to start with a letter. Got: %s',
-                static::valueToString($value)
-            ));
-        }
+        return $this->dom;
     }
 
-    /**
-     * @param mixed  $value
-     * @param string $suffix
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function endsWith($value, $suffix, $message = '')
+    public function getTotals()
     {
-        if ($suffix !== \substr($value, -\strlen($suffix))) {
-            static::reportInvalidArgument(\sprintf(
-        
+        $totalsContainer = $this->contextNode->firstChild;
+
+        if (!$totalsContainer) {
+            $totalsContainer = $this->contextNode->appendChild(
+                $this->dom->createElementNS(
+                    'http://schema.phpunit.de/coverage/1.0',
+                    'totals'
+                )
+            );
+        }
+
+        return new Totals($totalsContainer);
+    }
+
+    public function getLineCoverage($line)
+    {
+        $coverage = $this->contextNode->getElementsByTagNameNS(
+            'http://schema.phpunit.de/coverage/1.0',
+            'coverage'
+        )->item(0);
+
+        if (!$coverage) {
+            $coverage = $this->contextNode->appendChild(
+                $this->dom->createElementNS(
+                    'http://schema.phpunit.de/coverage/1.0',
+                    'coverage'
+                )
+            );
+        }
+
+        $lineNode = $coverage->appendChild(
+            $this->dom->createElementNS(
+                'http://schema.phpunit.de/coverage/1.0',
+                'line'
+            )
+        );
+
+        return new Coverage($lineNode, $line);
+    }
+}

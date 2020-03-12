@@ -1,18 +1,36 @@
-<?php
-
-// Protocol Buffers - Google's data interchange format
-// Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promot
+{
+    "name": "webmozart/assert",
+    "description": "Assertions to validate method input/output with nice error messages.",
+    "keywords": [
+        "assert",
+        "check",
+        "validate"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bernhard Schussek",
+            "email": "bschussek@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^5.3.3 || ^7.0",
+        "symfony/polyfill-ctype": "^1.8"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^4.8.36 || ^7.5.13"
+    },
+    "conflict": {
+        "vimeo/psalm": "<3.6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webmozart\\Assert\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Webmozart\\Assert\\Tests\\": "tests/"
+        }
+    }
+}

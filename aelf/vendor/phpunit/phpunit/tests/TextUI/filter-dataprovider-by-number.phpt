@@ -1,1 +1,20 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"2":"2 C d J M H I"},C:{"1":"0 1 3 4 7 8 9 w x y z HB GB BB CB FB","2":"2 6 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v ZB YB"},D:{"1":"1 3 4 7 8 9 HB GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"0 2 6 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z"},E:{"2":"5 F N K D G E A B C RB IB TB UB VB WB XB p aB"},F:{"1":"0 1 o L q r s t u v w x y z","2":"5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n bB cB dB eB p AB gB"},G:{"2":"G IB hB
+--TEST--
+phpunit --filter testTrue#3 DataProviderFilterTest ../_files/DataProviderFilterTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--filter';
+$_SERVER['argv'][3] = 'testTrue#3';
+$_SERVER['argv'][4] = 'DataProviderFilterTest';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/DataProviderFilterTest.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+.                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+OK (1 test, 1 assertion)

@@ -1,176 +1,152 @@
 <?php
-
 /*
- * This file is part of composer/semver.
+ * This file is part of sebastian/comparator.
  *
- * (c) Composer <https://github.com/composer>
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
- * For the full copyright and license information, please view
- * the LICENSE file that was distributed with this source code.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Composer\Semver\Constraint;
+namespace SebastianBergmann\Comparator;
+
+use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
- * Defines a constraint.
+ * @coversDefaultClass SebastianBergmann\Comparator\ObjectComparator
+ *
+ * @uses SebastianBergmann\Comparator\Comparator
+ * @uses SebastianBergmann\Comparator\Factory
+ * @uses SebastianBergmann\Comparator\ComparisonFailure
  */
-class Constraint implements ConstraintInterface
+class ObjectComparatorTest extends TestCase
 {
-    /* operator integer values */
-    const OP_EQ = 0;
-    const OP_LT = 1;
-    const OP_LE = 2;
-    const OP_GT = 3;
-    const OP_GE = 4;
-    const OP_NE = 5;
+    private $comparator;
 
-    /**
-     * Operator to integer translation table.
-     *
-     * @var array
-     */
-    private static $transOpStr = array(
-        '=' => self::OP_EQ,
-        '==' => self::OP_EQ,
-        '<' => self::OP_LT,
-        '<=' => self::OP_LE,
-        '>' => self::OP_GT,
-        '>=' => self::OP_GE,
-        '<>' => self::OP_NE,
-        '!=' => self::OP_NE,
-    );
-
-    /**
-     * Integer to operator translation table.
-     *
-     * @var array
-     */
-    private static $transOpInt = array(
-        self::OP_EQ => '==',
-        self::OP_LT => '<',
-        self::OP_LE => '<=',
-        self::OP_GT => '>',
-        self::OP_GE => '>=',
-        self::OP_NE => '!=',
-    );
-
-    /** @var string */
-    protected $operator;
-
-    /** @var string */
-    protected $version;
-
-    /** @var string */
-    protected $prettyString;
-
-    /**
-     * @param ConstraintInterface $provider
-     *
-     * @return bool
-     */
-    public function matches(ConstraintInterface $provider)
+    protected function setUp()
     {
-        if ($provider instanceof $this) {
-            return $this->matchSpecific($provider);
-        }
+        $this->comparator = new ObjectComparator;
+        $this->comparator->setFactory(new Factory);
+    }
 
-        // turn matching around to find a match
-        return $provider->matches($this);
+    public function acceptsSucceedsProvider()
+    {
+        return [
+          [new TestClass, new TestClass],
+          [new stdClass, new stdClass],
+          [new stdClass, new TestClass]
+        ];
+    }
+
+    public function acceptsFailsProvider()
+    {
+        return [
+          [new stdClass, null],
+          [null, new stdClass],
+          [null, null]
+        ];
+    }
+
+    public function assertEqualsSucceedsProvider()
+    {
+        // cyclic dependencies
+        $book1                  = new Book;
+        $book1->author          = new Author('Terry Pratchett');
+        $book1->author->books[] = $book1;
+        $book2                  = new Book;
+        $book2->author          = new Author('Terry Pratchett');
+        $book2->author->books[] = $book2;
+
+        $object1 = new SampleClass(4, 8, 15);
+        $object2 = new SampleClass(4, 8, 15);
+
+        return [
+          [$object1, $object1],
+          [$object1, $object2],
+          [$book1, $book1],
+          [$book1, $book2],
+          [new Struct(2.3), new Struct(2.5), 0.5]
+        ];
+    }
+
+    public function assertEqualsFailsProvider()
+    {
+        $typeMessage  = 'is not instance of expected class';
+        $equalMessage = 'Failed asserting that two objects are equal.';
+
+        // cyclic dependencies
+        $book1                  = new Book;
+        $book1->author          = new Author('Terry Pratchett');
+        $book1->author->books[] = $book1;
+        $book2                  = new Book;
+        $book2->author          = new Author('Terry Pratch');
+        $book2->author->books[] = $book2;
+
+        $book3         = new Book;
+        $book3->author = 'Terry Pratchett';
+        $book4         = new stdClass;
+        $book4->author = 'Terry Pratchett';
+
+        $object1 = new SampleClass(4, 8, 15);
+        $object2 = new SampleClass(16, 23, 42);
+
+        return [
+          [new SampleClass(4, 8, 15), new SampleClass(16, 23, 42), $equalMessage],
+          [$object1, $object2, $equalMessage],
+          [$book1, $book2, $equalMessage],
+          [$book3, $book4, $typeMessage],
+          [new Struct(2.3), new Struct(4.2), $equalMessage, 0.5]
+        ];
     }
 
     /**
-     * @param string $prettyString
+     * @covers       ::accepts
+     * @dataProvider acceptsSucceedsProvider
      */
-    public function setPrettyString($prettyString)
+    public function testAcceptsSucceeds($expected, $actual)
     {
-        $this->prettyString = $prettyString;
+        $this->assertTrue(
+          $this->comparator->accepts($expected, $actual)
+        );
     }
 
     /**
-     * @return string
+     * @covers       ::accepts
+     * @dataProvider acceptsFailsProvider
      */
-    public function getPrettyString()
+    public function testAcceptsFails($expected, $actual)
     {
-        if ($this->prettyString) {
-            return $this->prettyString;
-        }
-
-        return $this->__toString();
+        $this->assertFalse(
+          $this->comparator->accepts($expected, $actual)
+        );
     }
 
     /**
-     * Get all supported comparison operators.
-     *
-     * @return array
+     * @covers       ::assertEquals
+     * @dataProvider assertEqualsSucceedsProvider
      */
-    public static function getSupportedOperators()
+    public function testAssertEqualsSucceeds($expected, $actual, $delta = 0.0)
     {
-        return array_keys(self::$transOpStr);
+        $exception = null;
+
+        try {
+            $this->comparator->assertEquals($expected, $actual, $delta);
+        } catch (ComparisonFailure $exception) {
+        }
+
+        $this->assertNull($exception, 'Unexpected ComparisonFailure');
     }
 
     /**
-     * Sets operator and version to compare with.
-     *
-     * @param string $operator
-     * @param string $version
-     *
-     * @throws \InvalidArgumentException if invalid operator is given.
+     * @covers       ::assertEquals
+     * @dataProvider assertEqualsFailsProvider
      */
-    public function __construct($operator, $version)
+    public function testAssertEqualsFails($expected, $actual, $message, $delta = 0.0)
     {
-        if (!isset(self::$transOpStr[$operator])) {
-            throw new \InvalidArgumentException(sprintf(
-                'Invalid operator "%s" given, expected one of: %s',
-                $operator,
-                implode(', ', self::getSupportedOperators())
-            ));
-        }
+        $this->expectException(ComparisonFailure::class);
+        $this->expectExceptionMessage($message);
 
-        $this->operator = self::$transOpStr[$operator];
-        $this->version = $version;
+        $this->comparator->assertEquals($expected, $actual, $delta);
     }
-
-    /**
-     * @param string $a
-     * @param string $b
-     * @param string $operator
-     * @param bool $compareBranches
-     *
-     * @throws \InvalidArgumentException if invalid operator is given.
-     *
-     * @return bool
-     */
-    public function versionCompare($a, $b, $operator, $compareBranches = false)
-    {
-        if (!isset(self::$transOpStr[$operator])) {
-            throw new \InvalidArgumentException(sprintf(
-                'Invalid operator "%s" given, expected one of: %s',
-                $operator,
-                implode(', ', self::getSupportedOperators())
-            ));
-        }
-
-        $aIsBranch = 'dev-' === substr($a, 0, 4);
-        $bIsBranch = 'dev-' === substr($b, 0, 4);
-
-        if ($aIsBranch && $bIsBranch) {
-            return $operator === '==' && $a === $b;
-        }
-
-        // when branches are not comparable, we make sure dev branches never match anything
-        if (!$compareBranches && ($aIsBranch || $bIsBranch)) {
-            return false;
-        }
-
-        return version_compare($a, $b, $operator);
-    }
-
-    /**
-     * @param Constraint $provider
-     * @param bool $compareBranches
-     *
-     * @return bool
-     */
-    public function matchSpecific(Constraint $provider, $compareBranches = false)
-    {
-        $noEqualOp = str_replace('=', '', self::$transOpInt[$this->operator
+}

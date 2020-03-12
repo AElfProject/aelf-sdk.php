@@ -1,27 +1,52 @@
-nce that has the
-     * updated body parameters.
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Argument\Token;
+
+/**
+ * Any single value token.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class AnyValueToken implements TokenInterface
+{
+    /**
+     * Always scores 3 for any argument.
      *
-     * @param null|array|object $data The deserialized body data. This will
-     *     typically be in an array or object.
-     * @return static
-     * @throws \InvalidArgumentException if an unsupported argument type is
-     *     provided.
+     * @param $argument
+     *
+     * @return int
      */
-    public function withParsedBody($data)
+    public function scoreArgument($argument)
     {
-        $self = clone $this;
-        $self->parsedBody = $data;
-        return $self;
+        return 3;
     }
 
     /**
-     * Retrieve attributes derived from the request.
+     * Returns false.
      *
-     * The request "attributes" may be used to allow injection of any
-     * parameters derived from the request: e.g., the results of path
-     * match operations; the results of decrypting cookies; the results of
-     * deserializing non-form-encoded message bodies; etc. Attributes
-     * will be application and request specific, and CAN be mutable.
+     * @return bool
+     */
+    public function isLast()
+    {
+        return false;
+    }
+
+    /**
+     * Returns string representation for token.
      *
-     * @return array Attributes derived from the request.
-     
+     * @return string
+     */
+    public function __toString()
+    {
+        return '*';
+    }
+}

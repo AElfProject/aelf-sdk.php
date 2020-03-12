@@ -1,37 +1,37 @@
-      "reference": "99732be0ddb3361e16ad77b68ba41efc8e979019",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Library that helps with managing the version number of Git-hosted PHP projects",
-            "homepage": "https://github.com/sebastianbergmann/version",
-            "time": "2016-10-03T07:35:21+00:00"
-        },
-        {
-            "name": "symfony/console",
-            "version": "v3.3.10",
-            "source": {
- 
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+/**
+ * Interface for classes which can be invoked.
+ *
+ * The invocation will be taken from a mock object and passed to an object
+ * of this class.
+ */
+interface PHPUnit_Framework_MockObject_Invokable extends PHPUnit_Framework_MockObject_Verifiable
+{
+    /**
+     * Invokes the invocation object $invocation so that it can be checked for
+     * expectations or matched against stubs.
+     *
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation The invocation object passed from mock object
+     *
+     * @return object
+     */
+    public function invoke(PHPUnit_Framework_MockObject_Invocation $invocation);
+
+    /**
+     * Checks if the invocation matches.
+     *
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation The invocation object passed from mock object
+     *
+     * @return bool
+     */
+    public function matches(PHPUnit_Framework_MockObject_Invocation $invocation);
+}

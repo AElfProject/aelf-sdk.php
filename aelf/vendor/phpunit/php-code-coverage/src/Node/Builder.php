@@ -1,226 +1,245 @@
-it the
-global config.json file.
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-    <comment>%command.full_name% --editor --global</comment>
-EOT
-)
-;
-}
+namespace SebastianBergmann\CodeCoverage\Node;
 
+use SebastianBergmann\CodeCoverage\CodeCoverage;
 
-
-
-protected function initialize(InputInterface $input, OutputInterface $output)
+class Builder
 {
-if ($input->getOption('global') && 'composer.json' !== $input->getOption('file')) {
-throw new \RuntimeException('--file and --global can not be combined');
+    /**
+     * @param CodeCoverage $coverage
+     *
+     * @return Directory
+     */
+    public function build(CodeCoverage $coverage)
+    {
+        $files      = $coverage->getData();
+        $commonPath = $this->reducePaths($files);
+        $root       = new Directory(
+            $commonPath,
+            null
+        );
+
+        $this->addItems(
+            $root,
+            $this->buildDirectoryStructure($files),
+            $coverage->getTests(),
+            $coverage->getCacheTokens()
+        );
+
+        return $root;
+    }
+
+    /**
+     * @param Directory $root
+     * @param array     $items
+     * @param array     $tests
+     * @param bool      $cacheTokens
+     */
+    private function addItems(Directory $root, array $items, array $tests, $cacheTokens)
+    {
+        foreach ($items as $key => $value) {
+            if (\substr($key, -2) == '/f') {
+                $key = \substr($key, 0, -2);
+
+                if (\file_exists($root->getPath() . DIRECTORY_SEPARATOR . $key)) {
+                    $root->addFile($key, $value, $tests, $cacheTokens);
+                }
+            } else {
+                $child = $root->addDirectory($key);
+                $this->addItems($child, $value, $tests, $cacheTokens);
+            }
+        }
+    }
+
+    /**
+     * Builds an array representation of the directory structure.
+     *
+     * For instance,
+     *
+     * <code>
+     * Array
+     * (
+     *     [Money.php] => Array
+     *         (
+     *             ...
+     *         )
+     *
+     *     [MoneyBag.php] => Array
+     *         (
+     *             ...
+     *         )
+     * )
+     * </code>
+     *
+     * is transformed into
+     *
+     * <code>
+     * Array
+     * (
+     *     [.] => Array
+     *         (
+     *             [Money.php] => Array
+     *                 (
+     *                     ...
+     *                 )
+     *
+     *             [MoneyBag.php] => Array
+     *                 (
+     *                     ...
+     *                 )
+     *         )
+     * )
+     * </code>
+     *
+     * @param array $files
+     *
+     * @return array
+     */
+    private function buildDirectoryStructure($files)
+    {
+        $result = [];
+
+        foreach ($files as $path => $file) {
+            $path    = \explode('/', $path);
+            $pointer = &$result;
+            $max     = \count($path);
+
+            for ($i = 0; $i < $max; $i++) {
+                if ($i == ($max - 1)) {
+                    $type = '/f';
+                } else {
+                    $type = '';
+                }
+
+                $pointer = &$pointer[$path[$i] . $type];
+            }
+
+            $pointer = $file;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Reduces the paths by cutting the longest common start path.
+     *
+     * For instance,
+     *
+     * <code>
+     * Array
+     * (
+     *     [/home/sb/Money/Money.php] => Array
+     *         (
+     *             ...
+     *         )
+     *
+     *     [/home/sb/Money/MoneyBag.php] => Array
+     *         (
+     *             ...
+     *         )
+     * )
+     * </code>
+     *
+     * is reduced to
+     *
+     * <code>
+     * Array
+     * (
+     *     [Money.php] => Array
+     *         (
+     *             ...
+     *         )
+     *
+     *     [MoneyBag.php] => Array
+     *         (
+     *             ...
+     *         )
+     * )
+     * </code>
+     *
+     * @param array $files
+     *
+     * @return string
+     */
+    private function reducePaths(&$files)
+    {
+        if (empty($files)) {
+            return '.';
+        }
+
+        $commonPath = '';
+        $paths      = \array_keys($files);
+
+        if (\count($files) == 1) {
+            $commonPath                  = \dirname($paths[0]) . '/';
+            $files[\basename($paths[0])] = $files[$paths[0]];
+
+            unset($files[$paths[0]]);
+
+            return $commonPath;
+        }
+
+        $max = \count($paths);
+
+        for ($i = 0; $i < $max; $i++) {
+            // strip phar:// prefixes
+            if (\strpos($paths[$i], 'phar://') === 0) {
+                $paths[$i] = \substr($paths[$i], 7);
+                $paths[$i] = \strtr($paths[$i], '/', DIRECTORY_SEPARATOR);
+            }
+            $paths[$i] = \explode(DIRECTORY_SEPARATOR, $paths[$i]);
+
+            if (empty($paths[$i][0])) {
+                $paths[$i][0] = DIRECTORY_SEPARATOR;
+            }
+        }
+
+        $done = false;
+        $max  = \count($paths);
+
+        while (!$done) {
+            for ($i = 0; $i < $max - 1; $i++) {
+                if (!isset($paths[$i][0]) ||
+                    !isset($paths[$i + 1][0]) ||
+                    $paths[$i][0] != $paths[$i + 1][0]) {
+                    $done = true;
+
+                    break;
+                }
+            }
+
+            if (!$done) {
+                $commonPath .= $paths[0][0];
+
+                if ($paths[0][0] != DIRECTORY_SEPARATOR) {
+                    $commonPath .= DIRECTORY_SEPARATOR;
+                }
+
+                for ($i = 0; $i < $max; $i++) {
+                    \array_shift($paths[$i]);
+                }
+            }
+        }
+
+        $original = \array_keys($files);
+        $max      = \count($original);
+
+        for ($i = 0; $i < $max; $i++) {
+            $files[\implode('/', $paths[$i])] = $files[$original[$i]];
+            unset($files[$original[$i]]);
+        }
+
+        \ksort($files);
+
+        return \substr($commonPath, 0, -1);
+    }
 }
-
-$this->config = Factory::createConfig();
-
-
- 
- $configFile = $input->getOption('global')
-? ($this->config->get('home') . '/config.json')
-: $input->getOption('file');
-
-$this->configFile = new JsonFile($configFile);
-$this->configSource = new JsonConfigSource($this->configFile);
-
-
- if ($input->getOption('global') && !$this->configFile->exists()) {
-touch($this->configFile->getPath());
-$this->configFile->write(array('config' => new \ArrayObject));
-chmod($this->configFile->getPath(), 0600);
-}
-
-if (!$this->configFile->exists()) {
-throw new \RuntimeException('No composer.json found in the current directory');
-}
-}
-
-
-
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-
- if ($input->getOption('editor')) {
-$editor = getenv('EDITOR');
-if (!$editor) {
-if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-$editor = 'notepad';
-} else {
-foreach (array('vim', 'vi', 'nano', 'pico', 'ed') as $candidate) {
-if (exec('which '.$candidate)) {
-$editor = $candidate;
-break;
-}
-}
-}
-}
-
-system($editor . ' ' . $this->configFile->getPath() . (defined('PHP_WINDOWS_VERSION_BUILD') ? '': ' > `tty`'));
-
-return 0;
-}
-
-if (!$input->getOption('global')) {
-$this->config->merge($this->configFile->read());
-}
-
-
- if ($input->getOption('list')) {
-$this->listConfiguration($this->config->all(), $this->config->raw(), $output);
-
-return 0;
-}
-
-$settingKey = $input->getArgument('setting-key');
-if (!$settingKey) {
-return 0;
-}
-
-
- if (array() !== $input->getArgument('setting-value') && $input->getOption('unset')) {
-throw new \RuntimeException('You can not combine a setting value with --unset');
-}
-
-
- if (array() === $input->getArgument('setting-value') && !$input->getOption('unset')) {
-$data = $this->config->all();
-if (preg_match('/^repos?(?:itories)?(?:\.(.+))?/', $settingKey, $matches)) {
-if (empty($matches[1])) {
-$value = isset($data['repositories']) ? $data['repositories'] : array();
-} else {
-if (!isset($data['repositories'][$matches[1]])) {
-throw new \InvalidArgumentException('There is no '.$matches[1].' repository defined');
-}
-
-$value = $data['repositories'][$matches[1]];
-}
-} elseif (strpos($settingKey, '.')) {
-$bits = explode('.', $settingKey);
-$data = $data['config'];
-foreach ($bits as $bit) {
-if (isset($data[$bit])) {
-$data = $data[$bit];
-} elseif (isset($data[implode('.', $bits)])) {
-
- $data = $data[implode('.', $bits)];
-break;
-} else {
-throw new \RuntimeException($settingKey.' is not defined');
-}
-array_shift($bits);
-}
-
-$value = $data;
-} elseif (isset($data['config'][$settingKey])) {
-$value = $data['config'][$settingKey];
-} else {
-throw new \RuntimeException($settingKey.' is not defined');
-}
-
-if (is_array($value)) {
-$value = json_encode($value);
-}
-
-$output->writeln($value);
-
-return 0;
-}
-
-$values = $input->getArgument('setting-value'); 
-
-
- if (preg_match('/^repos?(?:itories)?\.(.+)/', $settingKey, $matches)) {
-if ($input->getOption('unset')) {
-return $this->configSource->removeRepository($matches[1]);
-}
-
-if (2 !== count($values)) {
-throw new \RuntimeException('You must pass the type and a url. Example: php composer.phar config repositories.foo vcs http://bar.com');
-}
-
-return $this->configSource->addRepository($matches[1], array(
-'type' => $values[0],
-'url' => $values[1],
-));
-}
-
-
- if (preg_match('/^github-oauth\.(.+)/', $settingKey, $matches)) {
-if ($input->getOption('unset')) {
-return $this->configSource->removeConfigSetting('github-oauth.'.$matches[1]);
-}
-
-if (1 !== count($values)) {
-throw new \RuntimeException('Too many arguments, expected only one token');
-}
-
-return $this->configSource->addConfigSetting('github-oauth.'.$matches[1], $values[0]);
-}
-
-$booleanValidator = function ($val) { return in_array($val, array('true', 'false', '1', '0'), true); };
-$booleanNormalizer = function ($val) { return $val !== 'false' && (bool) $val; };
-
-
- $uniqueConfigValues = array(
-'process-timeout' => array('is_numeric', 'intval'),
-'use-include-path' => array(
-$booleanValidator,
-$booleanNormalizer
-),
-'preferred-install' => array(
-function ($val) { return in_array($val, array('auto', 'source', 'dist'), true); },
-function ($val) { return $val; }
-),
-'notify-on-install' => array(
-$booleanValidator,
-$booleanNormalizer
-),
-'vendor-dir' => array('is_string', function ($val) { return $val; }),
-'bin-dir' => array('is_string', function ($val) { return $val; }),
-'cache-dir' => array('is_string', function ($val) { return $val; }),
-'cache-files-dir' => array('is_string', function ($val) { return $val; }),
-'cache-repo-dir' => array('is_string', function ($val) { return $val; }),
-'cache-vcs-dir' => array('is_string', function ($val) { return $val; }),
-'cache-ttl' => array('is_numeric', 'intval'),
-'cache-files-ttl' => array('is_numeric', 'intval'),
-'cache-files-maxsize' => array(
-function ($val) { return preg_match('/^\s*([0-9.]+)\s*(?:([kmg])(?:i?b)?)?\s*$/i', $val) > 0; },
-function ($val) { return $val; }
-),
-'discard-changes' => array(
-function ($val) { return in_array($val, array('stash', 'true', 'false', '1', '0'), true); },
-function ($val) {
-if ('stash' === $val) {
-return 'stash';
-}
-return $val !== 'false' && (bool) $val;
-}
-),
-);
-$multiConfigValues = array(
-'github-protocols' => array(
-function ($vals) {
-if (!is_array($vals)) {
-return 'array expected';
-}
-
-foreach ($vals as $val) {
-if (!in_array($val, array('git', 'https', 'http'))) {
-return 'valid protocols include: git, https, http';
-}
-}
-
-return true;
-},
-function ($vals) {
-return $vals;
-}
-),
-);
-
-foreach ($uniqueConfigVa

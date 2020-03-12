@@ -1,77 +1,105 @@
-takes a string in the (non-human-readable) binary wire
-     * format, matching the encoding output by serializeToString().
-     * See mergeFrom() for merging behavior, if the field is already set in the
-     * specified message.
-     *
-     * @param string $data Binary protobuf data.
-     * @return null.
-     * @throws \Exception Invalid data.
-     */
-    public function mergeFromString($data)
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('NS\Foo', array('bar'), 'MockFoo', true, true)
+--FILE--
+<?php
+namespace NS;
+
+class Foo
+{
+    public function bar(Foo $foo)
     {
-        $input = new CodedInputStream($data);
-        $this->parseFromStream($input);
     }
 
-    /**
-     * Parses a json string to protobuf message.
-     *
-     * This function takes a string in the json wire format, matching the
-     * encoding output by serializeToJsonString().
-     * See mergeFrom() for merging behavior, if the field is already set in the
-     * specified message.
-     *
-     * @param string $data Json protobuf data.
-     * @return null.
-     * @throws \Exception Invalid data.
-     */
-    public function mergeFromJsonString($data)
+    public function baz(Foo $foo)
     {
-        $input = new RawInputStream($data);
-        $this->parseFromJsonStream($input);
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new \PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'NS\Foo',
+    array('bar'),
+    'MockFoo',
+    true,
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends NS\Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = ['bar'];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
     }
 
-    /**
-     * @ignore
-     */
-    public function parseFromStream($input)
+    public function bar(NS\Foo $foo)
     {
-        while (true) {
-            $tag = $input->readTag();
-            // End of input.  This is a valid place to end, so return true.
-            if ($tag === 0) {
-                return true;
+        $arguments = array($foo);
+        $count     = func_num_args();
+
+        if ($count > 1) {
+            $_arguments = func_get_args();
+
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
             }
+        }
 
-            $number = GPBWire::getTagFieldNumber($tag);
-            $field = $this->desc->getFieldByNumber($number);
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'NS\Foo', 'bar', $arguments, '', $this, true
+            )
+        );
 
-            $this->parseFieldFromStream($tag, $input, $field);
+        return $result;
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
         }
     }
-
-    private function convertJsonValueToProtoValue(
-        $value,
-        $field,
-        $is_map_key = false)
-    {
-        switch ($field->getType()) {
-            case GPBType::MESSAGE:
-                $klass = $field->getMessageType()->getClass();
-                $submsg = new $klass;
-
-                if (is_a($submsg, "Google\Protobuf\Duration")) {
-                    if (is_null($value)) {
-                        return $this->defaultValue($field);
-                    } else if (!is_string($value)) {
-                        throw new GPBDecodeException("Expect string.");
-                    }
-                    return GPBUtil::parseDuration($value);
-                } else if ($field->isTimestamp()) {
-                    if (is_null($value)) {
-                        return $this->defaultValue($field);
-                    } else if (!is_string($value)) {
-                        throw new GPBDecodeException("Expect string.");
-                    }
-                    try {
-                        $timestamp = GPBUtil::parseTimestamp($value)
+}

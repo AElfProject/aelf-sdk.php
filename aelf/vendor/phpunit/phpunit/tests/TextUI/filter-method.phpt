@@ -1,1 +1,20 @@
-module.exports={A:{A:{"2":"K C G E A B YB"},B:{"2":"D w Z I","514":"M H"},C:{"2":"0 1 WB AB F J K C G E A B D w Z I M H N O P Q R S T U V W X Y y a b c d e f L h i j k l m n o p q r s t u v UB OB","322":"3 5 6 7 8 z x"},D:{"1":"8 BB IB DB FB ZB GB","2":"0 1 3 5 6 F J K C G E A B D w Z I M H N O P Q R S T U V W X Y y a b c d e f L h i j k l m n o p q r s t u v z x","194":"7"},E:{"1":"B g PB","2":"F J K C G E A HB CB JB KB LB MB NB"},F:{"2":"4 9 E B D I M H N O P Q R S T U V W X Y y a b c d e f L h i j k l m n o p q QB RB SB TB g VB","194":"r s t u v"},G:{"1":"hB iB","2":"2 G CB XB EB aB bB cB dB eB fB gB"},H:{
+--TEST--
+phpunit --filter testBalanceIsInitiallyZero BankAccountTest ../_files/BankAccountTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--filter';
+$_SERVER['argv'][3] = 'testBalanceIsInitiallyZero';
+$_SERVER['argv'][4] = 'BankAccountTest';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/BankAccountTest.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+.                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+OK (1 test, 1 assertion)

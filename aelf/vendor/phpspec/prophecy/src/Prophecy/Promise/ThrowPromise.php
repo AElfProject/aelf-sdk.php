@@ -1,117 +1,100 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace BitWasp\Buffertools;
+namespace Prophecy\Promise;
 
-use BitWasp\Buffertools\Exceptions\ParserOutOfRange;
+use Doctrine\Instantiator\Instantiator;
+use Prophecy\Prophecy\ObjectProphecy;
+use Prophecy\Prophecy\MethodProphecy;
+use Prophecy\Exception\InvalidArgumentException;
+use ReflectionClass;
 
-class Parser
+/**
+ * Throw promise.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class ThrowPromise implements PromiseInterface
 {
-    /**
-     * @var string
-     */
-    private $string;
+    private $exception;
 
     /**
-     * @var int
+     * @var \Doctrine\Instantiator\Instantiator
      */
-    private $size = 0;
+    private $instantiator;
 
     /**
-     * @var int
-     */
-    private $position = 0;
-
-    /**
-     * Instantiate class, optionally taking Buffer or HEX.
+     * Initializes promise.
      *
-     * @param null|string|BufferInterface $input
+     * @param string|\Exception|\Throwable $exception Exception class name or instance
+     *
+     * @throws \Prophecy\Exception\InvalidArgumentException
      */
-    public function __construct($input = null)
+    public function __construct($exception)
     {
-        if (null === $input) {
-            $input = '';
+        if (is_string($exception)) {
+            if ((!class_exists($exception) && !interface_exists($exception)) || !$this->isAValidThrowable($exception)) {
+                throw new InvalidArgumentException(sprintf(
+                    'Exception / Throwable class or instance expected as argument to ThrowPromise, but got %s.',
+                    $exception
+                ));
+            }
+        } elseif (!$exception instanceof \Exception && !$exception instanceof \Throwable) {
+            throw new InvalidArgumentException(sprintf(
+                'Exception / Throwable class or instance expected as argument to ThrowPromise, but got %s.',
+                is_object($exception) ? get_class($exception) : gettype($exception)
+            ));
         }
 
-        if (is_string($input)) {
-            $bin = Buffer::hex($input, null)->getBinary();
-        } elseif ($input instanceof BufferInterface) {
-            $bin = $input->getBinary();
-        } else {
-            throw new \InvalidArgumentException("Invalid argument to Parser");
-        }
-
-        $this->string = $bin;
-        $this->position = 0;
-        $this->size = strlen($this->string);
+        $this->exception = $exception;
     }
 
     /**
-     * Get the position pointer of the parser - ie, how many bytes from 0
+     * Throws predefined exception.
      *
-     * @return int
+     * @param array          $args
+     * @param ObjectProphecy $object
+     * @param MethodProphecy $method
+     *
+     * @throws object
      */
-    public function getPosition(): int
+    public function execute(array $args, ObjectProphecy $object, MethodProphecy $method)
     {
-        return $this->position;
+        if (is_string($this->exception)) {
+            $classname   = $this->exception;
+            $reflection  = new ReflectionClass($classname);
+            $constructor = $reflection->getConstructor();
+
+            if ($constructor->isPublic() && 0 == $constructor->getNumberOfRequiredParameters()) {
+                throw $reflection->newInstance();
+            }
+
+            if (!$this->instantiator) {
+                $this->instantiator = new Instantiator();
+            }
+
+            throw $this->instantiator->instantiate($classname);
+        }
+
+        throw $this->exception;
     }
 
     /**
-     * Get the total size of the parser
+     * @param string $exception
      *
-     * @return int
+     * @return bool
      */
-    public function getSize()
+    private function isAValidThrowable($exception)
     {
-        return $this->size;
+        return is_a($exception, 'Exception', true)
+            || is_a($exception, 'Throwable', true);
     }
-
-    /**
-     * Parse $bytes bytes from the string, and return the obtained buffer
-     *
-     * @param  int $numBytes
-     * @param  bool $flipBytes
-     * @return BufferInterface
-     * @throws \Exception
-     */
-    public function readBytes(int $numBytes, bool $flipBytes = false): BufferInterface
-    {
-        $string = substr($this->string, $this->getPosition(), $numBytes);
-        $length = strlen($string);
-
-        if ($length === 0) {
-            throw new ParserOutOfRange('Could not parse string of required length (empty)');
-        } elseif ($length < $numBytes) {
-            throw new ParserOutOfRange('Could not parse string of required length (too short)');
-        }
-
-        $this->position += $numBytes;
-
-        if ($flipBytes) {
-            $string = Buffertools::flipBytes($string);
-            /** @var string $string */
-        }
-
-        return new Buffer($string, $length);
-    }
-
-    /**
-     * Write $data as $bytes bytes. Can be flipped if needed.
-     *
-     * @param  integer $numBytes - number of bytes to write
-     * @param  SerializableInterface|BufferInterface|string $data - buffer, serializable or hex
-     * @param  bool $flipBytes
-     * @return Parser
-     */
-    public function writeBytes(int $numBytes, $data, bool $flipBytes = false): Parser
-    {
-        // Treat $data to ensure it's a buffer, with the correct size
-        if ($data instanceof SerializableInterface) {
-            $data = $data->getBuffer();
-        }
-
-        if (is_string($data)) {
-            // Convert to a buffer
-            $data = Buffer::hex($data, $numBytes);
-        } else if (!($data instanceof Buf
+}

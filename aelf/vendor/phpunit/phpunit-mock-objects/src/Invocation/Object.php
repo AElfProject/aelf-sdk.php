@@ -1,31 +1,35 @@
-     "php": "^5.5.9|>=7.0.8",
-                "psr/log": "~1.0"
-            },
-            "conflict": {
-                "symfony/http-kernel": ">=2.3,<2.3.24|~2.4.0|>=2.5,<2.5.9|>=2.6,<2.6.2"
-            },
-            "require-dev": {
-                "symfony/http-kernel": "~2.8|~3.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.3-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\Debug\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+/**
+ * Represents a non-static invocation.
+ */
+class PHPUnit_Framework_MockObject_Invocation_Object extends PHPUnit_Framework_MockObject_Invocation_Static
+{
+    /**
+     * @var object
+     */
+    public $object;
+
+    /**
+     * @param string $className
+     * @param string $methodName
+     * @param array  $parameters
+     * @param string $returnType
+     * @param object $object
+     * @param bool   $cloneObjects
+     */
+    public function __construct($className, $methodName, array $parameters, $returnType, $object, $cloneObjects = false)
+    {
+        parent::__construct($className, $methodName, $parameters, $returnType, $cloneObjects);
+
+        $this->object = $object;
+    }
+}

@@ -1,16 +1,37 @@
-"use strict";
+<?php
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+namespace PharIo\Version;
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+class SpecificMajorVersionConstraint extends AbstractVersionConstraint {
+    /**
+     * @var int
+     */
+    private $major = 0;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+    /**
+     * @param string $originalValue
+     * @param int    $major
+     */
+    public function __construct($originalValue, $major) {
+        parent::__construct($originalValue);
 
-var Value = require('../value');
+        $this->major = $major;
+    }
 
-var FilterValue =
-/*#__PURE__*/
-function (_Value) {
-  _inheritsLoose(FilterValue, _Value);
-
-  function FilterValue(name
+    /**
+     * @param Version $version
+     *
+     * @return bool
+     */
+    public function complies(Version $version) {
+        return $version->getMajor()->getValue() == $this->major;
+    }
+}

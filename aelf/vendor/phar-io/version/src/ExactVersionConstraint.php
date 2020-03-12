@@ -1,32 +1,22 @@
 <?php
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Version;
 
-namespace BitWasp\Bitcoin\Network;
-
-interface NetworkInterface
-{
+class ExactVersionConstraint extends AbstractVersionConstraint {
     /**
-     * Return a byte for the networks regular version
+     * @param Version $version
      *
-     * @return string
+     * @return bool
      */
-    public function getAddressByte(): string;
-
-    /**
-     * Return a address prefix length in bytes
-     *
-     * @return int
-     */
-    public function getAddressPrefixLength(): int;
-
-    /**
-     * Return the string that binds address signed messages to
-     * this network
-     *
-     * @return string
-     */
-    public function getSignedMessageMagic(): string;
-
-    /**
-     * Returns the prefix f
+    public function complies(Version $version) {
+        return $this->asString() == $version->getVersionString();
+    }
+}

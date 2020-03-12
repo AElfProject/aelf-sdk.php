@@ -1,98 +1,105 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
  */
 
-namespace Symfony\Polyfill\Ctype;
+namespace phpDocumentor\Reflection\Types;
+
+use ArrayIterator;
+use IteratorAggregate;
+use phpDocumentor\Reflection\Type;
+use function implode;
 
 /**
- * Ctype implementation through regex.
+ * Value Object representing a Compound Type.
  *
- * @internal
- *
- * @author Gert de Pagter <BackEndTea@gmail.com>
+ * A Compound Type is not so much a special keyword or object reference but is a series of Types that are separated
+ * using an OR operator (`|`). This combination of types signifies that whatever is associated with this compound type
+ * may contain a value with any of the given types.
  */
-final class Ctype
+final class Compound implements Type, IteratorAggregate
 {
-    /**
-     * Returns TRUE if every character in text is either a letter or a digit, FALSE otherwise.
-     *
-     * @see https://php.net/ctype-alnum
-     *
-     * @param string|int $text
-     *
-     * @return bool
-     */
-    public static function ctype_alnum($text)
-    {
-        $text = self::convert_int_to_char_for_ctype($text);
+    /** @var Type[] */
+    private $types = [];
 
-        return \is_string($text) && '' !== $text && !preg_match('/[^A-Za-z0-9]/', $text);
+    /**
+     * Initializes a compound type (i.e. `string|int`) and tests if the provided types all implement the Type interface.
+     *
+     * @param Type[] $types
+     */
+    public function __construct(array $types)
+    {
+        foreach ($types as $type) {
+            $this->add($type);
+        }
     }
 
     /**
-     * Returns TRUE if every character in text is a letter, FALSE otherwise.
-     *
-     * @see https://php.net/ctype-alpha
-     *
-     * @param string|int $text
-     *
-     * @return bool
+     * Returns the type at the given index.
      */
-    public static function ctype_alpha($text)
+    public function get(int $index) : ?Type
     {
-        $text = self::convert_int_to_char_for_ctype($text);
+        if (!$this->has($index)) {
+            return null;
+        }
 
-        return \is_string($text) && '' !== $text && !preg_match('/[^A-Za-z]/', $text);
+        return $this->types[$index];
     }
 
     /**
-     * Returns TRUE if every character in text is a control character from the current locale, FALSE otherwise.
-     *
-     * @see https://php.net/ctype-cntrl
-     *
-     * @param string|int $text
-     *
-     * @return bool
+     * Tests if this compound type has a type with the given index.
      */
-    public static function ctype_cntrl($text)
+    public function has(int $index) : bool
     {
-        $text = self::convert_int_to_char_for_ctype($text);
-
-        return \is_string($text) && '' !== $text && !preg_match('/[^\x00-\x1f\x7f]/', $text);
+        return isset($this->types[$index]);
     }
 
     /**
-     * Returns TRUE if every character in the string text is a decimal digit, FALSE otherwise.
-     *
-     * @see https://php.net/ctype-digit
-     *
-     * @param string|int $text
-     *
-     * @return bool
+     * Tests if this compound type contains the given type.
      */
-    public static function ctype_digit($text)
+    public function contains(Type $type) : bool
     {
-        $text = self::convert_int_to_char_for_ctype($text);
+        foreach ($this->types as $typePart) {
+            // if the type is duplicate; do not add it
+            if ((string) $typePart === (string) $type) {
+                return true;
+            }
+        }
 
-        return \is_string($text) && '' !== $text && !preg_match('/[^0-9]/', $text);
+        return false;
     }
 
     /**
-     * Returns TRUE if every character in text is printable and actually creates visible output (no white space), FALSE otherwise.
-     *
-     * @see https://php.net/ctype-graph
-     *
-     * @param string|int $text
-     *
-     * @return bool
+     * Returns a rendered output of the Type as it would be used in a DocBlock.
      */
-    public static function ctype_graph($text)
+    public function __toString() : string
     {
-        $text = sel
+        return implode('|', $this->types);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIterator()
+    {
+        return new ArrayIterator($this->types);
+    }
+
+    private function add(Type $type) : void
+    {
+        // if the type is duplicate; do not add it
+        if ($this->contains($type)) {
+            return;
+        }
+
+        $this->types[] = $type;
+    }
+}

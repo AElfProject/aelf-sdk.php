@@ -1,34 +1,40 @@
-<?php
+language: php
 
-declare(strict_types=1);
+sudo: false
 
-namespace BitWasp\Bitcoin\Serializer\MessageSigner;
+php:
+  - 7.0
+  - 7.1
+  - 7.2
+  - master
 
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Signature\CompactSignatureSerializerInterface;
-use BitWasp\Bitcoin\MessageSigner\SignedMessage;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
+matrix:
+  allow_failures:
+    - php: master
+  fast_finish: true
 
-class SignedMessageSerializer
-{
+env:
+  matrix:
+    - DEPENDENCIES="high"
+    - DEPENDENCIES="low"
+  global:
+    - DEFAULT_COMPOSER_FLAGS="--no-interaction --no-ansi --no-progress --no-suggest"
 
-    // Message headers
-    const HEADER = '-----BEGIN BITCOIN SIGNED MESSAGE-----';
-    const SIG_START = '-----BEGIN SIGNATURE-----';
-    const FOOTER = '-----END BITCOIN SIGNED MESSAGE-----';
+before_install:
+  - composer self-update
+  - composer clear-cache
 
-    /**
-     * @var CompactSignatureSerializerInterface
-     */
-    private $csSerializer;
+install:
+  - if [[ "$DEPENDENCIES" = 'high' ]]; then travis_retry composer update $DEFAULT_COMPOSER_FLAGS; fi
+  - if [[ "$DEPENDENCIES" = 'low' ]]; then travis_retry composer update $DEFAULT_COMPOSER_FLAGS --prefer-lowest; fi
 
-    /**
-     * @param CompactSignatureSerializerInterface $csSerializer
-     */
-    public function __construct(CompactSignatureSerializerInterface $csSerializer)
-    {
-        $this->csSerializer = $csSerializer;
-    }
+script:
+  - if [[ "$DRIVER" = 'phpdbg' ]]; then phpdbg -qrr vendor/bin/phpunit --coverage-clover=coverage.xml; fi
+  - if [[ "$DRIVER" = 'xdebug' ]]; then vendor/bin/phpunit --coverage-clover=coverage.xml; fi
 
-    /**
-     * @param SignedMessage $signedMe
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+notifications:
+  email: false
+

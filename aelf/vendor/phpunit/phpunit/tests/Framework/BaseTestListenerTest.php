@@ -1,40 +1,32 @@
-e) {
-                return substr($this->buffer, 0, $this->size);
-            }
-        }
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-        return $this->buffer;
-    }
+namespace PHPUnit\Framework;
 
+class BaseTestListenerTest extends TestCase
+{
     /**
-     * @return string
+     * @var TestResult
      */
-    public function getHex(): string
-    {
-        return unpack("H*", $this->getBinary())[1];
-    }
+    private $result;
 
-    /**
-     * @return \GMP
-     */
-    public function getGmp(): \GMP
+    public function testEndEventsAreCounted()
     {
-        $gmp = gmp_init($this->getHex(), 16);
-        return $gmp;
-    }
+        $this->result = new TestResult;
+        $listener     = new \BaseTestListenerSample;
 
-    /**
-     * @return int|string
-     */
-    public function getInt()
-    {
-        return gmp_strval($this->getGmp(), 10);
-    }
+        $this->result->addListener($listener);
 
-    /**
-     * @return Buffer
-     */
-    public function flip(): BufferInterface
-    {
-        /** @var Buffer $buffer */
-        $buf
+        $test = new \Success;
+        $test->run($this->result);
+
+        $this->assertEquals(1, $listener->endCount);
+    }
+}

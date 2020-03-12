@@ -1,46 +1,67 @@
-<?php
-
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Serializer\Key;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Adapter\EcAdapter;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Key\PrivateKey;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PrivateKeySerializerInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Parser;
-
-/**
- * Private Key Serializer - specific to secp256k1
+<?php declare(strict_types=1);
+/*
+ * This file is part of sebastian/diff.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
-class PrivateKeySerializer implements PrivateKeySerializerInterface
+
+namespace SebastianBergmann\Diff;
+
+final class Diff
 {
     /**
-     * @var EcAdapter
+     * @var string
      */
-    private $ecAdapter;
+    private $from;
 
     /**
-     * @param EcAdapter $ecAdapter
+     * @var string
      */
-    public function __construct(EcAdapter $ecAdapter)
+    private $to;
+
+    /**
+     * @var Chunk[]
+     */
+    private $chunks;
+
+    /**
+     * @param string  $from
+     * @param string  $to
+     * @param Chunk[] $chunks
+     */
+    public function __construct(string $from, string $to, array $chunks = [])
     {
-        $this->ecAdapter = $ecAdapter;
+        $this->from   = $from;
+        $this->to     = $to;
+        $this->chunks = $chunks;
+    }
+
+    public function getFrom(): string
+    {
+        return $this->from;
+    }
+
+    public function getTo(): string
+    {
+        return $this->to;
     }
 
     /**
-     * @param PrivateKey $privateKey
-     * @return BufferInterface
+     * @return Chunk[]
      */
-    private function doSerialize(PrivateKey $privateKey): BufferInterface
+    public function getChunks(): array
     {
-        return new Buffer($privateKey->getSecretBinary(), 32);
+        return $this->chunks;
     }
 
     /**
-     * @param PrivateKeyInterface $privateKey
-     * @return BufferInterface
+     * @param Chunk[] $chunks
      */
-    p
+    public function setChunks(array $chunks)
+    {
+        $this->chunks = $chunks;
+    }
+}

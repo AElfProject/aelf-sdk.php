@@ -1,48 +1,78 @@
-->$setter($value);
-        }
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('NS\Foo', array(), 'MockFoo', true)
+--FILE--
+<?php
+namespace NS;
+
+class Foo
+{
+    public function __construct()
+    {
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new \PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'NS\Foo',
+    array(),
+    'MockFoo',
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends NS\Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = [];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
     }
 
-    /**
-     * Tries to normalize the elements in $value into a provided protobuf
-     * wrapper type $class. If $value is any type other than array, we do
-     * not do any conversion, and instead rely on the existing protobuf
-     * type checking. If $value is an array, we process each element and
-     * try to convert it to an instance of $class.
-     *
-     * @param mixed $value The array of values to normalize.
-     * @param string $class The expected wrapper class name
-     */
-    private static function normalizeArrayElementsToMessageType(&$value, $class)
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
     {
-        if (!is_array($value)) {
-            // In the case that $value is not an array, we do not want to
-            // attempt any conversion. Note that this includes the cases
-            // when $value is a RepeatedField of MapField. In those cases,
-            // we do not need to convert the elements, as they should
-            // already be the correct types.
-            return;
-        } else {
-            // Normalize each element in the array.
-            foreach ($value as $key => &$elementValue) {
-              self::normalizeToMessageType($elementValue, $class);
-            }
-        }
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
     }
 
-    /**
-     * Tries to normalize $value into a provided protobuf wrapper type $class.
-     * If $value is any type other than an object, we attempt to construct an
-     * instance of $class and assign $value to it using the setValue method
-     * shared by all wrapper types.
-     *
-     * This method will raise an error if it receives a type that cannot be
-     * assigned to the wrapper type via setValue.
-     *
-     * @param mixed $value The value to normalize.
-     * @param string $class The expected wrapper class name
-     */
-    private static function normalizeToMessageType(&$value, $class)
+    public function method()
     {
-        if (is_null($value) || is_object($value)) {
-            // This handles the case that $value is an instance of $class. We
-            // cho
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

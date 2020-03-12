@@ -1,106 +1,105 @@
-        }
-            } else {
-                $constraintObjects = $this->parseConstraint($andConstraints[0]);
-            }
+<?php
+/*
+ * This file is part of sebastian/global-state.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-            if (1 === count($constraintObjects)) {
-                $constraint = $constraintObjects[0];
-            } else {
-                $constraint = new MultiConstraint($constraintObjects);
-            }
+declare(strict_types=1);
 
-            $orGroups[] = $constraint;
-        }
+namespace SebastianBergmann\GlobalState;
 
-        if (1 === count($orGroups)) {
-            $constraint = $orGroups[0];
-        } elseif (2 === count($orGroups)
-            // parse the two OR groups and if they are contiguous we collapse
-            // them into one constraint
-            && $orGroups[0] instanceof MultiConstraint
-            && $orGroups[1] instanceof MultiConstraint
-            && 2 === count($orGroups[0]->getConstraints())
-            && 2 === count($orGroups[1]->getConstraints())
-            && ($a = (string) $orGroups[0])
-            && strpos($a, '[>=') === 0 && (false !== ($posA = strpos($a, '<', 4)))
-            && ($b = (string) $orGroups[1])
-            && strpos($b, '[>=') === 0 && (false !== ($posB = strpos($b, '<', 4)))
-            && substr($a, $posA + 2, -1) === substr($b, 4, $posB - 5)
-        ) {
-            $constraint = new MultiConstraint(array(
-                new Constraint('>=', substr($a, 4, $posA - 5)),
-                new Constraint('<', substr($b, $posB + 2, -1)),
-            ));
-        } else {
-            $constraint = new MultiConstraint($orGroups, false);
-        }
+use PHPUnit\Framework\TestCase;
 
-        $constraint->setPrettyString($prettyConstraint);
-
-        return $constraint;
+/**
+ * Class Restorer.
+ */
+class RestorerTest extends TestCase
+{
+    public static function setUpBeforeClass()
+    {
+        $GLOBALS['varBool'] = false;
+        $GLOBALS['varNull'] = null;
+        $_GET['varGet']     = 0;
     }
 
     /**
-     * @param string $constraint
+     * Check global variables are correctly backuped and restored (unit test).
      *
-     * @throws \UnexpectedValueException
+     * @covers \SebastianBergmann\GlobalState\Restorer::restoreGlobalVariables
+     * @covers \SebastianBergmann\GlobalState\Restorer::restoreSuperGlobalArray
      *
-     * @return array
+     * @uses \SebastianBergmann\GlobalState\Blacklist::isGlobalVariableBlacklisted
+     * @uses \SebastianBergmann\GlobalState\Snapshot::__construct
+     * @uses \SebastianBergmann\GlobalState\Snapshot::blacklist
+     * @uses \SebastianBergmann\GlobalState\Snapshot::canBeSerialized
+     * @uses \SebastianBergmann\GlobalState\Snapshot::globalVariables
+     * @uses \SebastianBergmann\GlobalState\Snapshot::setupSuperGlobalArrays
+     * @uses \SebastianBergmann\GlobalState\Snapshot::snapshotGlobals
+     * @uses \SebastianBergmann\GlobalState\Snapshot::snapshotSuperGlobalArray
+     * @uses \SebastianBergmann\GlobalState\Snapshot::superGlobalArrays
+     * @uses \SebastianBergmann\GlobalState\Snapshot::superGlobalVariables
      */
-    private function parseConstraint($constraint)
+    public function testRestorerGlobalVariable()
     {
-        if (preg_match('{^([^,\s]+?)@(' . implode('|', self::$stabilities) . ')$}i', $constraint, $match)) {
-            $constraint = $match[1];
-            if ($match[2] !== 'stable') {
-                $stabilityModifier = $match[2];
-            }
-        }
+        $snapshot = new Snapshot(null, true, false, false, false, false, false, false, false, false);
+        $restorer = new Restorer;
+        $restorer->restoreGlobalVariables($snapshot);
 
-        if (preg_match('{^v?[xX*](\.[xX*])*$}i', $constraint)) {
-            return array(new EmptyConstraint());
-        }
+        $this->assertArrayHasKey('varBool', $GLOBALS);
+        $this->assertEquals(false, $GLOBALS['varBool']);
+        $this->assertArrayHasKey('varNull', $GLOBALS);
+        $this->assertEquals(null, $GLOBALS['varNull']);
+        $this->assertArrayHasKey('varGet', $_GET);
+        $this->assertEquals(0, $_GET['varGet']);
+    }
 
-        $versionRegex = 'v?(\d++)(?:\.(\d++))?(?:\.(\d++))?(?:\.(\d++))?' . self::$modifierRegex . '(?:\+[^\s]+)?';
+    /**
+     * Check global variables are correctly backuped and restored.
+     *
+     * The real test is the second, but the first has to be executed to backup the globals.
+     *
+     * @backupGlobals enabled
+     * @covers \SebastianBergmann\GlobalState\Restorer::restoreGlobalVariables
+     * @covers \SebastianBergmann\GlobalState\Restorer::restoreSuperGlobalArray
+     *
+     * @uses \SebastianBergmann\GlobalState\Blacklist::addClassNamePrefix
+     * @uses \SebastianBergmann\GlobalState\Blacklist::isGlobalVariableBlacklisted
+     * @uses \SebastianBergmann\GlobalState\Snapshot::__construct
+     * @uses \SebastianBergmann\GlobalState\Snapshot::blacklist
+     * @uses \SebastianBergmann\GlobalState\Snapshot::canBeSerialized
+     * @uses \SebastianBergmann\GlobalState\Snapshot::globalVariables
+     * @uses \SebastianBergmann\GlobalState\Snapshot::setupSuperGlobalArrays
+     * @uses \SebastianBergmann\GlobalState\Snapshot::snapshotGlobals
+     * @uses \SebastianBergmann\GlobalState\Snapshot::snapshotSuperGlobalArray
+     * @uses \SebastianBergmann\GlobalState\Snapshot::superGlobalArrays
+     * @uses \SebastianBergmann\GlobalState\Snapshot::superGlobalVariables
+     */
+    public function testIntegrationRestorerGlobalVariables()
+    {
+        $this->assertArrayHasKey('varBool', $GLOBALS);
+        $this->assertEquals(false, $GLOBALS['varBool']);
+        $this->assertArrayHasKey('varNull', $GLOBALS);
+        $this->assertEquals(null, $GLOBALS['varNull']);
+        $this->assertArrayHasKey('varGet', $_GET);
+        $this->assertEquals(0, $_GET['varGet']);
+    }
 
-        // Tilde Range
-        //
-        // Like wildcard constraints, unsuffixed tilde constraints say that they must be greater than the previous
-        // version, to ensure that unstable instances of the current version are allowed. However, if a stability
-        // suffix is added to the constraint, then a >= match on the current version is used instead.
-        if (preg_match('{^~>?' . $versionRegex . '$}i', $constraint, $matches)) {
-            if (strpos($constraint, '~>') === 0) {
-                throw new \UnexpectedValueException(
-                    'Could not parse version constraint ' . $constraint . ': ' .
-                    'Invalid operator "~>", you probably meant to use the "~" operator'
-                );
-            }
-
-            // Work out which position in the version we are operating at
-            if (isset($matches[4]) && '' !== $matches[4] && null !== $matches[4]) {
-                $position = 4;
-            } elseif (isset($matches[3]) && '' !== $matches[3] && null !== $matches[3]) {
-                $position = 3;
-            } elseif (isset($matches[2]) && '' !== $matches[2] && null !== $matches[2]) {
-                $position = 2;
-            } else {
-                $position = 1;
-            }
-
-            // Calculate the stability suffix
-            $stabilitySuffix = '';
-            if (empty($matches[5]) && empty($matches[7])) {
-                $stabilitySuffix .= '-dev';
-            }
-
-            $lowVersion = $this->normalize(substr($constraint . $stabilitySuffix, 1));
-            $lowerBound = new Constraint('>=', $lowVersion);
-
-            // For upper bound, we increment the position of one more significance,
-            // but highPosition = 0 would be illegal
-            $highPosition = max(1, $position - 1);
-            $highVersion = $this->manipulateVersionString($matches, $highPosition, 1) . '-dev';
-            $upperBound = new Constraint('<', $highVersion);
-
-            return array(
-                $lowerBound,
-             
+    /**
+     * Check global variables are correctly backuped and restored.
+     *
+     * @depends testIntegrationRestorerGlobalVariables
+     */
+    public function testIntegrationRestorerGlobalVariables2()
+    {
+        $this->assertArrayHasKey('varBool', $GLOBALS);
+        $this->assertEquals(false, $GLOBALS['varBool']);
+        $this->assertArrayHasKey('varNull', $GLOBALS);
+        $this->assertEquals(null, $GLOBALS['varNull']);
+        $this->assertArrayHasKey('varGet', $_GET);
+        $this->assertEquals(0, $_GET['varGet']);
+    }
+}

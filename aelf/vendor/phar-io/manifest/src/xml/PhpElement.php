@@ -1,30 +1,27 @@
-0131213
-* Firefox ESR in default browsers was changed to 24 version.
-* Firefox 26 was moved to current releases list.
-* Firefox 28 was added to future releases list.
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-## 0.7 “We Do Not Sow”
-* Add vendor prefixes to selectors.
-* Add ::selection and ::placeholder selectors support.
-* Allow to load support data from Can I Use pull requests.
-* Remove deprecated API.
+namespace PharIo\Manifest;
 
-### 20130806
-* Add hyphens support.
+class PhpElement extends ManifestElement {
+    public function getVersion() {
+        return $this->getAttributeValue('version');
+    }
 
-### 20130807
-* Add tab-size support.
-* Add :fullscreen support.
+    public function hasExtElements() {
+        return $this->hasChild('ext');
+    }
 
-### 20130808
-* Allow to select browser versions by > and >= operator.
-* Fix flex properties in transition.
-
-### 20130810
-* Add Firefox 25 data.
-
-### 20130824
-* Add Chrome 31 and 30 data.
-* Fix CSS comments parsing (by vladkens).
-
-## 0.
+    public function getExtElements() {
+        return new ExtElementCollection(
+            $this->getChildrenByName('ext')
+        );
+    }
+}

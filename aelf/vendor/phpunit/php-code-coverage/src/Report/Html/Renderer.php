@@ -1,302 +1,296 @@
-rmat: '.
-'John Smith <john@example.com>'
-);
-}
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-protected function configure()
+namespace SebastianBergmann\CodeCoverage\Report\Html;
+
+use SebastianBergmann\CodeCoverage\Node\AbstractNode;
+use SebastianBergmann\CodeCoverage\Node\Directory as DirectoryNode;
+use SebastianBergmann\CodeCoverage\Node\File as FileNode;
+use SebastianBergmann\CodeCoverage\Version;
+use SebastianBergmann\Environment\Runtime;
+
+/**
+ * Base class for node renderers.
+ */
+abstract class Renderer
 {
-$this
-->setName('init')
-->setDescription('Creates a basic composer.json file in current directory.')
-->setDefinition(array(
-new InputOption('name', null, InputOption::VALUE_REQUIRED, 'Name of the package'),
-new InputOption('description', null, InputOption::VALUE_REQUIRED, 'Description of package'),
-new InputOption('author', null, InputOption::VALUE_REQUIRED, 'Author name of package'),
+    /**
+     * @var string
+     */
+    protected $templatePath;
 
- new InputOption('homepage', null, InputOption::VALUE_REQUIRED, 'Homepage of package'),
-new InputOption('require', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Package to require with a version constraint, e.g. foo/bar:1.0.0 or foo/bar=1.0.0 or "foo/bar 1.0.0"'),
-new InputOption('require-dev', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Package to require for development with a version constraint, e.g. foo/bar:1.0.0 or foo/bar=1.0.0 or "foo/bar 1.0.0"'),
-new InputOption('stability', 's', InputOption::VALUE_REQUIRED, 'Minimum stability (empty or one of: '.implode(', ', array_keys(BasePackage::$stabilities)).')'),
-new InputOption('license', 'l', InputOption::VALUE_REQUIRED, 'License of package'),
-))
-->setHelp(<<<EOT
-The <info>init</info> command creates a basic composer.json file
-in the current directory.
+    /**
+     * @var string
+     */
+    protected $generator;
 
-<info>php composer.phar init</info>
+    /**
+     * @var string
+     */
+    protected $date;
 
-EOT
-)
-;
+    /**
+     * @var int
+     */
+    protected $lowUpperBound;
+
+    /**
+     * @var int
+     */
+    protected $highLowerBound;
+
+    /**
+     * @var string
+     */
+    protected $version;
+
+    /**
+     * Constructor.
+     *
+     * @param string $templatePath
+     * @param string $generator
+     * @param string $date
+     * @param int    $lowUpperBound
+     * @param int    $highLowerBound
+     */
+    public function __construct($templatePath, $generator, $date, $lowUpperBound, $highLowerBound)
+    {
+        $this->templatePath   = $templatePath;
+        $this->generator      = $generator;
+        $this->date           = $date;
+        $this->lowUpperBound  = $lowUpperBound;
+        $this->highLowerBound = $highLowerBound;
+        $this->version        = Version::id();
+    }
+
+    /**
+     * @param \Text_Template $template
+     * @param array          $data
+     *
+     * @return string
+     */
+    protected function renderItemTemplate(\Text_Template $template, array $data)
+    {
+        $numSeparator  = '&nbsp;/&nbsp;';
+
+        if (isset($data['numClasses']) && $data['numClasses'] > 0) {
+            $classesLevel = $this->getColorLevel($data['testedClassesPercent']);
+
+            $classesNumber = $data['numTestedClasses'] . $numSeparator .
+                $data['numClasses'];
+
+            $classesBar = $this->getCoverageBar(
+                $data['testedClassesPercent']
+            );
+        } else {
+            $classesLevel                         = '';
+            $classesNumber                        = '0' . $numSeparator . '0';
+            $classesBar                           = '';
+            $data['testedClassesPercentAsString'] = 'n/a';
+        }
+
+        if ($data['numMethods'] > 0) {
+            $methodsLevel = $this->getColorLevel($data['testedMethodsPercent']);
+
+            $methodsNumber = $data['numTestedMethods'] . $numSeparator .
+                $data['numMethods'];
+
+            $methodsBar = $this->getCoverageBar(
+                $data['testedMethodsPercent']
+            );
+        } else {
+            $methodsLevel                         = '';
+            $methodsNumber                        = '0' . $numSeparator . '0';
+            $methodsBar                           = '';
+            $data['testedMethodsPercentAsString'] = 'n/a';
+        }
+
+        if ($data['numExecutableLines'] > 0) {
+            $linesLevel = $this->getColorLevel($data['linesExecutedPercent']);
+
+            $linesNumber = $data['numExecutedLines'] . $numSeparator .
+                $data['numExecutableLines'];
+
+            $linesBar = $this->getCoverageBar(
+                $data['linesExecutedPercent']
+            );
+        } else {
+            $linesLevel                           = '';
+            $linesNumber                          = '0' . $numSeparator . '0';
+            $linesBar                             = '';
+            $data['linesExecutedPercentAsString'] = 'n/a';
+        }
+
+        $template->setVar(
+            [
+                'icon'                   => isset($data['icon']) ? $data['icon'] : '',
+                'crap'                   => isset($data['crap']) ? $data['crap'] : '',
+                'name'                   => $data['name'],
+                'lines_bar'              => $linesBar,
+                'lines_executed_percent' => $data['linesExecutedPercentAsString'],
+                'lines_level'            => $linesLevel,
+                'lines_number'           => $linesNumber,
+                'methods_bar'            => $methodsBar,
+                'methods_tested_percent' => $data['testedMethodsPercentAsString'],
+                'methods_level'          => $methodsLevel,
+                'methods_number'         => $methodsNumber,
+                'classes_bar'            => $classesBar,
+                'classes_tested_percent' => isset($data['testedClassesPercentAsString']) ? $data['testedClassesPercentAsString'] : '',
+                'classes_level'          => $classesLevel,
+                'classes_number'         => $classesNumber
+            ]
+        );
+
+        return $template->render();
+    }
+
+    /**
+     * @param \Text_Template $template
+     * @param AbstractNode   $node
+     */
+    protected function setCommonTemplateVariables(\Text_Template $template, AbstractNode $node)
+    {
+        $template->setVar(
+            [
+                'id'               => $node->getId(),
+                'full_path'        => $node->getPath(),
+                'path_to_root'     => $this->getPathToRoot($node),
+                'breadcrumbs'      => $this->getBreadcrumbs($node),
+                'date'             => $this->date,
+                'version'          => $this->version,
+                'runtime'          => $this->getRuntimeString(),
+                'generator'        => $this->generator,
+                'low_upper_bound'  => $this->lowUpperBound,
+                'high_lower_bound' => $this->highLowerBound
+            ]
+        );
+    }
+
+    protected function getBreadcrumbs(AbstractNode $node)
+    {
+        $breadcrumbs = '';
+        $path        = $node->getPathAsArray();
+        $pathToRoot  = [];
+        $max         = \count($path);
+
+        if ($node instanceof FileNode) {
+            $max--;
+        }
+
+        for ($i = 0; $i < $max; $i++) {
+            $pathToRoot[] = \str_repeat('../', $i);
+        }
+
+        foreach ($path as $step) {
+            if ($step !== $node) {
+                $breadcrumbs .= $this->getInactiveBreadcrumb(
+                    $step,
+                    \array_pop($pathToRoot)
+                );
+            } else {
+                $breadcrumbs .= $this->getActiveBreadcrumb($step);
+            }
+        }
+
+        return $breadcrumbs;
+    }
+
+    protected function getActiveBreadcrumb(AbstractNode $node)
+    {
+        $buffer = \sprintf(
+            '        <li class="active">%s</li>' . "\n",
+            $node->getName()
+        );
+
+        if ($node instanceof DirectoryNode) {
+            $buffer .= '        <li>(<a href="dashboard.html">Dashboard</a>)</li>' . "\n";
+        }
+
+        return $buffer;
+    }
+
+    protected function getInactiveBreadcrumb(AbstractNode $node, $pathToRoot)
+    {
+        return \sprintf(
+            '        <li><a href="%sindex.html">%s</a></li>' . "\n",
+            $pathToRoot,
+            $node->getName()
+        );
+    }
+
+    protected function getPathToRoot(AbstractNode $node)
+    {
+        $id    = $node->getId();
+        $depth = \substr_count($id, '/');
+
+        if ($id != 'index' &&
+            $node instanceof DirectoryNode) {
+            $depth++;
+        }
+
+        return \str_repeat('../', $depth);
+    }
+
+    protected function getCoverageBar($percent)
+    {
+        $level = $this->getColorLevel($percent);
+
+        $template = new \Text_Template(
+            $this->templatePath . 'coverage_bar.html',
+            '{{',
+            '}}'
+        );
+
+        $template->setVar(['level' => $level, 'percent' => \sprintf('%.2F', $percent)]);
+
+        return $template->render();
+    }
+
+    /**
+     * @param int $percent
+     *
+     * @return string
+     */
+    protected function getColorLevel($percent)
+    {
+        if ($percent <= $this->lowUpperBound) {
+            return 'danger';
+        } elseif ($percent > $this->lowUpperBound &&
+            $percent < $this->highLowerBound) {
+            return 'warning';
+        } else {
+            return 'success';
+        }
+    }
+
+    /**
+     * @return string
+     */
+    private function getRuntimeString()
+    {
+        $runtime = new Runtime;
+
+        $buffer = \sprintf(
+            '<a href="%s" target="_top">%s %s</a>',
+            $runtime->getVendorUrl(),
+            $runtime->getName(),
+            $runtime->getVersion()
+        );
+
+        if ($runtime->hasXdebug() && !$runtime->hasPHPDBGCodeCoverage()) {
+            $buffer .= \sprintf(
+                ' with <a href="https://xdebug.org/">Xdebug %s</a>',
+                \phpversion('xdebug')
+            );
+        }
+
+        return $buffer;
+    }
 }
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-$dialog = $this->getHelperSet()->get('dialog');
-
-$whitelist = array('name', 'description', 'author', 'homepage', 'require', 'require-dev', 'stability', 'license');
-
-$options = array_filter(array_intersect_key($input->getOptions(), array_flip($whitelist)));
-
-if (isset($options['author'])) {
-$options['authors'] = $this->formatAuthors($options['author']);
-unset($options['author']);
-}
-
-if (isset($options['stability'])) {
-$options['minimum-stability'] = $options['stability'];
-unset($options['stability']);
-}
-
-$options['require'] = isset($options['require']) ? $this->formatRequirements($options['require']) : new \stdClass;
-if (array() === $options['require']) {
-$options['require'] = new \stdClass;
-}
-
-if (isset($options['require-dev'])) {
-$options['require-dev'] = $this->formatRequirements($options['require-dev']) ;
-if (array() === $options['require-dev']) {
-$options['require-dev'] = new \stdClass;
-}
-}
-
-$file = new JsonFile('composer.json');
-
-$json = $file->encode($options);
-
-if ($input->isInteractive()) {
-$output->writeln(array(
-'',
-$json,
-''
-));
-if (!$dialog->askConfirmation($output, $dialog->getQuestion('Do you confirm generation', 'yes', '?'), true)) {
-$output->writeln('<error>Command aborted</error>');
-
-return 1;
-}
-}
-
-$file->write($options);
-
-if ($input->isInteractive() && is_dir('.git')) {
-$ignoreFile = realpath('.gitignore');
-
-if (false === $ignoreFile) {
-$ignoreFile = realpath('.') . '/.gitignore';
-}
-
-if (!$this->hasVendorIgnore($ignoreFile)) {
-$question = 'Would you like the <info>vendor</info> directory added to your <info>.gitignore</info> [<comment>yes</comment>]?';
-
-if ($dialog->askConfirmation($output, $question, true)) {
-$this->addVendorIgnore($ignoreFile);
-}
-}
-}
-}
-
-protected function interact(InputInterface $input, OutputInterface $output)
-{
-$git = $this->getGitConfig();
-
-$dialog = $this->getHelperSet()->get('dialog');
-$formatter = $this->getHelperSet()->get('formatter');
-$output->writeln(array(
-'',
-$formatter->formatBlock('Welcome to the Composer config generator', 'bg=blue;fg=white', true),
-''
-));
-
-
- $output->writeln(array(
-'',
-'This command will guide you through creating your composer.json config.',
-'',
-));
-
-$cwd = realpath(".");
-
-if (!$name = $input->getOption('name')) {
-$name = basename($cwd);
-$name = preg_replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $name);
-$name = strtolower($name);
-if (isset($git['github.user'])) {
-$name = $git['github.user'] . '/' . $name;
-} elseif (!empty($_SERVER['USERNAME'])) {
-$name = $_SERVER['USERNAME'] . '/' . $name;
-} elseif (get_current_user()) {
-$name = get_current_user() . '/' . $name;
-} else {
-
- $name = $name . '/' . $name;
-}
-} else {
-if (!preg_match('{^[a-z0-9_.-]+/[a-z0-9_.-]+$}', $name)) {
-throw new \InvalidArgumentException(
-'The package name '.$name.' is invalid, it should be lowercase and have a vendor name, a forward slash, and a package name, matching: [a-z0-9_.-]+/[a-z0-9_.-]+'
-);
-}
-}
-
-$name = $dialog->askAndValidate(
-$output,
-$dialog->getQuestion('Package name (<vendor>/<name>)', $name),
-function ($value) use ($name) {
-if (null === $value) {
-return $name;
-}
-
-if (!preg_match('{^[a-z0-9_.-]+/[a-z0-9_.-]+$}', $value)) {
-throw new \InvalidArgumentException(
-'The package name '.$value.' is invalid, it should be lowercase and have a vendor name, a forward slash, and a package name, matching: [a-z0-9_.-]+/[a-z0-9_.-]+'
-);
-}
-
-return $value;
-}
-);
-$input->setOption('name', $name);
-
-$description = $input->getOption('description') ?: false;
-$description = $dialog->ask(
-$output,
-$dialog->getQuestion('Description', $description)
-);
-$input->setOption('description', $description);
-
-if (null === $author = $input->getOption('author')) {
-if (isset($git['user.name']) && isset($git['user.email'])) {
-$author = sprintf('%s <%s>', $git['user.name'], $git['user.email']);
-}
-}
-
-$self = $this;
-$author = $dialog->askAndValidate(
-$output,
-$dialog->getQuestion('Author', $author),
-function ($value) use ($self, $author) {
-if (null === $value) {
-return $author;
-}
-
-$author = $self->parseAuthorString($value);
-
-return sprintf('%s <%s>', $author['name'], $author['email']);
-}
-);
-$input->setOption('author', $author);
-
-$minimumStability = $input->getOption('stability') ?: '';
-$minimumStability = $dialog->askAndValidate(
-$output,
-$dialog->getQuestion('Minimum Stability', $minimumStability),
-function ($value) use ($self, $minimumStability) {
-if (null === $value) {
-return $minimumStability;
-}
-
-if (!isset(BasePackage::$stabilities[$value])) {
-throw new \InvalidArgumentException(
-'Invalid minimum stability "'.$value.'". Must be empty or one of: '.
-implode(', ', array_keys(BasePackage::$stabilities))
-);
-}
-
-return $value;
-}
-);
-$input->setOption('stability', $minimumStability);
-
-$license = $input->getOption('license') ?: false;
-$license = $dialog->ask(
-$output,
-$dialog->getQuestion('License', $license)
-);
-$input->setOption('license', $license);
-
-$output->writeln(array(
-'',
-'Define your dependencies.',
-''
-));
-
-$requirements = array();
-if ($dialog->askConfirmation($output, $dialog->getQuestion('Would you like to define your dependencies (require) interactively', 'yes', '?'), true)) {
-$requirements = $this->determineRequirements($input, $output, $input->getOption('require'));
-}
-$input->setOption('require', $requirements);
-$devRequirements = array();
-if ($dialog->askConfirmation($output, $dialog->getQuestion('Would you like to define your dev dependencies (require-dev) interactively', 'yes', '?'), true)) {
-$devRequirements = $this->determineRequirements($input, $output, $input->getOption('require-dev'));
-}
-$input->setOption('require-dev', $devRequirements);
-}
-
-protected function findPackages($name)
-{
-$packages = array();
-
-
- if (!$this->repos) {
-$this->repos = new CompositeRepository(array_merge(
-array(new PlatformRepository),
-Factory::createDefaultRepositories($this->getIO())
-));
-}
-
-return $this->repos->search($name);
-}
-
-protected function determineRequirements(InputInterface $input, OutputInterface $output, $requires = array())
-{
-$dialog = $this->getHelperSet()->get('dialog');
-$prompt = $dialog->getQuestion('Search for a package', false, ':');
-
-if ($requires) {
-$requires = $this->normalizeRequirements($requires);
-$result = array();
-
-foreach ($requires as $key => $requirement) {
-if (!isset($requirement['version']) && $input->isInteractive()) {
-$question = $dialog->getQuestion('Please provide a version constraint for the '.$requirement['name'].' requirement');
-if ($constraint = $dialog->ask($output, $question)) {
-$requirement['version'] = $constraint;
-}
-}
-if (!isset($requirement['version'])) {
-throw new \InvalidArgumentException('The requirement '.$requirement['name'].' must contain a version constraint');
-}
-
-$result[] = $requirement['name'] . ' ' . $requirement['version'];
-}
-
-return $result;
-}
-
-while (null !== $package = $dialog->ask($output, $prompt)) {
-$matches = $this->findPackages($package);
-
-if (count($matches)) {
-$output->writeln(array(
-'',
-sprintf('Found <info>%s</info> packages matching <info>%s</info>', count($matches), $package),
-''
-));
-
-$exactMatch = null;
-$choices = array();
-foreach ($matches as $position => $package) {
-$choices[] = sprintf(' <info>%5s</info> %s', "[$position]", $package['name']);
-if ($package['name'] === $package) {
-$exactMatch = true;
-break;
-}
-}
-
-
- if (!$exactMatch) {
-$output->writeln($choices);
-$output->writeln('');
-
-$validator = function ($selection) use ($matches

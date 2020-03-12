@@ -1,42 +1,44 @@
-<?php
+# Changes in PHP_CodeCoverage 5.2
 
-// Protocol Buffers - Google's data interchange format
-// Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+All notable changes of the PHP_CodeCoverage 5.2 release series are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-namespace Google\Protobuf\Internal;
+## [5.2.4] - 2017-11-27
 
-class GPBWireType
-{
-    const VARINT           = 0;
-    const FIXED64          = 1;
-    const LENGTH_DELIMITED = 2;
-    const START_GROUP      = 3;
-    const END_GROUP        = 4;
- 
+### Fixed
+
+* Fixed [#424](https://github.com/sebastianbergmann/php-code-coverage/issues/424): Rest of a function or method is ignored after an anonymous function
+* Fixed [#455](https://github.com/sebastianbergmann/php-code-coverage/issues/455): Dashboard does not handle namespaced classes properly
+* Fixed [#468](https://github.com/sebastianbergmann/php-code-coverage/issues/468): Global functions are not properly counted
+* Fixed [#560](https://github.com/sebastianbergmann/php-code-coverage/issues/560): Uncovered whitelisted files are missing from the report
+
+## [5.2.3] - 2017-11-03
+
+### Fixed
+
+* Fixed [#540](https://github.com/sebastianbergmann/php-code-coverage/issues/540): Missing attribute `type` in the CSS `<link>` elements
+* Fixed [#554](https://github.com/sebastianbergmann/php-code-coverage/pull/554): `Parameter must be an array or an object that implements Countable`
+
+## [5.2.2] - 2017-08-03
+
+## Changed
+
+* Bumped required versions of dependencies
+
+## [5.2.1] - 2017-04-21
+
+## Changed
+
+* Version 3 of `sebastian/environment` is now required
+
+## [5.2.0] - 2017-04-20
+
+## Changed
+
+* Implemented [#518](https://github.com/sebastianbergmann/php-code-coverage/pull/518): Add more information to XML code coverage report
+
+[5.2.4]: https://github.com/sebastianbergmann/php-code-coverage/compare/5.2.3...5.2.4
+[5.2.3]: https://github.com/sebastianbergmann/php-code-coverage/compare/5.2.2...5.2.3
+[5.2.2]: https://github.com/sebastianbergmann/php-code-coverage/compare/5.2.1...5.2.2
+[5.2.1]: https://github.com/sebastianbergmann/php-code-coverage/compare/5.2.0...5.2.1
+[5.2.0]: https://github.com/sebastianbergmann/php-code-coverage/compare/5.1...5.2.0
+

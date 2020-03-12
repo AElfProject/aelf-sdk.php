@@ -1,429 +1,522 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace BitWasp\Bitcoin\Script\Interpreter;
+namespace Prophecy\Prophecy;
 
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\Hash;
-use BitWasp\Bitcoin\Exceptions\ScriptRuntimeException;
-use BitWasp\Bitcoin\Exceptions\SignatureNotCanonical;
-use BitWasp\Bitcoin\Script\Classifier\OutputClassifier;
-use BitWasp\Bitcoin\Script\Opcodes;
-use BitWasp\Bitcoin\Script\Script;
-use BitWasp\Bitcoin\Script\ScriptFactory;
-use BitWasp\Bitcoin\Script\ScriptInterface;
-use BitWasp\Bitcoin\Script\ScriptWitness;
-use BitWasp\Bitcoin\Script\ScriptWitnessInterface;
-use BitWasp\Bitcoin\Script\WitnessProgram;
-use BitWasp\Bitcoin\Signature\TransactionSignature;
-use BitWasp\Bitcoin\Transaction\SignatureHash\SigHash;
-use BitWasp\Bitcoin\Transaction\TransactionInputInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
+use Prophecy\Argument;
+use Prophecy\Prophet;
+use Prophecy\Promise;
+use Prophecy\Prediction;
+use Prophecy\Exception\Doubler\MethodNotFoundException;
+use Prophecy\Exception\InvalidArgumentException;
+use Prophecy\Exception\Prophecy\MethodProphecyException;
 
-class Interpreter implements InterpreterInterface
+/**
+ * Method prophecy.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class MethodProphecy
 {
+    private $objectProphecy;
+    private $methodName;
+    private $argumentsWildcard;
+    private $promise;
+    private $prediction;
+    private $checkedPredictions = array();
+    private $bound = false;
+    private $voidReturnType = false;
 
     /**
-     * @var \BitWasp\Bitcoin\Math\Math
-     */
-    private $math;
-
-    /**
-     * @var BufferInterface
-     */
-    private $vchFalse;
-
-    /**
-     * @var BufferInterface
-     */
-    private $vchTrue;
-
-    /**
-     * @var array
-     */
-    private $disabledOps = [
-        Opcodes::OP_CAT,    Opcodes::OP_SUBSTR, Opcodes::OP_LEFT,  Opcodes::OP_RIGHT,
-        Opcodes::OP_INVERT, Opcodes::OP_AND,    Opcodes::OP_OR,    Opcodes::OP_XOR,
-        Opcodes::OP_2MUL,   Opcodes::OP_2DIV,   Opcodes::OP_MUL,   Opcodes::OP_DIV,
-        Opcodes::OP_MOD,    Opcodes::OP_LSHIFT, Opcodes::OP_RSHIFT
-    ];
-
-    /**
-     * @param EcAdapterInterface $ecAdapter
-     */
-    public function __construct(EcAdapterInterface $ecAdapter = null)
-    {
-        $ecAdapter = $ecAdapter ?: Bitcoin::getEcAdapter();
-        $this->math = $ecAdapter->getMath();
-        $this->vchFalse = new Buffer("", 0);
-        $this->vchTrue = new Buffer("\x01", 1);
-    }
-
-    /**
-     * Cast the value to a boolean
+     * Initializes method prophecy.
      *
-     * @param BufferInterface $value
-     * @return bool
+     * @param ObjectProphecy                        $objectProphecy
+     * @param string                                $methodName
+     * @param null|Argument\ArgumentsWildcard|array $arguments
+     *
+     * @throws \Prophecy\Exception\Doubler\MethodNotFoundException If method not found
      */
-    public function castToBool(BufferInterface $value): bool
+    public function __construct(ObjectProphecy $objectProphecy, $methodName, $arguments = null)
     {
-        $val = $value->getBinary();
-        for ($i = 0, $size = strlen($val); $i < $size; $i++) {
-            $chr = ord($val[$i]);
-            if ($chr !== 0) {
-                if (($i === ($size - 1)) && $chr === 0x80) {
-                    return false;
+        $double = $objectProphecy->reveal();
+        if (!method_exists($double, $methodName)) {
+            throw new MethodNotFoundException(sprintf(
+                'Method `%s::%s()` is not defined.', get_class($double), $methodName
+            ), get_class($double), $methodName, $arguments);
+        }
+
+        $this->objectProphecy = $objectProphecy;
+        $this->methodName     = $methodName;
+
+        $reflectedMethod = new \ReflectionMethod($double, $methodName);
+        if ($reflectedMethod->isFinal()) {
+            throw new MethodProphecyException(sprintf(
+                "Can not add prophecy for a method `%s::%s()`\n".
+                "as it is a final method.",
+                get_class($double),
+                $methodName
+            ), $this);
+        }
+
+        if (null !== $arguments) {
+            $this->withArguments($arguments);
+        }
+
+        if (version_compare(PHP_VERSION, '7.0', '>=') && true === $reflectedMethod->hasReturnType()) {
+            $type = PHP_VERSION_ID >= 70100 ? $reflectedMethod->getReturnType()->getName() : (string) $reflectedMethod->getReturnType();
+
+            if ('void' === $type) {
+                $this->voidReturnType = true;
+            }
+
+            $this->will(function () use ($type) {
+                switch ($type) {
+                    case 'void': return;
+                    case 'string': return '';
+                    case 'float':  return 0.0;
+                    case 'int':    return 0;
+                    case 'bool':   return false;
+                    case 'array':  return array();
+
+                    case 'callable':
+                    case 'Closure':
+                        return function () {};
+
+                    case 'Traversable':
+                    case 'Generator':
+                        // Remove eval() when minimum version >=5.5
+                        /** @var callable $generator */
+                        $generator = eval('return function () { yield; };');
+                        return $generator();
+
+                    default:
+                        $prophet = new Prophet;
+                        return $prophet->prophesize($type)->reveal();
                 }
-                return true;
-            }
+            });
         }
-        return false;
     }
 
     /**
-     * @param BufferInterface $signature
-     * @return bool
+     * Sets argument wildcard.
+     *
+     * @param array|Argument\ArgumentsWildcard $arguments
+     *
+     * @return $this
+     *
+     * @throws \Prophecy\Exception\InvalidArgumentException
      */
-    public function isValidSignatureEncoding(BufferInterface $signature): bool
+    public function withArguments($arguments)
     {
-        try {
-            TransactionSignature::isDERSignature($signature);
-            return true;
-        } catch (SignatureNotCanonical $e) {
-            /* In any case, we will return false outside this block */
+        if (is_array($arguments)) {
+            $arguments = new Argument\ArgumentsWildcard($arguments);
         }
 
-        return false;
+        if (!$arguments instanceof Argument\ArgumentsWildcard) {
+            throw new InvalidArgumentException(sprintf(
+                "Either an array or an instance of ArgumentsWildcard expected as\n".
+                'a `MethodProphecy::withArguments()` argument, but got %s.',
+                gettype($arguments)
+            ));
+        }
+
+        $this->argumentsWildcard = $arguments;
+
+        return $this;
     }
 
     /**
-     * @param int $opCode
-     * @param BufferInterface $pushData
-     * @return bool
-     * @throws \Exception
+     * Sets custom promise to the prophecy.
+     *
+     * @param callable|Promise\PromiseInterface $promise
+     *
+     * @return $this
+     *
+     * @throws \Prophecy\Exception\InvalidArgumentException
      */
-    public function checkMinimalPush($opCode, BufferInterface $pushData): bool
+    public function will($promise)
     {
-        $pushSize = $pushData->getSize();
-        $binary = $pushData->getBinary();
-
-        if ($pushSize === 0) {
-            return $opCode === Opcodes::OP_0;
-        } elseif ($pushSize === 1) {
-            $first = ord($binary[0]);
-
-            if ($first >= 1 && $first <= 16) {
-                return $opCode === (Opcodes::OP_1 + ($first - 1));
-            } elseif ($first === 0x81) {
-                return $opCode === Opcodes::OP_1NEGATE;
-            }
-        } elseif ($pushSize <= 75) {
-            return $opCode === $pushSize;
-        } elseif ($pushSize <= 255) {
-            return $opCode === Opcodes::OP_PUSHDATA1;
-        } elseif ($pushSize <= 65535) {
-            return $opCode === Opcodes::OP_PUSHDATA2;
+        if (is_callable($promise)) {
+            $promise = new Promise\CallbackPromise($promise);
         }
 
-        return true;
+        if (!$promise instanceof Promise\PromiseInterface) {
+            throw new InvalidArgumentException(sprintf(
+                'Expected callable or instance of PromiseInterface, but got %s.',
+                gettype($promise)
+            ));
+        }
+
+        $this->bindToObjectProphecy();
+        $this->promise = $promise;
+
+        return $this;
     }
 
     /**
-     * @param int $count
+     * Sets return promise to the prophecy.
+     *
+     * @see \Prophecy\Promise\ReturnPromise
+     *
      * @return $this
      */
-    private function checkOpcodeCount(int $count)
+    public function willReturn()
     {
-        if ($count > 201) {
-            throw new \RuntimeException('Error: Script op code count');
+        if ($this->voidReturnType) {
+            throw new MethodProphecyException(
+                "The method \"$this->methodName\" has a void return type, and so cannot return anything",
+                $this
+            );
+        }
+
+        return $this->will(new Promise\ReturnPromise(func_get_args()));
+    }
+
+    /**
+     * @param array $items
+     *
+     * @return $this
+     *
+     * @throws \Prophecy\Exception\InvalidArgumentException
+     */
+    public function willYield($items)
+    {
+        if ($this->voidReturnType) {
+            throw new MethodProphecyException(
+                "The method \"$this->methodName\" has a void return type, and so cannot yield anything",
+                $this
+            );
+        }
+
+        if (!is_array($items)) {
+            throw new InvalidArgumentException(sprintf(
+                'Expected array, but got %s.',
+                gettype($items)
+            ));
+        }
+
+        // Remove eval() when minimum version >=5.5
+        /** @var callable $generator */
+        $generator = eval('return function() use ($items) {
+            foreach ($items as $key => $value) {
+                yield $key => $value;
+            }
+        };');
+
+        return $this->will($generator);
+    }
+
+    /**
+     * Sets return argument promise to the prophecy.
+     *
+     * @param int $index The zero-indexed number of the argument to return
+     *
+     * @see \Prophecy\Promise\ReturnArgumentPromise
+     *
+     * @return $this
+     */
+    public function willReturnArgument($index = 0)
+    {
+        if ($this->voidReturnType) {
+            throw new MethodProphecyException("The method \"$this->methodName\" has a void return type", $this);
+        }
+
+        return $this->will(new Promise\ReturnArgumentPromise($index));
+    }
+
+    /**
+     * Sets throw promise to the prophecy.
+     *
+     * @see \Prophecy\Promise\ThrowPromise
+     *
+     * @param string|\Exception $exception Exception class or instance
+     *
+     * @return $this
+     */
+    public function willThrow($exception)
+    {
+        return $this->will(new Promise\ThrowPromise($exception));
+    }
+
+    /**
+     * Sets custom prediction to the prophecy.
+     *
+     * @param callable|Prediction\PredictionInterface $prediction
+     *
+     * @return $this
+     *
+     * @throws \Prophecy\Exception\InvalidArgumentException
+     */
+    public function should($prediction)
+    {
+        if (is_callable($prediction)) {
+            $prediction = new Prediction\CallbackPrediction($prediction);
+        }
+
+        if (!$prediction instanceof Prediction\PredictionInterface) {
+            throw new InvalidArgumentException(sprintf(
+                'Expected callable or instance of PredictionInterface, but got %s.',
+                gettype($prediction)
+            ));
+        }
+
+        $this->bindToObjectProphecy();
+        $this->prediction = $prediction;
+
+        return $this;
+    }
+
+    /**
+     * Sets call prediction to the prophecy.
+     *
+     * @see \Prophecy\Prediction\CallPrediction
+     *
+     * @return $this
+     */
+    public function shouldBeCalled()
+    {
+        return $this->should(new Prediction\CallPrediction);
+    }
+
+    /**
+     * Sets no calls prediction to the prophecy.
+     *
+     * @see \Prophecy\Prediction\NoCallsPrediction
+     *
+     * @return $this
+     */
+    public function shouldNotBeCalled()
+    {
+        return $this->should(new Prediction\NoCallsPrediction);
+    }
+
+    /**
+     * Sets call times prediction to the prophecy.
+     *
+     * @see \Prophecy\Prediction\CallTimesPrediction
+     *
+     * @param $count
+     *
+     * @return $this
+     */
+    public function shouldBeCalledTimes($count)
+    {
+        return $this->should(new Prediction\CallTimesPrediction($count));
+    }
+
+    /**
+     * Sets call times prediction to the prophecy.
+     *
+     * @see \Prophecy\Prediction\CallTimesPrediction
+     *
+     * @return $this
+     */
+    public function shouldBeCalledOnce()
+    {
+        return $this->shouldBeCalledTimes(1);
+    }
+
+    /**
+     * Checks provided prediction immediately.
+     *
+     * @param callable|Prediction\PredictionInterface $prediction
+     *
+     * @return $this
+     *
+     * @throws \Prophecy\Exception\InvalidArgumentException
+     */
+    public function shouldHave($prediction)
+    {
+        if (is_callable($prediction)) {
+            $prediction = new Prediction\CallbackPrediction($prediction);
+        }
+
+        if (!$prediction instanceof Prediction\PredictionInterface) {
+            throw new InvalidArgumentException(sprintf(
+                'Expected callable or instance of PredictionInterface, but got %s.',
+                gettype($prediction)
+            ));
+        }
+
+        if (null === $this->promise && !$this->voidReturnType) {
+            $this->willReturn();
+        }
+
+        $calls = $this->getObjectProphecy()->findProphecyMethodCalls(
+            $this->getMethodName(),
+            $this->getArgumentsWildcard()
+        );
+
+        try {
+            $prediction->check($calls, $this->getObjectProphecy(), $this);
+            $this->checkedPredictions[] = $prediction;
+        } catch (\Exception $e) {
+            $this->checkedPredictions[] = $prediction;
+
+            throw $e;
         }
 
         return $this;
     }
 
     /**
-     * @param WitnessProgram $witnessProgram
-     * @param ScriptWitnessInterface $scriptWitness
-     * @param int $flags
-     * @param CheckerBase $checker
-     * @return bool
+     * Checks call prediction.
+     *
+     * @see \Prophecy\Prediction\CallPrediction
+     *
+     * @return $this
      */
-    private function verifyWitnessProgram(WitnessProgram $witnessProgram, ScriptWitnessInterface $scriptWitness, int $flags, CheckerBase $checker): bool
+    public function shouldHaveBeenCalled()
     {
-        $witnessCount = count($scriptWitness);
-
-        if ($witnessProgram->getVersion() === 0) {
-            $buffer = $witnessProgram->getProgram();
-            if ($buffer->getSize() === 32) {
-                // Version 0 segregated witness program: SHA256(Script) in program, Script + inputs in witness
-                if ($witnessCount === 0) {
-                    // Must contain script at least
-                    return false;
-                }
-
-                $scriptPubKey = new Script($scriptWitness[$witnessCount - 1]);
-                $stackValues = $scriptWitness->slice(0, -1);
-                if (!$buffer->equals($scriptPubKey->getWitnessScriptHash())) {
-                    return false;
-                }
-            } elseif ($buffer->getSize() === 20) {
-                // Version 0 special case for pay-to-pubkeyhash
-                if ($witnessCount !== 2) {
-                    // 2 items in witness - <signature> <pubkey>
-                    return false;
-                }
-
-                $scriptPubKey = ScriptFactory::scriptPubKey()->payToPubKeyHash($buffer);
-                $stackValues = $scriptWitness;
-            } else {
-                return false;
-            }
-        } elseif ($flags & self::VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM) {
-            return false;
-        } else {
-            // Unknown versions are always 'valid' to permit future soft forks
-            return true;
-        }
-
-        $mainStack = new Stack();
-        foreach ($stackValues as $value) {
-            $mainStack->push($value);
-        }
-
-        if (!$this->evaluate($scriptPubKey, $mainStack, SigHash::V1, $flags, $checker)) {
-            return false;
-        }
-
-        if ($mainStack->count() !== 1) {
-            return false;
-        }
-
-        if (!$this->castToBool($mainStack->bottom())) {
-            return false;
-        }
-
-        return true;
+        return $this->shouldHave(new Prediction\CallPrediction);
     }
 
     /**
-     * @param ScriptInterface $scriptSig
-     * @param ScriptInterface $scriptPubKey
-     * @param int $flags
-     * @param CheckerBase $checker
-     * @param ScriptWitnessInterface|null $witness
-     * @return bool
+     * Checks no calls prediction.
+     *
+     * @see \Prophecy\Prediction\NoCallsPrediction
+     *
+     * @return $this
      */
-    public function verify(ScriptInterface $scriptSig, ScriptInterface $scriptPubKey, int $flags, CheckerBase $checker, ScriptWitnessInterface $witness = null): bool
+    public function shouldNotHaveBeenCalled()
     {
-        static $emptyWitness = null;
-        if ($emptyWitness === null) {
-            $emptyWitness = new ScriptWitness();
-        }
-
-        $witness = is_null($witness) ? $emptyWitness : $witness;
-
-        if (($flags & self::VERIFY_SIGPUSHONLY) !== 0 && !$scriptSig->isPushOnly()) {
-            return false;
-        }
-
-        $stack = new Stack();
-        if (!$this->evaluate($scriptSig, $stack, SigHash::V0, $flags, $checker)) {
-            return false;
-        }
-
-        $backup = [];
-        if ($flags & self::VERIFY_P2SH) {
-            foreach ($stack as $s) {
-                $backup[] = $s;
-            }
-        }
-
-        if (!$this->evaluate($scriptPubKey, $stack, SigHash::V0, $flags, $checker)) {
-            return false;
-        }
-
-        if ($stack->isEmpty()) {
-            return false;
-        }
-
-        if (false === $this->castToBool($stack[-1])) {
-            return false;
-        }
-
-        $program = null;
-        if ($flags & self::VERIFY_WITNESS) {
-            if ($scriptPubKey->isWitness($program)) {
-                /** @var WitnessProgram $program */
-                if ($scriptSig->getBuffer()->getSize() !== 0) {
-                    return false;
-                }
-
-                if (!$this->verifyWitnessProgram($program, $witness, $flags, $checker)) {
-                    return false;
-                }
-
-                $stack->resize(1);
-            }
-        }
-
-        if ($flags & self::VERIFY_P2SH && (new OutputClassifier())->isPayToScriptHash($scriptPubKey)) {
-            if (!$scriptSig->isPushOnly()) {
-                return false;
-            }
-
-            $stack = new Stack();
-            foreach ($backup as $i) {
-                $stack->push($i);
-            }
-
-            // Restore mainStack to how it was after evaluating scriptSig
-            if ($stack->isEmpty()) {
-                return false;
-            }
-
-            // Load redeemscript as the scriptPubKey
-            $scriptPubKey = new Script($stack->bottom());
-            $stack->pop();
-
-            if (!$this->evaluate($scriptPubKey, $stack, 0, $flags, $checker)) {
-                return false;
-            }
-
-            if ($stack->isEmpty()) {
-                return false;
-            }
-
-            if (!$this->castToBool($stack->bottom())) {
-                return false;
-            }
-
-            if ($flags & self::VERIFY_WITNESS) {
-                if ($scriptPubKey->isWitness($program)) {
-                    /** @var WitnessProgram $program */
-                    if (!$scriptSig->equals(ScriptFactory::sequence([$scriptPubKey->getBuffer()]))) {
-                        return false; // SCRIPT_ERR_WITNESS_MALLEATED_P2SH
-                    }
-
-                    if (!$this->verifyWitnessProgram($program, $witness, $flags, $checker)) {
-                        return false;
-                    }
-
-                    $stack->resize(1);
-                }
-            }
-        }
-
-        if ($flags & self::VERIFY_CLEAN_STACK) {
-            if (!($flags & self::VERIFY_P2SH !== 0) && ($flags & self::VERIFY_WITNESS !== 0)) {
-                return false; // implied flags required
-            }
-
-            if (count($stack) !== 1) {
-                return false; // Cleanstack
-            }
-        }
-
-        if ($flags & self::VERIFY_WITNESS) {
-            if (!$flags & self::VERIFY_P2SH) {
-                return false; //
-            }
-
-            if ($program === null && !$witness->isNull()) {
-                return false; // SCRIPT_ERR_WITNESS_UNEXPECTED
-            }
-        }
-
-        return true;
+        return $this->shouldHave(new Prediction\NoCallsPrediction);
     }
 
     /**
-     * @param Stack $vfStack
-     * @param bool $value
-     * @return bool
+     * Checks no calls prediction.
+     *
+     * @see \Prophecy\Prediction\NoCallsPrediction
+     * @deprecated
+     *
+     * @return $this
      */
-    public function checkExec(Stack $vfStack, bool $value): bool
+    public function shouldNotBeenCalled()
     {
-        $ret = 0;
-        foreach ($vfStack as $item) {
-            if ($item === $value) {
-                $ret++;
-            }
-        }
-
-        return (bool) $ret;
+        return $this->shouldNotHaveBeenCalled();
     }
 
     /**
-     * @param ScriptInterface $script
-     * @param Stack $mainStack
-     * @param int $sigVersion
-     * @param int $flags
-     * @param CheckerBase $checker
-     * @return bool
+     * Checks call times prediction.
+     *
+     * @see \Prophecy\Prediction\CallTimesPrediction
+     *
+     * @param int $count
+     *
+     * @return $this
      */
-    public function evaluate(ScriptInterface $script, Stack $mainStack, int $sigVersion, int $flags, CheckerBase $checker): bool
+    public function shouldHaveBeenCalledTimes($count)
     {
-        $hashStartPos = 0;
-        $opCount = 0;
-        $zero = gmp_init(0, 10);
-        $altStack = new Stack();
-        $vfStack = new Stack();
-        $minimal = ($flags & self::VERIFY_MINIMALDATA) !== 0;
-        $parser = $script->getScriptParser();
+        return $this->shouldHave(new Prediction\CallTimesPrediction($count));
+    }
 
-        if ($script->getBuffer()->getSize() > 10000) {
-            return false;
+    /**
+     * Checks call times prediction.
+     *
+     * @see \Prophecy\Prediction\CallTimesPrediction
+     *
+     * @return $this
+     */
+    public function shouldHaveBeenCalledOnce()
+    {
+        return $this->shouldHaveBeenCalledTimes(1);
+    }
+
+    /**
+     * Checks currently registered [with should(...)] prediction.
+     */
+    public function checkPrediction()
+    {
+        if (null === $this->prediction) {
+            return;
         }
 
-        try {
-            foreach ($parser as $operation) {
-                $opCode = $operation->getOp();
-                $pushData = $operation->getData();
-                $fExec = !$this->checkExec($vfStack, false);
+        $this->shouldHave($this->prediction);
+    }
 
-                // If pushdata was written to
-                if ($operation->isPush() && $operation->getDataSize() > InterpreterInterface::MAX_SCRIPT_ELEMENT_SIZE) {
-                    throw new \RuntimeException('Error - push size');
-                }
+    /**
+     * Returns currently registered promise.
+     *
+     * @return null|Promise\PromiseInterface
+     */
+    public function getPromise()
+    {
+        return $this->promise;
+    }
 
-                // OP_RESERVED should not count towards opCount
-                if ($opCode > Opcodes::OP_16 && ++$opCount) {
-                    $this->checkOpcodeCount($opCount);
-                }
+    /**
+     * Returns currently registered prediction.
+     *
+     * @return null|Prediction\PredictionInterface
+     */
+    public function getPrediction()
+    {
+        return $this->prediction;
+    }
 
-                if (in_array($opCode, $this->disabledOps, true)) {
-                    throw new \RuntimeException('Disabled Opcode');
-                }
+    /**
+     * Returns predictions that were checked on this object.
+     *
+     * @return Prediction\PredictionInterface[]
+     */
+    public function getCheckedPredictions()
+    {
+        return $this->checkedPredictions;
+    }
 
-                if ($fExec && $operation->isPush()) {
-                    // In range of a pushdata opcode
-                    if ($minimal && !$this->checkMinimalPush($opCode, $pushData)) {
-                        throw new ScriptRuntimeException(self::VERIFY_MINIMALDATA, 'Minimal pushdata required');
-                    }
+    /**
+     * Returns object prophecy this method prophecy is tied to.
+     *
+     * @return ObjectProphecy
+     */
+    public function getObjectProphecy()
+    {
+        return $this->objectProphecy;
+    }
 
-                    $mainStack->push($pushData);
-                    // echo " - [pushed '" . $pushData->getHex() . "']\n";
-                } elseif ($fExec || (Opcodes::OP_IF <= $opCode && $opCode <= Opcodes::OP_ENDIF)) {
-                    // echo "OPCODE - " . $script->getOpcodes()->getOp($opCode) . "\n";
-                    switch ($opCode) {
-                        case Opcodes::OP_1NEGATE:
-                        case Opcodes::OP_1:
-                        case Opcodes::OP_2:
-                        case Opcodes::OP_3:
-                        case Opcodes::OP_4:
-                        case Opcodes::OP_5:
-                        case Opcodes::OP_6:
-                        case Opcodes::OP_7:
-                        case Opcodes::OP_8:
-                        case Opcodes::OP_9:
-                        case Opcodes::OP_10:
-                        case Opcodes::OP_11:
-                        case Opcodes::OP_12:
-                        case Opcodes::OP_13:
-                        case Opcodes::OP_14:
-                        case Opcodes::OP_15:
-                        case Opcodes::OP_16:
-                            $num = \BitWasp\Bitcoin\Scr
+    /**
+     * Returns method name.
+     *
+     * @return string
+     */
+    public function getMethodName()
+    {
+        return $this->methodName;
+    }
+
+    /**
+     * Returns arguments wildcard.
+     *
+     * @return Argument\ArgumentsWildcard
+     */
+    public function getArgumentsWildcard()
+    {
+        return $this->argumentsWildcard;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasReturnVoid()
+    {
+        return $this->voidReturnType;
+    }
+
+    private function bindToObjectProphecy()
+    {
+        if ($this->bound) {
+            return;
+        }
+
+        $this->getObjectProphecy()->addMethodProphecy($this);
+        $this->bound = true;
+    }
+}

@@ -1,178 +1,162 @@
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Util;
 
-declare(strict_types=1);
+use PHPUnit\Framework\Exception;
 
-namespace BitWasp\Bitcoin\Script;
-
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\Hash;
-use BitWasp\Bitcoin\Script\Classifier\OutputClassifier;
-use BitWasp\Bitcoin\Script\Interpreter\InterpreterInterface;
-use BitWasp\Bitcoin\Script\Interpreter\Number;
-use BitWasp\Bitcoin\Script\Parser\Parser;
-use BitWasp\Bitcoin\Serializable;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class Script extends Serializable implements ScriptInterface
+/**
+ * Command-line options parsing class.
+ */
+class Getopt
 {
-
-    /**
-     * @var Opcodes
-     */
-    protected $opCodes;
-
-    /**
-     * @var string
-     */
-    protected $script;
-
-    /**
-     * @var BufferInterface|null
-     */
-    protected $scriptHash;
-
-    /**
-     * @var BufferInterface|null
-     */
-    protected $witnessScriptHash;
-
-    /**
-     * @param BufferInterface $script
-     * @param Opcodes|null $opCodes
-     */
-    public function __construct(BufferInterface $script = null, Opcodes $opCodes = null)
+    public static function getopt(array $args, $short_options, $long_options = null)
     {
-        $this->script = $script instanceof BufferInterface ? $script->getBinary() : '';
-        $this->opCodes = $opCodes ?: new Opcodes();
-    }
-
-    /**
-     * @return BufferInterface
-     */
-    public function getBuffer(): BufferInterface
-    {
-        return new Buffer($this->script);
-    }
-
-    /**
-     * @return Parser
-     */
-    public function getScriptParser(): Parser
-    {
-        return new Parser(Bitcoin::getMath(), $this);
-    }
-
-    /**
-     * Get all opcodes
-     *
-     * @return Opcodes
-     */
-    public function getOpCodes(): Opcodes
-    {
-        return $this->opCodes;
-    }
-
-    /**
-     * Return a buffer containing the HASH160 of this script.
-     *
-     * @return BufferInterface
-     */
-    public function getScriptHash(): BufferInterface
-    {
-        if (null === $this->scriptHash) {
-            $this->scriptHash = Hash::sha256ripe160($this->getBuffer());
+        if (empty($args)) {
+            return [[], []];
         }
 
-        return $this->scriptHash;
-    }
+        $opts     = [];
+        $non_opts = [];
 
-    /**
-     * Return a buffer containing the SHA256 of this script.
-     *
-     * @return BufferInterface
-     */
-    public function getWitnessScriptHash(): BufferInterface
-    {
-        if (null === $this->witnessScriptHash) {
-            $this->witnessScriptHash = Hash::sha256($this->getBuffer());
+        if ($long_options) {
+            \sort($long_options);
         }
 
-        return $this->witnessScriptHash;
+        if (isset($args[0][0]) && $args[0][0] != '-') {
+            \array_shift($args);
+        }
+
+        \reset($args);
+        \array_map('trim', $args);
+
+        while (false !== $arg = \current($args)) {
+            $i = \key($args);
+            \next($args);
+            if ($arg == '') {
+                continue;
+            }
+
+            if ($arg == '--') {
+                $non_opts = \array_merge($non_opts, \array_slice($args, $i + 1));
+                break;
+            }
+
+            if ($arg[0] != '-' || (\strlen($arg) > 1 && $arg[1] == '-' && !$long_options)) {
+                $non_opts[] = $args[$i];
+                continue;
+            } elseif (\strlen($arg) > 1 && $arg[1] == '-') {
+                self::parseLongOption(
+                    \substr($arg, 2),
+                    $long_options,
+                    $opts,
+                    $args
+                );
+            } else {
+                self::parseShortOption(
+                    \substr($arg, 1),
+                    $short_options,
+                    $opts,
+                    $args
+                );
+            }
+        }
+
+        return [$opts, $non_opts];
     }
 
-    /**
-     * @param bool|true $accurate
-     * @return int
-     */
-    public function countSigOps(bool $accurate = true): int
+    protected static function parseShortOption($arg, $short_options, &$opts, &$args)
     {
-        $count = 0;
-        $parser = $this->getScriptParser();
+        $argLen = \strlen($arg);
 
-        $lastOp = 0xff;
-        try {
-            foreach ($parser as $exec) {
-                $op = $exec->getOp();
+        for ($i = 0; $i < $argLen; $i++) {
+            $opt     = $arg[$i];
+            $opt_arg = null;
 
-                // None of these are pushdatas, so just an opcode
-                if ($op === Opcodes::OP_CHECKSIG || $op === Opcodes::OP_CHECKSIGVERIFY) {
-                    $count++;
-                } elseif ($op === Opcodes::OP_CHECKMULTISIG || $op === Opcodes::OP_CHECKMULTISIGVERIFY) {
-                    if ($accurate && ($lastOp >= Opcodes::OP_1 && $lastOp <= Opcodes::OP_16)) {
-                        $count += decodeOpN($lastOp);
-                    } else {
-                        $count += 20;
+            if (($spec = \strstr($short_options, $opt)) === false || $arg[$i] == ':') {
+                throw new Exception(
+                    "unrecognized option -- $opt"
+                );
+            }
+
+            if (\strlen($spec) > 1 && $spec[1] == ':') {
+                if ($i + 1 < $argLen) {
+                    $opts[] = [$opt, \substr($arg, $i + 1)];
+                    break;
+                }
+                if (!(\strlen($spec) > 2 && $spec[2] == ':')) {
+                    if (false === $opt_arg = \current($args)) {
+                        throw new Exception(
+                            "option requires an argument -- $opt"
+                        );
+                    }
+                    \next($args);
+                }
+            }
+
+            $opts[] = [$opt, $opt_arg];
+        }
+    }
+
+    protected static function parseLongOption($arg, $long_options, &$opts, &$args)
+    {
+        $count   = \count($long_options);
+        $list    = \explode('=', $arg);
+        $opt     = $list[0];
+        $opt_arg = null;
+
+        if (\count($list) > 1) {
+            $opt_arg = $list[1];
+        }
+
+        $opt_len = \strlen($opt);
+
+        for ($i = 0; $i < $count; $i++) {
+            $long_opt  = $long_options[$i];
+            $opt_start = \substr($long_opt, 0, $opt_len);
+
+            if ($opt_start != $opt) {
+                continue;
+            }
+
+            $opt_rest = \substr($long_opt, $opt_len);
+
+            if ($opt_rest != '' && $opt[0] != '=' && $i + 1 < $count &&
+                $opt == \substr($long_options[$i + 1], 0, $opt_len)) {
+                throw new Exception(
+                    "option --$opt is ambiguous"
+                );
+            }
+
+            if (\substr($long_opt, -1) == '=') {
+                if (\substr($long_opt, -2) != '==') {
+                    if (!\strlen($opt_arg)) {
+                        if (false === $opt_arg = \current($args)) {
+                            throw new Exception(
+                                "option --$opt requires an argument"
+                            );
+                        }
+                        \next($args);
                     }
                 }
-
-                $lastOp = $op;
+            } elseif ($opt_arg) {
+                throw new Exception(
+                    "option --$opt doesn't allow an argument"
+                );
             }
-        } catch (\Exception $e) {
-            /* Script parsing failures don't count, and terminate the loop */
+
+            $full_option = '--' . \preg_replace('/={1,2}$/', '', $long_opt);
+            $opts[]      = [$full_option, $opt_arg];
+
+            return;
         }
 
-        return $count;
+        throw new Exception("unrecognized option --$opt");
     }
-
-    /**
-     * @param WitnessProgram $program
-     * @param ScriptWitnessInterface $scriptWitness
-     * @return int
-     */
-    private function witnessSigOps(WitnessProgram $program, ScriptWitnessInterface $scriptWitness): int
-    {
-        if ($program->getVersion() === 0) {
-            $size = $program->getProgram()->getSize();
-            if ($size === 32 && count($scriptWitness) > 0) {
-                $script = new Script($scriptWitness->bottom());
-                return $script->countSigOps(true);
-            }
-
-            if ($size === 20) {
-                return 1;
-            }
-        }
-
-        return 0;
-    }
-
-    /**
-     * @param ScriptInterface $scriptSig
-     * @param ScriptWitnessInterface $scriptWitness
-     * @param int $flags
-     * @return int
-     */
-    public function countWitnessSigOps(ScriptInterface $scriptSig, ScriptWitnessInterface $scriptWitness, int $flags): int
-    {
-        if (($flags & InterpreterInterface::VERIFY_WITNESS) === 0) {
-            return 0;
-        }
-
-        $program = null;
-        if ($this->isWitness($program)) {
-            /** @var WitnessProgram $program */
-            return $this->witnessSigOps($program, $scriptWitness);
-        }
-
-        if ((new OutputClassifier())->isPa
+}

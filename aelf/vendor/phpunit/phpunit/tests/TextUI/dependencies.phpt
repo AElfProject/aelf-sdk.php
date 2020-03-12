@@ -1,23 +1,41 @@
-deo/mpeg'    => 'mpeg',
-        'application/vnd.ms-project'    => 'mpp',
-        'application/x-troff-ms'    => 'ms',
-        'application/x-msmediaview'    => 'mvb',
-        'application/oda'    => 'oda',
-        'application/pkcs10'    => 'p10',
-        'application/x-pkcs7-mime'    => 'p7m',
-        'application/x-pkcs7-certreqresp'    => 'p7r',
-        'application/x-pkcs7-signature'    => 'p7s',
-        'image/x-portable-bitmap'    => 'pbm',
-        'application/pdf'    => 'pdf',
-        'application/x-pkcs12'    => 'pfx',
-        'image/x-portable-graymap'    => 'pgm',
-        'application/ynd.ms-pkipko'    => 'pko',
-        'image/x-portable-anymap'    => 'pnm',
-        'image/x-portable-pixmap'    => 'ppm',
-        'application/vnd.ms-powerpoint'    => 'ppt',
-        'application/pics-rules'    => 'prf',
-        'application/x-mspublisher'    => 'pub',
-        'audio/x-pn-realaudio'    => 'ram',
-        'image/x-cmu-raster'    => 'ras',
-        'image/x-rgb'    => 'rgb',
-        
+--TEST--
+phpunit --verbose DependencyTestSuite ../_files/DependencyTestSuite.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--verbose';
+$_SERVER['argv'][3] = 'DependencyTestSuite';
+$_SERVER['argv'][4] = __DIR__ . '/../_files/DependencyTestSuite.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+Runtime:       %s
+
+...FSSS                                                             7 / 7 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 failure:
+
+1) DependencyFailureTest::testOne
+
+%s:%i
+
+--
+
+There were 3 skipped tests:
+
+1) DependencyFailureTest::testTwo
+This test depends on "DependencyFailureTest::testOne" to pass.
+
+2) DependencyFailureTest::testThree
+This test depends on "DependencyFailureTest::testTwo" to pass.
+
+3) DependencyFailureTest::testFour
+This test depends on "DependencyFailureTest::testOne" to pass.
+
+FAILURES!
+Tests: 7, Assertions: 4, Failures: 1, Skipped: 3.

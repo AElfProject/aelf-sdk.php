@@ -1,50 +1,41 @@
 <?php
-
 /*
- * This file is part of composer/semver.
+ * This file is part of the phpunit-mock-objects package.
  *
- * (c) Composer <https://github.com/composer>
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
- * For the full copyright and license information, please view
- * the LICENSE file that was distributed with this source code.
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Composer\Semver;
+use PHPUnit\Framework\TestCase;
 
-use Composer\Semver\Constraint\Constraint;
-
-class Comparator
+class Framework_ProxyObjectTest extends TestCase
 {
-    /**
-     * Evaluates the expression: $version1 > $version2.
-     *
-     * @param string $version1
-     * @param string $version2
-     *
-     * @return bool
-     */
-    public static function greaterThan($version1, $version2)
+    public function testMockedMethodIsProxiedToOriginalMethod()
     {
-        return self::compare($version1, '>', $version2);
+        $proxy = $this->getMockBuilder(Bar::class)
+                      ->enableProxyingToOriginalMethods()
+                      ->getMock();
+
+        $proxy->expects($this->once())
+              ->method('doSomethingElse');
+
+        $foo = new Foo;
+
+        $this->assertEquals('result', $foo->doSomething($proxy));
     }
 
-    /**
-     * Evaluates the expression: $version1 >= $version2.
-     *
-     * @param string $version1
-     * @param string $version2
-     *
-     * @return bool
-     */
-    public static function greaterThanOrEqualTo($version1, $version2)
+    public function testMockedMethodWithReferenceIsProxiedToOriginalMethod()
     {
-        return self::compare($version1, '>=', $version2);
-    }
+        $proxy = $this->getMockBuilder(MethodCallbackByReference::class)
+                      ->enableProxyingToOriginalMethods()
+                      ->getMock();
 
-    /**
-     * Evaluates the expression: $version1 < $version2.
-     *
-     * @param string $version1
-     * @param string $version2
-     *
-     * @return bool
+        $a = $b = $c = 0;
+
+        $proxy->callback($a, $b, $c);
+
+        $this->assertEquals(1, $b);
+    }
+}

@@ -1,24 +1,36 @@
-<?php
-declare(strict_types=1);
+# Changelog
 
-namespace Mdanter\Ecc\Crypto\Key;
+All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-/**
- * *********************************************************************
- * Copyright (C) 2012 Matyas Danter
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
- * O
+## 1.0.1 - 2016-08-06
+
+### Added
+
+- Nothing.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- Updated all `@return self` annotation references in interfaces to use
+  `@return static`, which more closelly follows the semantics of the
+  specification.
+- Updated the `MessageInterface::getHeaders()` return annotation to use the
+  value `string[][]`, indicating the format is a nested array of strings.
+- Updated the `@link` annotation for `RequestInterface::withRequestTarget()`
+  to point to the correct section of RFC 7230.
+- Updated the `ServerRequestInterface::withUploadedFiles()` parameter annotation
+  to add the parameter name (`$uploadedFiles`).
+- Updated a `@throws` annotation for the `UploadedFileInterface::moveTo()`
+  method to correctly reference the method parameter (it was referencing an
+  incorrect parameter name previously).
+
+## 1.0.0 - 2016-05-18
+
+Initial stable release; reflects accepted PSR-7 specification.

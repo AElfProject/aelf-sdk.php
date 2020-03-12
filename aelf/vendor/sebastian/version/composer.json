@@ -1,27 +1,29 @@
-<?php
-/*
- * This file is part of the PHPASN1 library.
- *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
-namespace FG\ASN1\Universal;
-
-use FG\ASN1\AbstractString;
-use FG\ASN1\Identifier;
-
-class PrintableString extends AbstractString
 {
-    /**
-     * Creates a new ASN.1 PrintableString.
-     *
-     * The ITU-T X.680 Table 8 permits the following characters:
-     * Latin capital letters A,B, ... Z
-     * Latin small letters   a,b, ... z
-     * Digits                0,1, ... 9
-     * SPACE                 (space)
-     * APOSTROPHE            '
-     * LE
+    "name": "sebastian/version",
+    "description": "Library that helps with managing the version number of Git-hosted PHP projects",
+    "homepage": "https://github.com/sebastianbergmann/version",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Sebastian Bergmann",
+            "email": "sebastian@phpunit.de",
+            "role": "lead"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/sebastianbergmann/version/issues"
+    },
+    "require": {
+        "php": ">=5.6"
+    },
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
+    }
+}

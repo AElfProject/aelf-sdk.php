@@ -1,86 +1,72 @@
-<?php
+<?php declare(strict_types = 1);
+namespace TheSeer\Tokenizer;
 
-declare(strict_types=1);
+use PHPUnit\Framework\TestCase;
 
-namespace BitWasp\Bitcoin\Serializer\Key\HierarchicalKey;
+/**
+ * @covers \TheSeer\Tokenizer\TokenCollection
+ */
+class TokenCollectionTest extends TestCase {
 
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Serializer\Types;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Exceptions\ParserOutOfRange;
-use BitWasp\Buffertools\Parser;
+    /** @var  TokenCollection */
+    private $collection;
 
-class RawExtendedKeySerializer
-{
-    /**
-     * @var EcAdapterInterface
-     */
-    private $ecAdapter;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\ByteString
-     */
-    private $bytestring4;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\Uint8
-     */
-    private $uint8;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\Uint32
-     */
-    private $uint32;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\ByteString
-     */
-    private $bytestring32;
-
-    /**
-     * @var \BitWasp\Buffertools\Types\ByteString
-     */
-    private $bytestring33;
-
-    /**
-     * RawExtendedKeySerializer constructor.
-     * @param EcAdapterInterface $ecAdapter
-     */
-    public function __construct(EcAdapterInterface $ecAdapter)
-    {
-        $this->ecAdapter = $ecAdapter;
-        $this->bytestring4 = Types::bytestring(4);
-        $this->uint8 = Types::uint8();
-        $this->uint32 = Types::uint32();
-        $this->bytestring32 = Types::bytestring(32);
-        $this->bytestring33 = Types::bytestring(33);
+    protected function setUp() {
+        $this->collection = new TokenCollection();
     }
 
-    /**
-     * @param RawKeyParams $keyParams
-     * @return BufferInterface
-     * @throws \Exception
-     */
-    public function serialize(RawKeyParams $keyParams): BufferInterface
-    {
-        return new Buffer(
-            pack("H*", $keyParams->getPrefix()) .
-            $this->uint8->write($keyParams->getDepth()) .
-            $this->uint32->write($keyParams->getParentFingerprint()) .
-            $this->uint32->write($keyParams->getSequence()) .
-            $this->bytestring32->write($keyParams->getChainCode()) .
-            $this->bytestring33->write($keyParams->getKeyData())
-        );
+    public function testCollectionIsInitiallyEmpty() {
+        $this->assertCount(0, $this->collection);
     }
 
-    /**
-     * @param Parser $parser
-     * @return RawKeyParams
-     * @throws ParserOutOfRange
-     */
-    public function fromParser(Parser $parser): RawKeyParams
-    {
-        try {
-            return new RawKeyParams(
-                $this->bytestring4-
+    public function testTokenCanBeAddedToCollection() {
+        $token = $this->createMock(Token::class);
+        $this->collection->addToken($token);
+
+        $this->assertCount(1, $this->collection);
+        $this->assertSame($token, $this->collection[0]);
+    }
+
+    public function testCanIterateOverTokens() {
+        $token = $this->createMock(Token::class);
+        $this->collection->addToken($token);
+        $this->collection->addToken($token);
+
+        foreach($this->collection as $position => $current) {
+            $this->assertInternalType('integer', $position);
+            $this->assertSame($token, $current);
+        }
+    }
+
+    public function testOffsetCanBeUnset() {
+        $token = $this->createMock(Token::class);
+        $this->collection->addToken($token);
+
+        $this->assertCount(1, $this->collection);
+        unset($this->collection[0]);
+        $this->assertCount(0, $this->collection);
+    }
+
+    public function testTokenCanBeSetViaOffsetPosition() {
+        $token = $this->createMock(Token::class);
+        $this->collection[0] = $token;
+        $this->assertCount(1, $this->collection);
+        $this->assertSame($token, $this->collection[0]);
+    }
+
+    public function testTryingToUseNonIntegerOffsetThrowsException() {
+        $this->expectException(TokenCollectionException::class);
+        $this->collection['foo'] = $this->createMock(Token::class);
+    }
+
+    public function testTryingToSetNonTokenAtOffsetThrowsException() {
+        $this->expectException(TokenCollectionException::class);
+        $this->collection[0] = 'abc';
+    }
+
+    public function testTryingToGetTokenAtNonExistingOffsetThrowsException() {
+        $this->expectException(TokenCollectionException::class);
+        $x = $this->collection[3];
+    }
+
+}

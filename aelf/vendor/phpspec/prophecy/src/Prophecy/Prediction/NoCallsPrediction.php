@@ -1,57 +1,68 @@
-          $size += 2;  // size for "[]".
-                $size += $count - 1;                     // size for commas
-                $getter = $field->getGetter();
-                foreach ($values as $value) {
-                    $size += $this->fieldDataOnlyJsonByteSize($field, $value);
-                }
-            }
-        } elseif ($this->existField($field) || GPBUtil::hasJsonValue($this)) {
-            if (!GPBUtil::hasSpecialJsonMapping($this)) {
-                $size += 3;                              // size for "\"\":".
-                $size += strlen($field->getJsonName());  // size for field name
-            }
-            $getter = $field->getGetter();
-            $value = $this->$getter();
-            $size += $this->fieldDataOnlyJsonByteSize($field, $value);
-        }
-        return $size;
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Prediction;
+
+use Prophecy\Call\Call;
+use Prophecy\Prophecy\ObjectProphecy;
+use Prophecy\Prophecy\MethodProphecy;
+use Prophecy\Util\StringUtil;
+use Prophecy\Exception\Prediction\UnexpectedCallsException;
+
+/**
+ * No calls prediction.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class NoCallsPrediction implements PredictionInterface
+{
+    private $util;
+
+    /**
+     * Initializes prediction.
+     *
+     * @param null|StringUtil $util
+     */
+    public function __construct(StringUtil $util = null)
+    {
+        $this->util = $util ?: new StringUtil;
     }
 
     /**
-     * @ignore
+     * Tests that there were no calls made.
+     *
+     * @param Call[]         $calls
+     * @param ObjectProphecy $object
+     * @param MethodProphecy $method
+     *
+     * @throws \Prophecy\Exception\Prediction\UnexpectedCallsException
      */
-    public function byteSize()
+    public function check(array $calls, ObjectProphecy $object, MethodProphecy $method)
     {
-        $size = 0;
-
-        $fields = $this->desc->getField();
-        foreach ($fields as $field) {
-            $size += $this->fieldByteSize($field);
+        if (!count($calls)) {
+            return;
         }
-        $size += strlen($this->unknown);
-        return $size;
+
+        $verb = count($calls) === 1 ? 'was' : 'were';
+
+        throw new UnexpectedCallsException(sprintf(
+            "No calls expected that match:\n".
+            "  %s->%s(%s)\n".
+            "but %d %s made:\n%s",
+            get_class($object->reveal()),
+            $method->getMethodName(),
+            $method->getArgumentsWildcard(),
+            count($calls),
+            $verb,
+            $this->util->stringifyCalls($calls)
+        ), $method, $calls);
     }
-
-    private function appendHelper($field, $append_value)
-    {
-        $getter = $field->getGetter();
-        $setter = $field->getSetter();
-
-        $field_arr_value = $this->$getter();
-        $field_arr_value[] = $append_value;
-
-        if (!is_object($field_arr_value)) {
-            $this->$setter($field_arr_value);
-        }
-    }
-
-    private function kvUpdateHelper($field, $update_key, $update_value)
-    {
-        $getter = $field->getGetter();
-        $setter = $field->getSetter();
-
-        $field_arr_value = $this->$getter();
-        $field_arr_value[$update_key] = $update_value;
-
-        if (!is_object($field_arr_value)) {
-  
+}

@@ -1,30 +1,13 @@
-<?php
+     <tr>
+      <td class="{{lines_level}}">{{icon}}{{name}}</td>
+      <td class="{{lines_level}} big">{{lines_bar}}</td>
+      <td class="{{lines_level}} small"><div align="right">{{lines_executed_percent}}</div></td>
+      <td class="{{lines_level}} small"><div align="right">{{lines_number}}</div></td>
+      <td class="{{methods_level}} big">{{methods_bar}}</td>
+      <td class="{{methods_level}} small"><div align="right">{{methods_tested_percent}}</div></td>
+      <td class="{{methods_level}} small"><div align="right">{{methods_number}}</div></td>
+      <td class="{{classes_level}} big">{{classes_bar}}</td>
+      <td class="{{classes_level}} small"><div align="right">{{classes_tested_percent}}</div></td>
+      <td class="{{classes_level}} small"><div align="right">{{classes_number}}</div></td>
+     </tr>
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Transaction\Bip69;
-
-use BitWasp\Bitcoin\Script\ScriptWitnessInterface;
-use BitWasp\Bitcoin\Transaction\Mutator\TxMutator;
-use BitWasp\Bitcoin\Transaction\TransactionInputInterface;
-use BitWasp\Bitcoin\Transaction\TransactionInterface;
-use BitWasp\Bitcoin\Transaction\TransactionOutputInterface;
-
-class Bip69
-{
-    /**
-     * @param TransactionInputInterface[] $vTxin
-     * @return TransactionInputInterface[]
-     */
-    public function sortInputs(array $vTxin): array
-    {
-        usort($vTxin, [$this, 'compareInputs']);
-        return $vTxin;
-    }
-
-    /**
-     * @param TransactionInputInterface $vin1
-     * @param TransactionInputInterface $vin2
-     * @return int
-     */
-    public function compareInputs(TransactionInputInterface $vin1, TransactionIn

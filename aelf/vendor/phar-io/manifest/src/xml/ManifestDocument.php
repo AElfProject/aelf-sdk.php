@@ -1,108 +1,118 @@
-"use strict";
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+namespace PharIo\Manifest;
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+use DOMDocument;
+use DOMElement;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+class ManifestDocument {
+    const XMLNS = 'https://phar.io/xml/manifest/1.0';
 
-var Declaration = require('../declaration');
+    /**
+     * @var DOMDocument
+     */
+    private $dom;
 
-var TransformDecl =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(TransformDecl, _Declaration);
+    /**
+     * ManifestDocument constructor.
+     *
+     * @param DOMDocument $dom
+     */
+    private function __construct(DOMDocument $dom) {
+        $this->ensureCorrectDocumentType($dom);
 
-  function TransformDecl() {
-    return _Declaration.apply(this, arguments) || this;
-  }
-
-  var _proto = TransformDecl.prototype;
-
-  /**
-   * Recursively check all parents for @keyframes
-   */
-  _proto.keyframeParents = function keyframeParents(decl) {
-    var parent = decl.parent;
-
-    while (parent) {
-      if (parent.type === 'atrule' && parent.name === 'keyframes') {
-        return true;
-      }
-
-      var _parent = parent;
-      parent = _parent.parent;
+        $this->dom = $dom;
     }
 
-    return false;
-  }
-  /**
-   * Is transform contain 3D commands
-   */
-  ;
+    public static function fromFile($filename) {
+        if (!file_exists($filename)) {
+            throw new ManifestDocumentException(
+                sprintf('File "%s" not found', $filename)
+            );
+        }
 
-  _proto.contain3d = function contain3d(decl) {
-    if (decl.prop === 'transform-origin') {
-      return false;
+        return self::fromString(
+            file_get_contents($filename)
+        );
     }
 
-    for (var _iterator = TransformDecl.functions3d, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
-      var _ref;
+    public static function fromString($xmlString) {
+        $prev = libxml_use_internal_errors(true);
+        libxml_clear_errors();
 
-      if (_isArray) {
-        if (_i >= _iterator.length) break;
-        _ref = _iterator[_i++];
-      } else {
-        _i = _iterator.next();
-        if (_i.done) break;
-        _ref = _i.value;
-      }
+        $dom = new DOMDocument();
+        $dom->loadXML($xmlString);
 
-      var func = _ref;
+        $errors = libxml_get_errors();
+        libxml_use_internal_errors($prev);
 
-      if (decl.value.indexOf(func + "(") !== -1) {
-        return true;
-      }
+        if (count($errors) !== 0) {
+            throw new ManifestDocumentLoadingException($errors);
+        }
+
+        return new self($dom);
     }
 
-    return false;
-  }
-  /**
-   * Replace rotateZ to rotate for IE 9
-   */
-  ;
-
-  _proto.set = function set(decl, prefix) {
-    decl = _Declaration.prototype.set.call(this, decl, prefix);
-
-    if (prefix === '-ms-') {
-      decl.value = decl.value.replace(/rotateZ/gi, 'rotate');
+    public function getContainsElement() {
+        return new ContainsElement(
+            $this->fetchElementByName('contains')
+        );
     }
 
-    return decl;
-  }
-  /**
-   * Don't add prefix for IE in keyframes
-   */
-  ;
-
-  _proto.insert = function insert(decl, prefix, prefixes) {
-    if (prefix === '-ms-') {
-      if (!this.contain3d(decl) && !this.keyframeParents(decl)) {
-        return _Declaration.prototype.insert.call(this, decl, prefix, prefixes);
-      }
-    } else if (prefix === '-o-') {
-      if (!this.contain3d(decl)) {
-        return _Declaration.prototype.insert.call(this, decl, prefix, prefixes);
-      }
-    } else {
-      return _Declaration.prototype.insert.call(this, decl, prefix, prefixes);
+    public function getCopyrightElement() {
+        return new CopyrightElement(
+            $this->fetchElementByName('copyright')
+        );
     }
 
-    return undefined;
-  };
+    public function getRequiresElement() {
+        return new RequiresElement(
+            $this->fetchElementByName('requires')
+        );
+    }
 
-  return TransformDecl;
-}(Declaration);
+    public function hasBundlesElement() {
+        return $this->dom->getElementsByTagNameNS(self::XMLNS, 'bundles')->length === 1;
+    }
 
-_def
+    public function getBundlesElement() {
+        return new BundlesElement(
+            $this->fetchElementByName('bundles')
+        );
+    }
+
+    private function ensureCorrectDocumentType(DOMDocument $dom) {
+        $root = $dom->documentElement;
+
+        if ($root->localName !== 'phar' || $root->namespaceURI !== self::XMLNS) {
+            throw new ManifestDocumentException('Not a phar.io manifest document');
+        }
+    }
+
+    /**
+     * @param $elementName
+     *
+     * @return DOMElement
+     *
+     * @throws ManifestDocumentException
+     */
+    private function fetchElementByName($elementName) {
+        $element = $this->dom->getElementsByTagNameNS(self::XMLNS, $elementName)->item(0);
+
+        if (!$element instanceof DOMElement) {
+            throw new ManifestDocumentException(
+                sprintf('Element %s missing', $elementName)
+            );
+        }
+
+        return $element;
+    }
+}

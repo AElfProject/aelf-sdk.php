@@ -1,47 +1,53 @@
-     * Add a little-endian Int8 serializer to the template
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Util\TestDox;
+
+/**
+ * Prints TestDox documentation in text format.
+ */
+class TextResultPrinter extends ResultPrinter
+{
+    /**
+     * Handler for 'start class' event.
      *
-     * @return TemplateFactory
+     * @param string $name
      */
-    public function int8le(): TemplateFactory
+    protected function startClass($name)
     {
-        $this->template->addItem($this->types->{__FUNCTION__}());
-        return $this;
+        $this->write($this->currentTestClassPrettified . "\n");
     }
 
     /**
-     * Add a int16 serializer to the template
+     * Handler for 'on test' event.
      *
-     * @return TemplateFactory
+     * @param string $name
+     * @param bool   $success
      */
-    public function int16(): TemplateFactory
+    protected function onTest($name, $success = true)
     {
-        $this->template->addItem($this->types->{__FUNCTION__}());
-        return $this;
+        if ($success) {
+            $this->write(' [x] ');
+        } else {
+            $this->write(' [ ] ');
+        }
+
+        $this->write($name . "\n");
     }
 
     /**
-     * Add a little-endian Int16 serializer to the template
+     * Handler for 'end class' event.
      *
-     * @return TemplateFactory
+     * @param string $name
      */
-    public function int16le(): TemplateFactory
+    protected function endClass($name)
     {
-        $this->template->addItem($this->types->{__FUNCTION__}());
-        return $this;
+        $this->write("\n");
     }
-
-    /**
-     * Add a int32 serializer to the template
-     *
-     * @return TemplateFactory
-     */
-    public function int32(): TemplateFactory
-    {
-        $this->template->addItem($this->types->{__FUNCTION__}());
-        return $this;
-    }
-
-    /**
-     * Add a little-endian Int serializer to the template
-     *
-    
+}

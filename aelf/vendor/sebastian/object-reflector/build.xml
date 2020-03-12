@@ -1,41 +1,22 @@
-build:
-    nodes:
-        php-scrutinizer-run:
-            project_setup:
-                override: true
-            tests:
-                override: [php-scrutinizer-run]
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="object-reflector" default="setup">
+    <target name="setup" depends="clean,composer"/>
 
-    environment:
-        mysql: false
-        redis: false
-        postgresql: false
-        php:
-           version: 7.2
-           ini:
-               'zend.assertions': '1'
-               'assert.exception': '1'
-    dependencies:
-        override:
-            -
-                command: 'composer install'
-    tests:
-        override: true
-    project_setup:
-        override: true
+    <target name="clean" description="Cleanup build artifacts">
+        <delete dir="${basedir}/vendor"/>
+        <delete file="${basedir}/composer.lock"/>
+    </target>
 
-filter:
-    paths:
-        - src/*
-    excluded_paths:
-        - examples/*
-        - tests/*
-        - vendor/*
+    <target name="composer" depends="clean" description="Install dependencies with Composer">
+        <exec executable="composer" taskname="composer">
+            <arg value="update"/>
+            <arg value="--no-interaction"/>
+            <arg value="--no-progress"/>
+            <arg value="--no-ansi"/>
+            <arg value="--no-suggest"/>
+            <arg value="--optimize-autoloader"/>
+            <arg value="--prefer-stable"/>
+        </exec>
+    </target>
+</project>
 
-tools:
-    php_cpd: true
-    php_pdepend: true
-    php_analyzer: true
-    php_sim: true
-    php_changetracking: true
-    

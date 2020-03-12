@@ -1,39 +1,51 @@
 <?php
+/*
+ * This file is part of sebastian/environment.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 declare(strict_types=1);
 
-namespace BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Serializer\Key;
+namespace SebastianBergmann\Environment;
 
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Adapter\EcAdapter;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Key\PublicKey;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PublicKeySerializerInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class PublicKeySerializer implements PublicKeySerializerInterface
+final class OperatingSystem
 {
     /**
-     * @var EcAdapter
+     * Returns PHP_OS_FAMILY (if defined (which it is on PHP >= 7.2)).
+     * Returns a string (compatible with PHP_OS_FAMILY) derived from PHP_OS otherwise.
      */
-    private $ecAdapter;
-
-    /**
-     * @param EcAdapter $ecAdapter
-     */
-    public function __construct(EcAdapter $ecAdapter)
+    public function getFamily(): string
     {
-        $this->ecAdapter = $ecAdapter;
+        if (\defined('PHP_OS_FAMILY')) {
+            return PHP_OS_FAMILY;
+        }
+
+        if (DIRECTORY_SEPARATOR === '\\') {
+            return 'Windows';
+        }
+
+        switch (PHP_OS) {
+            case 'Darwin':
+                return 'Darwin';
+
+            case 'DragonFly':
+            case 'FreeBSD':
+            case 'NetBSD':
+            case 'OpenBSD':
+                return 'BSD';
+
+            case 'Linux':
+                return 'Linux';
+
+            case 'SunOS':
+                return 'Solaris';
+
+            default:
+                return 'Unknown';
+        }
     }
-
-    /**
-     * @param PublicKey $publicKey
-     * @return string
-     */
-    public function getPrefix(PublicKey $publicKey): string
-    {
-        if (null === $publicKey->getPrefix()) {
-            return $publicKey->isCompressed()
-                ? $this->ecAdapter->getMath()->isEven($publicKey->getPoint()->getY())
-                    ? PublicKey::KEY_COMPRESSED_EVEN
-                    : PublicKey::KEY_COMPR
+}

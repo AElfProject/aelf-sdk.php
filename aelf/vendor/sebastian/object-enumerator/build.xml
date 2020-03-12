@@ -1,20 +1,22 @@
-<?php
-declare(strict_types=1);
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="object-enumerator" default="setup">
+    <target name="setup" depends="clean,composer"/>
 
-namespace Mdanter\Ecc\Crypto\Key;
+    <target name="clean" description="Cleanup build artifacts">
+        <delete dir="${basedir}/vendor"/>
+        <delete file="${basedir}/composer.lock"/>
+    </target>
 
-/**
- * *********************************************************************
- * Copyright (C) 2012 Matyas Danter
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PRO
+    <target name="composer" depends="clean" description="Install dependencies with Composer">
+        <exec executable="composer" taskname="composer">
+            <arg value="update"/>
+            <arg value="--no-interaction"/>
+            <arg value="--no-progress"/>
+            <arg value="--no-ansi"/>
+            <arg value="--no-suggest"/>
+            <arg value="--optimize-autoloader"/>
+            <arg value="--prefer-stable"/>
+        </exec>
+    </target>
+</project>
+

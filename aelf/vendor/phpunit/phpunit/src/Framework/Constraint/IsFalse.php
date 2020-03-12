@@ -1,31 +1,39 @@
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-name: Qa workflow
-jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: Restore/cache vendor folder
-        uses: actions/cache@v1
-        with:
-          path: vendor
-          key: all-build-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            all-build-${{ hashFiles('**/composer.lock') }}
-            all-build-
-      - name: Restore/cache tools folder
-        uses: actions/cache@v1
-        with:
-          path: tools
-          key: all-tools-${{ github.sha }}
-          restore-keys: |
-            all-tools-${{ github.sha }}-
-            all-tools-
-      - name: composer
-        uses: docker://composer
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_T
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework\Constraint;
+
+/**
+ * Constraint that accepts false.
+ */
+class IsFalse extends Constraint
+{
+    /**
+     * Evaluates the constraint for parameter $other. Returns true if the
+     * constraint is met, false otherwise.
+     *
+     * @param mixed $other Value or object to evaluate.
+     *
+     * @return bool
+     */
+    protected function matches($other)
+    {
+        return $other === false;
+    }
+
+    /**
+     * Returns a string representation of the constraint.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return 'is false';
+    }
+}

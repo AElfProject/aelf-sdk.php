@@ -1,27 +1,48 @@
-"use strict";
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+namespace PharIo\Manifest;
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+use LibXMLError;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+class ManifestDocumentLoadingException extends \Exception implements Exception {
+    /**
+     * @var LibXMLError[]
+     */
+    private $libxmlErrors;
 
-var Declaration = require('../declaration');
+    /**
+     * ManifestDocumentLoadingException constructor.
+     *
+     * @param LibXMLError[] $libxmlErrors
+     */
+    public function __construct(array $libxmlErrors) {
+        $this->libxmlErrors = $libxmlErrors;
+        $first              = $this->libxmlErrors[0];
 
-var TextEmphasisPosition =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(TextEmphasisPosition, _Declaration);
-
-  function TextEmphasisPosition() {
-    return _Declaration.apply(this, arguments) || this;
-  }
-
-  var _proto = TextEmphasisPosition.prototype;
-
-  _proto.set = function set(decl, prefix) {
-    if (prefix === '-webkit-') {
-      decl.value = decl.value.replace(/\s*(right|left)\s*/i, '');
+        parent::__construct(
+            sprintf(
+                '%s (Line: %d / Column: %d / File: %s)',
+                $first->message,
+                $first->line,
+                $first->column,
+                $first->file
+            ),
+            $first->code
+        );
     }
 
-    
+    /**
+     * @return LibXMLError[]
+     */
+    public function getLibxmlErrors() {
+        return $this->libxmlErrors;
+    }
+}

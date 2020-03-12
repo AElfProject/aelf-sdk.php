@@ -1,25 +1,25 @@
 <?php
-/*
- * This file is part of the PHPASN1 library.
- *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+require '../vendor/autoload.php';
 
-namespace FG\ASN1\Exception;
+use Hhxsv5\PhpMultiCurl\Curl;
 
-class ParserException extends \Exception
-{
-    private $errorMessage;
-    private $offset;
+$postUrl = 'http://localhost/upload.php';//<?php var_dump($_FILES);
 
-    public function __construct($errorMessage, $offset)
-    {
-        $this->errorMessage = $errorMessage;
-        $this->offset = $offset;
-        parent::__construct("ASN.1 Parser Exception at offset {$this->offset}: {$this->errorMessage}");
-    }
+$options = [//The custom options of cURL
+    CURLOPT_TIMEOUT        => 10,
+    CURLOPT_CONNECTTIMEOUT => 5,
+    CURLOPT_USERAGENT      => 'Multi-cURL client v1.5.0',
+];
+$c = new Curl(null, $options);
 
-    
+$file1 = new CURLFile('./olddriver.gif', 'image/gif', 'name1');
+$params = ['file1' => $file1];
+$c->makePost($postUrl, $params);
+$response = $c->exec();
+if ($response->hasError()) {
+    //Fail
+    var_dump($response->getError());
+} else {
+    //Success
+    var_dump($response->getBody());
+}

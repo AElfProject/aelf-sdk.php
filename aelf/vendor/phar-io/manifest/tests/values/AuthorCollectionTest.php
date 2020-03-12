@@ -1,67 +1,62 @@
 <?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-namespace BitWasp\Buffertools\Tests;
+use PHPUnit\Framework\TestCase;
 
-use BitWasp\Buffertools\TemplateFactory;
-use BitWasp\Buffertools\Types\VarInt;
-use BitWasp\Buffertools\Types\VarString;
-use BitWasp\Buffertools\Types\Vector;
-
-class TemplateFactoryTest extends BinaryTest
-{
+/**
+ * @covers \PharIo\Manifest\AuthorCollection
+ * @covers \PharIo\Manifest\AuthorCollectionIterator
+ *
+ * @uses \PharIo\Manifest\Author
+ * @uses \PharIo\Manifest\Email
+ */
+class AuthorCollectionTest extends TestCase {
     /**
-     * @return array
+     * @var AuthorCollection
      */
-    public function getTestVectors(): array
-    {
-        $vectors = [];
+    private $collection;
 
-        for ($i = 8; $i <= 256; $i = $i * 2) {
-            foreach (array('', 'le') as $byteOrder) {
-                $vectors[] = [
-                    'uint' . $i . $byteOrder,
-                    '\BitWasp\Buffertools\Types\Uint' . $i,
-                ];
-                $vectors[] = [
-                    'int' . $i . $byteOrder,
-                    '\BitWasp\Buffertools\Types\Int' . $i,
-                ];
-            }
+    /**
+     * @var Author
+     */
+    private $item;
+
+    protected function setUp() {
+        $this->collection = new AuthorCollection;
+        $this->item       = new Author('Joe Developer', new Email('user@example.com'));
+    }
+
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(AuthorCollection::class, $this->collection);
+    }
+
+    public function testCanBeCounted() {
+        $this->collection->add($this->item);
+
+        $this->assertCount(1, $this->collection);
+    }
+
+    public function testCanBeIterated() {
+        $this->collection->add(
+            new Author('Dummy First', new Email('dummy@example.com'))
+        );
+        $this->collection->add($this->item);
+        $this->assertContains($this->item, $this->collection);
+    }
+
+    public function testKeyPositionCanBeRetreived() {
+        $this->collection->add($this->item);
+        foreach($this->collection as $key => $item) {
+            $this->assertEquals(0, $key);
         }
-
-        $vectors[] = [
-            'varint',
-            VarInt::class
-        ];
-
-        $vectors[] = [
-            'varstring',
-            VarString::class
-        ];
-
-        return $vectors;
     }
-
-    /**
-     * @dataProvider getTestVectors
-     * @param string $function
-     * @param string $eClass
-     */
-    public function testTemplateUint(string $function, string $eClass)
-    {
-        $factory = new TemplateFactory(null);
-        $factory->$function();
-        $template = $factory->getTemplate();
-        $this->assertEquals(1, count($template));
-        $template = $factory->getTemplate()->getItems();
-        $this->assertInstanceOf($eClass, $template[0]);
-    }
-
-    public function testVector()
-    {
-        $factory = new TemplateFactory(null);
-        $factory->vector(
-            function () {
-     
+}

@@ -1,16 +1,43 @@
-info->getRelativeLockTime() & TransactionInput::SEQUENCE_LOCKTIME_DISABLE_FLAG) != 0) {
-                return;
-            }
+<?php
+use PHPUnit\Framework\TestCase;
 
-            if (!$this->signatureChecker->checkSequence(Number::int($info->getRelativeLockTime()))) {
-                if ($this->tx->getVersion() < 2) {
-                    throw new \RuntimeException("Transaction version must be 2 or greater for CSV");
-                }
+class ClonedDependencyTest extends TestCase
+{
+    private static $dependency;
 
-                $input = $this->tx->getInput($this->nInput);
-                if ($input->isFinal()) {
-                    throw new \RuntimeException("Sequence LOCKTIME_DISABLE_FLAG is set - not allowed on CSV output");
-                }
+    public static function setUpBeforeClass()
+    {
+        self::$dependency = new stdClass;
+    }
 
-                $cmp = $this->compareRangeAgainstThreshold($info->getRelativeLockTime(), $input->getSequence(), TransactionInput::SEQUENCE_LOCKTIME_TYPE_FLAG);
-          
+    public function testOne()
+    {
+        $this->assertTrue(true);
+
+        return self::$dependency;
+    }
+
+    /**
+     * @depends testOne
+     */
+    public function testTwo($dependency)
+    {
+        $this->assertSame(self::$dependency, $dependency);
+    }
+
+    /**
+     * @depends !clone testOne
+     */
+    public function testThree($dependency)
+    {
+        $this->assertSame(self::$dependency, $dependency);
+    }
+
+    /**
+     * @depends clone testOne
+     */
+    public function testFour($dependency)
+    {
+        $this->assertNotSame(self::$dependency, $dependency);
+    }
+}

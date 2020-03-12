@@ -1,290 +1,304 @@
 <?php
-
-declare(strict_types=1);
-
-/**
- * This file is part of phpDocumentor.
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * @link      http://phpdoc.org
  */
 
-namespace phpDocumentor\Reflection;
+namespace SebastianBergmann\CodeCoverage\Report\Html;
 
-use Mockery as m;
-use phpDocumentor\Reflection\Types\Array_;
-use phpDocumentor\Reflection\Types\Boolean;
-use phpDocumentor\Reflection\Types\ClassString;
-use phpDocumentor\Reflection\Types\Compound;
-use phpDocumentor\Reflection\Types\Context;
-use phpDocumentor\Reflection\Types\Iterable_;
-use phpDocumentor\Reflection\Types\Nullable;
-use phpDocumentor\Reflection\Types\Object_;
-use phpDocumentor\Reflection\Types\String_;
-use PHPUnit\Framework\TestCase;
-use stdClass;
-use function get_class;
+use SebastianBergmann\CodeCoverage\Node\AbstractNode;
+use SebastianBergmann\CodeCoverage\Node\Directory as DirectoryNode;
 
 /**
- * @coversDefaultClass \phpDocumentor\Reflection\TypeResolver
+ * Renders the dashboard for a directory node.
  */
-class TypeResolverTest extends TestCase
+class Dashboard extends Renderer
 {
     /**
-     * Call Mockery::close after each test.
+     * @param DirectoryNode $node
+     * @param string        $file
+     *
+     * @throws \InvalidArgumentException
      */
-    public function tearDown() : void
+    public function render(DirectoryNode $node, $file)
     {
-        m::close();
-    }
-
-    /**
-     * @uses         \phpDocumentor\Reflection\Types\Context
-     * @uses         \phpDocumentor\Reflection\Types\Array_
-     * @uses         \phpDocumentor\Reflection\Types\Object_
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     *
-     * @dataProvider provideKeywords
-     */
-    public function testResolvingKeywords(string $keyword, string $expectedClass) : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve($keyword, new Context(''));
-
-        $this->assertInstanceOf($expectedClass, $resolvedType);
-    }
-
-    /**
-     * @uses         \phpDocumentor\Reflection\Types\Context
-     * @uses         \phpDocumentor\Reflection\Types\Object_
-     * @uses         \phpDocumentor\Reflection\Types\String_
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     *
-     * @dataProvider provideClassStrings
-     */
-    public function testResolvingClassStrings(string $classString, bool $throwsException) : void
-    {
-        $fixture = new TypeResolver();
-
-        if ($throwsException) {
-            $this->expectException('RuntimeException');
-        }
-
-        $resolvedType = $fixture->resolve($classString, new Context(''));
-
-        $this->assertInstanceOf(ClassString::class, $resolvedType);
-    }
-
-    /**
-     * @uses         \phpDocumentor\Reflection\Types\Context
-     * @uses         \phpDocumentor\Reflection\Types\Object_
-     * @uses         \phpDocumentor\Reflection\Fqsen
-     * @uses         \phpDocumentor\Reflection\FqsenResolver
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     *
-     * @dataProvider provideFqcn
-     */
-    public function testResolvingFQSENs(string $fqsen) : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve($fqsen, new Context(''));
-
-        $this->assertInstanceOf(Object_::class, $resolvedType);
-        $this->assertInstanceOf(Fqsen::class, $resolvedType->getFqsen());
-        $this->assertSame($fqsen, (string) $resolvedType);
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testResolvingRelativeQSENsBasedOnNamespace() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve('DocBlock', new Context('phpDocumentor\Reflection'));
-
-        $this->assertInstanceOf(Object_::class, $resolvedType);
-        $this->assertInstanceOf(Fqsen::class, $resolvedType->getFqsen());
-        $this->assertSame('\phpDocumentor\Reflection\DocBlock', (string) $resolvedType);
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testResolvingRelativeQSENsBasedOnNamespaceAlias() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve(
-            'm\MockInterface',
-            new Context('phpDocumentor\Reflection', ['m' => m::class])
+        $classes  = $node->getClassesAndTraits();
+        $template = new \Text_Template(
+            $this->templatePath . 'dashboard.html',
+            '{{',
+            '}}'
         );
 
-        $this->assertInstanceOf(Object_::class, $resolvedType);
-        $this->assertInstanceOf(Fqsen::class, $resolvedType->getFqsen());
-        $this->assertSame('\Mockery\MockInterface', (string) $resolvedType);
+        $this->setCommonTemplateVariables($template, $node);
+
+        $baseLink             = $node->getId() . '/';
+        $complexity           = $this->complexity($classes, $baseLink);
+        $coverageDistribution = $this->coverageDistribution($classes);
+        $insufficientCoverage = $this->insufficientCoverage($classes, $baseLink);
+        $projectRisks         = $this->projectRisks($classes, $baseLink);
+
+        $template->setVar(
+            [
+                'insufficient_coverage_classes' => $insufficientCoverage['class'],
+                'insufficient_coverage_methods' => $insufficientCoverage['method'],
+                'project_risks_classes'         => $projectRisks['class'],
+                'project_risks_methods'         => $projectRisks['method'],
+                'complexity_class'              => $complexity['class'],
+                'complexity_method'             => $complexity['method'],
+                'class_coverage_distribution'   => $coverageDistribution['class'],
+                'method_coverage_distribution'  => $coverageDistribution['method']
+            ]
+        );
+
+        $template->renderTo($file);
     }
 
     /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Array_
-     * @uses \phpDocumentor\Reflection\Types\String_
+     * Returns the data for the Class/Method Complexity charts.
      *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testResolvingTypedArrays() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve('string[]', new Context(''));
-
-        $this->assertInstanceOf(Array_::class, $resolvedType);
-        $this->assertSame('string[]', (string) $resolvedType);
-        $this->assertInstanceOf(Compound::class, $resolvedType->getKeyType());
-        $this->assertInstanceOf(Types\String_::class, $resolvedType->getValueType());
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Nullable
-     * @uses \phpDocumentor\Reflection\Types\String_
+     * @param array  $classes
+     * @param string $baseLink
      *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
+     * @return array
      */
-    public function testResolvingNullableTypes() : void
+    protected function complexity(array $classes, $baseLink)
     {
-        $fixture = new TypeResolver();
+        $result = ['class' => [], 'method' => []];
 
-        $resolvedType = $fixture->resolve('?string', new Context(''));
+        foreach ($classes as $className => $class) {
+            foreach ($class['methods'] as $methodName => $method) {
+                if ($className !== '*') {
+                    $methodName = $className . '::' . $methodName;
+                }
 
-        $this->assertInstanceOf(Nullable::class, $resolvedType);
-        $this->assertInstanceOf(String_::class, $resolvedType->getActualType());
-        $this->assertSame('?string', (string) $resolvedType);
+                $result['method'][] = [
+                    $method['coverage'],
+                    $method['ccn'],
+                    \sprintf(
+                        '<a href="%s">%s</a>',
+                        \str_replace($baseLink, '', $method['link']),
+                        $methodName
+                    )
+                ];
+            }
+
+            $result['class'][] = [
+                $class['coverage'],
+                $class['ccn'],
+                \sprintf(
+                    '<a href="%s">%s</a>',
+                    \str_replace($baseLink, '', $class['link']),
+                    $className
+                )
+            ];
+        }
+
+        return [
+            'class'  => \json_encode($result['class']),
+            'method' => \json_encode($result['method'])
+        ];
     }
 
     /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Array_
-     * @uses \phpDocumentor\Reflection\Types\String_
+     * Returns the data for the Class / Method Coverage Distribution chart.
      *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testResolvingNestedTypedArrays() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve('string[][]', new Context(''));
-
-        $childValueType = $resolvedType->getValueType();
-
-        $this->assertInstanceOf(Array_::class, $resolvedType);
-
-        $this->assertSame('string[][]', (string) $resolvedType);
-        $this->assertInstanceOf(Compound::class, $resolvedType->getKeyType());
-        $this->assertInstanceOf(Array_::class, $childValueType);
-
-        $this->assertSame('string[]', (string) $childValueType);
-        $this->assertInstanceOf(Compound::class, $childValueType->getKeyType());
-        $this->assertInstanceOf(Types\String_::class, $childValueType->getValueType());
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Compound
-     * @uses \phpDocumentor\Reflection\Types\String_
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
+     * @param array $classes
      *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
+     * @return array
      */
-    public function testResolvingCompoundTypes() : void
+    protected function coverageDistribution(array $classes)
     {
-        $fixture = new TypeResolver();
+        $result = [
+            'class' => [
+                '0%'      => 0,
+                '0-10%'   => 0,
+                '10-20%'  => 0,
+                '20-30%'  => 0,
+                '30-40%'  => 0,
+                '40-50%'  => 0,
+                '50-60%'  => 0,
+                '60-70%'  => 0,
+                '70-80%'  => 0,
+                '80-90%'  => 0,
+                '90-100%' => 0,
+                '100%'    => 0
+            ],
+            'method' => [
+                '0%'      => 0,
+                '0-10%'   => 0,
+                '10-20%'  => 0,
+                '20-30%'  => 0,
+                '30-40%'  => 0,
+                '40-50%'  => 0,
+                '50-60%'  => 0,
+                '60-70%'  => 0,
+                '70-80%'  => 0,
+                '80-90%'  => 0,
+                '90-100%' => 0,
+                '100%'    => 0
+            ]
+        ];
 
-        $resolvedType = $fixture->resolve('string|Reflection\DocBlock', new Context('phpDocumentor'));
+        foreach ($classes as $class) {
+            foreach ($class['methods'] as $methodName => $method) {
+                if ($method['coverage'] === 0) {
+                    $result['method']['0%']++;
+                } elseif ($method['coverage'] === 100) {
+                    $result['method']['100%']++;
+                } else {
+                    $key = \floor($method['coverage'] / 10) * 10;
+                    $key = $key . '-' . ($key + 10) . '%';
+                    $result['method'][$key]++;
+                }
+            }
 
-        $this->assertInstanceOf(Compound::class, $resolvedType);
-        $this->assertSame('string|\phpDocumentor\Reflection\DocBlock', (string) $resolvedType);
+            if ($class['coverage'] === 0) {
+                $result['class']['0%']++;
+            } elseif ($class['coverage'] === 100) {
+                $result['class']['100%']++;
+            } else {
+                $key = \floor($class['coverage'] / 10) * 10;
+                $key = $key . '-' . ($key + 10) . '%';
+                $result['class'][$key]++;
+            }
+        }
 
-        $firstType = $resolvedType->get(0);
-
-        $secondType = $resolvedType->get(1);
-
-        $this->assertInstanceOf(Types\String_::class, $firstType);
-        $this->assertInstanceOf(Object_::class, $secondType);
-        $this->assertInstanceOf(Fqsen::class, $secondType->getFqsen());
+        return [
+            'class'  => \json_encode(\array_values($result['class'])),
+            'method' => \json_encode(\array_values($result['method']))
+        ];
     }
 
     /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Compound
-     * @uses \phpDocumentor\Reflection\Types\Array_
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
+     * Returns the classes / methods with insufficient coverage.
      *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
+     * @param array  $classes
+     * @param string $baseLink
+     *
+     * @return array
      */
-    public function testResolvingCompoundTypedArrayTypes() : void
+    protected function insufficientCoverage(array $classes, $baseLink)
     {
-        $fixture = new TypeResolver();
+        $leastTestedClasses = [];
+        $leastTestedMethods = [];
+        $result             = ['class' => '', 'method' => ''];
 
-        $resolvedType = $fixture->resolve('\stdClass[]|Reflection\DocBlock[]', new Context('phpDocumentor'));
+        foreach ($classes as $className => $class) {
+            foreach ($class['methods'] as $methodName => $method) {
+                if ($method['coverage'] < $this->highLowerBound) {
+                    $key = $methodName;
 
-        $this->assertInstanceOf(Compound::class, $resolvedType);
-        $this->assertSame('\stdClass[]|\phpDocumentor\Reflection\DocBlock[]', (string) $resolvedType);
+                    if ($className !== '*') {
+                        $key = $className . '::' . $methodName;
+                    }
 
-        $firstType = $resolvedType->get(0);
+                    $leastTestedMethods[$key] = $method['coverage'];
+                }
+            }
 
-        $secondType = $resolvedType->get(1);
+            if ($class['coverage'] < $this->highLowerBound) {
+                $leastTestedClasses[$className] = $class['coverage'];
+            }
+        }
 
-        $this->assertInstanceOf(Array_::class, $firstType);
-        $this->assertInstanceOf(Array_::class, $secondType);
-        $this->assertInstanceOf(Object_::class, $firstType->getValueType());
-        $this->assertInstanceOf(Object_::class, $secondType->getValueType());
+        \asort($leastTestedClasses);
+        \asort($leastTestedMethods);
+
+        foreach ($leastTestedClasses as $className => $coverage) {
+            $result['class'] .= \sprintf(
+                '       <tr><td><a href="%s">%s</a></td><td class="text-right">%d%%</td></tr>' . "\n",
+                \str_replace($baseLink, '', $classes[$className]['link']),
+                $className,
+                $coverage
+            );
+        }
+
+        foreach ($leastTestedMethods as $methodName => $coverage) {
+            list($class, $method) = \explode('::', $methodName);
+
+            $result['method'] .= \sprintf(
+                '       <tr><td><a href="%s"><abbr title="%s">%s</abbr></a></td><td class="text-right">%d%%</td></tr>' . "\n",
+                \str_replace($baseLink, '', $classes[$class]['methods'][$method]['link']),
+                $methodName,
+                $method,
+                $coverage
+            );
+        }
+
+        return $result;
     }
 
     /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Compound
-     * @uses \phpDocumentor\Reflection\Types\String_
-     * @uses \phpDocumentor\Reflection\Types\Nullable
-     * @uses \phpDocumentor\Refle
+     * Returns the project risks according to the CRAP index.
+     *
+     * @param array  $classes
+     * @param string $baseLink
+     *
+     * @return array
+     */
+    protected function projectRisks(array $classes, $baseLink)
+    {
+        $classRisks  = [];
+        $methodRisks = [];
+        $result      = ['class' => '', 'method' => ''];
+
+        foreach ($classes as $className => $class) {
+            foreach ($class['methods'] as $methodName => $method) {
+                if ($method['coverage'] < $this->highLowerBound &&
+                    $method['ccn'] > 1) {
+                    if ($className !== '*') {
+                        $key = $className . '::' . $methodName;
+                    } else {
+                        $key = $methodName;
+                    }
+
+                    $methodRisks[$key] = $method['crap'];
+                }
+            }
+
+            if ($class['coverage'] < $this->highLowerBound &&
+                $class['ccn'] > \count($class['methods'])) {
+                $classRisks[$className] = $class['crap'];
+            }
+        }
+
+        \arsort($classRisks);
+        \arsort($methodRisks);
+
+        foreach ($classRisks as $className => $crap) {
+            $result['class'] .= \sprintf(
+                '       <tr><td><a href="%s">%s</a></td><td class="text-right">%d</td></tr>' . "\n",
+                \str_replace($baseLink, '', $classes[$className]['link']),
+                $className,
+                $crap
+            );
+        }
+
+        foreach ($methodRisks as $methodName => $crap) {
+            list($class, $method) = \explode('::', $methodName);
+
+            $result['method'] .= \sprintf(
+                '       <tr><td><a href="%s"><abbr title="%s">%s</abbr></a></td><td class="text-right">%d</td></tr>' . "\n",
+                \str_replace($baseLink, '', $classes[$class]['methods'][$method]['link']),
+                $methodName,
+                $method,
+                $crap
+            );
+        }
+
+        return $result;
+    }
+
+    protected function getActiveBreadcrumb(AbstractNode $node)
+    {
+        return \sprintf(
+            '        <li><a href="index.html">%s</a></li>' . "\n" .
+            '        <li class="active">(Dashboard)</li>' . "\n",
+            $node->getName()
+        );
+    }
+}

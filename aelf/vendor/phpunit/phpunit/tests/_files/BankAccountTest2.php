@@ -1,16 +1,56 @@
-ully', 'hunt', 'jealous',
-            'lightning', 'mama', 'mercy', 'peel', 'physical', 'position',
-            'pulse', 'punch', 'quit', 'rant', 'respond', 'salty', 'sane',
-            'satisfy', 'savior', 'sheep', 'slept', 'social', 'sport', 'tuck',
-            'utter', 'valley', 'wolf', 'aim', 'alas', 'alter', 'arrow', 'awaken',
-            'beaten', 'belief', 'brand', 'ceiling', 'cheese', 'clue',
-            'confidence', 'connection', 'daily', 'disguise', 'eager', 'erase',
-            'essence', 'everytime', 'expression', 'fan', 'flag', 'flirt', 'foul',
-            'fur', 'giggle', 'glorious', 'ignorance', 'law', 'lifeless',
-            'measure', 'mighty', 'muse', 'north', 'opposite', 'paradise',
-            'patience', 'patient', 'pencil', 'petal', 'plate', 'ponder',
-            'possibly', 'practice', 'slice', 'spell', 'stock', 'strife', 'strip',
-            'suffocate', 'suit', 'tender', 'tool', 'trade', 'velvet', 'verse',
-            'waist', 'witch', 'aunt', 'bench', 'bold', 'cap', 'certainly',
-            'click', 'companion', 'creator', 'dart', 'delicate', 'determine',
-            'dish', 'dragon', 'drama', 'drum
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+use PHPUnit\Framework\TestCase;
+
+class BankAccountTest extends TestCase
+{
+    private $ba;
+
+    protected function setUp()
+    {
+        $this->ba = new BankAccount;
+    }
+
+    public function testBalanceIsInitiallyZero()
+    {
+        $ba = new BankAccount;
+
+        $balance = $ba->getBalance();
+
+        $this->assertEquals(0, $balance);
+    }
+
+    public function testBalanceCannotBecomeNegative()
+    {
+        try {
+            $this->ba->withdrawMoney(1);
+        } catch (BankAccountException $e) {
+            $this->assertEquals(0, $this->ba->getBalance());
+
+            return;
+        }
+
+        $this->fail();
+    }
+
+    public function testBalanceCannotBecomeNegative2()
+    {
+        try {
+            $this->ba->depositMoney(-1);
+        } catch (BankAccountException $e) {
+            $this->assertEquals(0, $this->ba->getBalance());
+
+            return;
+        }
+
+        $this->fail();
+    }
+}

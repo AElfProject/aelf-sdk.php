@@ -1,1 +1,20 @@
-module.exports={A:{A:{"1":"A B","2":"K D G E iB"},B:{"1":"2 C d J M H I"},C:{"1":"0 1 3 4 6 7 8 9 e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB","2":"fB DB ZB YB","33":"J M H I O P Q R S T U V W X Y Z a b c","164":"2 F N K D G E A B C d"},D:{"1":"0 1 3 4 7 8 9 r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"2 F N K D G E A B C d J","33":"6 Q R S T U V W X Y Z a b c e f g h i j k l m n o L q","292":"M H I O P"},E:{"1":"5 A B C WB XB p aB","2":"D G E RB IB UB VB","4":"F N K TB"},F:{"1":"0 1 e f g h i j k l m n o L q r s t u v w x y z","2":"5 E B C bB cB dB eB p
+--TEST--
+phpunit --filter BankAccountTest BankAccountTest ../_files/BankAccountTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--filter';
+$_SERVER['argv'][3] = 'BankAccountTest';
+$_SERVER['argv'][4] = 'BankAccountTest';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/BankAccountTest.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+...                                                                 3 / 3 (100%)
+
+Time: %s, Memory: %s
+
+OK (3 tests, 3 assertions)

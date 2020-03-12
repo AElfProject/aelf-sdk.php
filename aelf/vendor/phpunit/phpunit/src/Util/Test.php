@@ -1,1485 +1,1190 @@
-e !== null) {
-            return $this->name;
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Util;
+
+use Iterator;
+use PharIo\Version\VersionConstraintParser;
+use PHPUnit\Framework\CodeCoverageException;
+use PHPUnit\Framework\Exception;
+use PHPUnit\Framework\InvalidCoversTargetException;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\SelfDescribing;
+use PHPUnit\Framework\SkippedTestError;
+use PHPUnit\Framework\Warning;
+use PHPUnit\Runner\Version;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionFunction;
+use ReflectionMethod;
+use Traversable;
+
+/**
+ * Test helpers.
+ */
+class Test
+{
+    const REGEX_DATA_PROVIDER               = '/@dataProvider\s+([a-zA-Z0-9._:-\\\\x7f-\xff]+)/';
+    const REGEX_TEST_WITH                   = '/@testWith\s+/';
+    const REGEX_EXPECTED_EXCEPTION          = '(@expectedException\s+([:.\w\\\\x7f-\xff]+)(?:[\t ]+(\S*))?(?:[\t ]+(\S*))?\s*$)m';
+    const REGEX_REQUIRES_VERSION            = '/@requires\s+(?P<name>PHP(?:Unit)?)\s+(?P<operator>[<>=!]{0,2})\s*(?P<version>[\d\.-]+(dev|(RC|alpha|beta)[\d\.])?)[ \t]*\r?$/m';
+    const REGEX_REQUIRES_VERSION_CONSTRAINT = '/@requires\s+(?P<name>PHP(?:Unit)?)\s+(?P<constraint>[\d\t -.|~^]+)[ \t]*\r?$/m';
+    const REGEX_REQUIRES_OS                 = '/@requires\s+OS\s+(?P<value>.+?)[ \t]*\r?$/m';
+    const REGEX_REQUIRES                    = '/@requires\s+(?P<name>function|extension)\s+(?P<value>([^ ]+?))\s*(?P<operator>[<>=!]{0,2})\s*(?P<version>[\d\.-]+[\d\.]?)?[ \t]*\r?$/m';
+
+    const UNKNOWN = -1;
+    const SMALL   = 0;
+    const MEDIUM  = 1;
+    const LARGE   = 2;
+
+    private static $annotationCache = [];
+
+    private static $hookMethods = [];
+
+    /**
+     * @param \PHPUnit\Framework\Test $test
+     * @param bool                    $asString
+     *
+     * @return mixed
+     */
+    public static function describe(\PHPUnit\Framework\Test $test, $asString = true)
+    {
+        if ($asString) {
+            if ($test instanceof SelfDescribing) {
+                return $test->toString();
+            }
+
+            return \get_class($test);
         }
 
-        $tokens = $this->tokenStream->tokens();
-
-        $i = $this->id + 1;
-
-        if ($tokens[$i] instanceof PHP_Token_WHITESPACE) {
-            $i++;
+        if ($test instanceof TestCase) {
+            return [
+                \get_class($test), $test->getName()
+            ];
         }
 
-        if ($tokens[$i] instanceof PHP_Token_AMPERSAND) {
-            $i++;
+        if ($test instanceof SelfDescribing) {
+            return ['', $test->toString()];
         }
 
-        if ($tokens[$i + 1] instanceof PHP_Token_OPEN_BRACKET) {
-            $this->name = (string) $tokens[$i];
-        } elseif ($tokens[$i + 1] instanceof PHP_Token_WHITESPACE && $tokens[$i + 2] instanceof PHP_Token_OPEN_BRACKET) {
-            $this->name = (string) $tokens[$i];
-        } else {
-            $this->anonymous = true;
+        return ['', \get_class($test)];
+    }
 
-            $this->name = sprintf(
-                'anonymousFunction:%s#%s',
-                $this->getLine(),
-                $this->getId()
+    /**
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array|bool
+     *
+     * @throws CodeCoverageException
+     */
+    public static function getLinesToBeCovered($className, $methodName)
+    {
+        $annotations = self::parseTestMethodAnnotations(
+            $className,
+            $methodName
+        );
+
+        if (isset($annotations['class']['coversNothing']) || isset($annotations['method']['coversNothing'])) {
+            return false;
+        }
+
+        return self::getLinesToBeCoveredOrUsed($className, $methodName, 'covers');
+    }
+
+    /**
+     * Returns lines of code specified with the @uses annotation.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     */
+    public static function getLinesToBeUsed($className, $methodName)
+    {
+        return self::getLinesToBeCoveredOrUsed($className, $methodName, 'uses');
+    }
+
+    /**
+     * @param string $className
+     * @param string $methodName
+     * @param string $mode
+     *
+     * @return array
+     *
+     * @throws CodeCoverageException
+     */
+    private static function getLinesToBeCoveredOrUsed($className, $methodName, $mode)
+    {
+        $annotations = self::parseTestMethodAnnotations(
+            $className,
+            $methodName
+        );
+
+        $classShortcut = null;
+
+        if (!empty($annotations['class'][$mode . 'DefaultClass'])) {
+            if (\count($annotations['class'][$mode . 'DefaultClass']) > 1) {
+                throw new CodeCoverageException(
+                    \sprintf(
+                        'More than one @%sClass annotation in class or interface "%s".',
+                        $mode,
+                        $className
+                    )
+                );
+            }
+
+            $classShortcut = $annotations['class'][$mode . 'DefaultClass'][0];
+        }
+
+        $list = [];
+
+        if (isset($annotations['class'][$mode])) {
+            $list = $annotations['class'][$mode];
+        }
+
+        if (isset($annotations['method'][$mode])) {
+            $list = \array_merge($list, $annotations['method'][$mode]);
+        }
+
+        $codeList = [];
+
+        foreach (\array_unique($list) as $element) {
+            if ($classShortcut && \strncmp($element, '::', 2) === 0) {
+                $element = $classShortcut . $element;
+            }
+
+            $element = \preg_replace('/[\s()]+$/', '', $element);
+            $element = \explode(' ', $element);
+            $element = $element[0];
+
+            $codeList = \array_merge(
+                $codeList,
+                self::resolveElementToReflectionObjects($element)
             );
         }
 
-        if (!$this->isAnonymous()) {
-            for ($i = $this->id; $i; --$i) {
-                if ($tokens[$i] instanceof PHP_Token_NAMESPACE) {
-                    $this->name = $tokens[$i]->getName() . '\\' . $this->name;
+        return self::resolveReflectionObjectsToLines($codeList);
+    }
 
-                    break;
+    /**
+     * Returns the requirements for a test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     */
+    public static function getRequirements($className, $methodName)
+    {
+        $reflector  = new ReflectionClass($className);
+        $docComment = $reflector->getDocComment();
+        $reflector  = new ReflectionMethod($className, $methodName);
+        $docComment .= "\n" . $reflector->getDocComment();
+        $requires = [];
+
+        if ($count = \preg_match_all(self::REGEX_REQUIRES_OS, $docComment, $matches)) {
+            $requires['OS'] = \sprintf(
+                '/%s/i',
+                \addcslashes($matches['value'][$count - 1], '/')
+            );
+        }
+
+        if ($count = \preg_match_all(self::REGEX_REQUIRES_VERSION, $docComment, $matches)) {
+            foreach (\range(0, $count - 1) as $i) {
+                $requires[$matches['name'][$i]] = [
+                    'version'  => $matches['version'][$i],
+                    'operator' => $matches['operator'][$i]
+                ];
+            }
+        }
+        if ($count = \preg_match_all(self::REGEX_REQUIRES_VERSION_CONSTRAINT, $docComment, $matches)) {
+            foreach (\range(0, $count - 1) as $i) {
+                if (!empty($requires[$matches['name'][$i]])) {
+                    continue;
                 }
 
-                if ($tokens[$i] instanceof PHP_Token_INTERFACE) {
-                    break;
+                try {
+                    $versionConstraintParser = new VersionConstraintParser;
+
+                    $requires[$matches['name'][$i] . '_constraint'] = [
+                        'constraint' => $versionConstraintParser->parse(\trim($matches['constraint'][$i]))
+                    ];
+                } catch (\PharIo\Version\Exception $e) {
+                    throw new Warning($e->getMessage(), $e->getCode(), $e);
                 }
             }
         }
 
-        return $this->name;
+        if ($count = \preg_match_all(self::REGEX_REQUIRES, $docComment, $matches)) {
+            foreach (\range(0, $count - 1) as $i) {
+                $name = $matches['name'][$i] . 's';
+
+                if (!isset($requires[$name])) {
+                    $requires[$name] = [];
+                }
+
+                $requires[$name][] = $matches['value'][$i];
+
+                if (empty($matches['version'][$i]) || $name != 'extensions') {
+                    continue;
+                }
+
+                $requires['extension_versions'][$matches['value'][$i]] = [
+                    'version'  => $matches['version'][$i],
+                    'operator' => $matches['operator'][$i]
+                ];
+            }
+        }
+
+        return $requires;
     }
 
     /**
+     * Returns the missing requirements for a test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     */
+    public static function getMissingRequirements($className, $methodName)
+    {
+        $required = static::getRequirements($className, $methodName);
+        $missing  = [];
+
+        if (!empty($required['PHP'])) {
+            $operator = empty($required['PHP']['operator']) ? '>=' : $required['PHP']['operator'];
+
+            if (!\version_compare(PHP_VERSION, $required['PHP']['version'], $operator)) {
+                $missing[] = \sprintf('PHP %s %s is required.', $operator, $required['PHP']['version']);
+            }
+        } elseif (!empty($required['PHP_constraint'])) {
+            $version = new \PharIo\Version\Version(self::sanitizeVersionNumber(PHP_VERSION));
+
+            if (!$required['PHP_constraint']['constraint']->complies($version)) {
+                $missing[] = \sprintf(
+                    'PHP version does not match the required constraint %s.',
+                    $required['PHP_constraint']['constraint']->asString()
+                );
+            }
+        }
+
+        if (!empty($required['PHPUnit'])) {
+            $phpunitVersion = Version::id();
+
+            $operator = empty($required['PHPUnit']['operator']) ? '>=' : $required['PHPUnit']['operator'];
+
+            if (!\version_compare($phpunitVersion, $required['PHPUnit']['version'], $operator)) {
+                $missing[] = \sprintf('PHPUnit %s %s is required.', $operator, $required['PHPUnit']['version']);
+            }
+        } elseif (!empty($required['PHPUnit_constraint'])) {
+            $phpunitVersion = new \PharIo\Version\Version(self::sanitizeVersionNumber(Version::id()));
+
+            if (!$required['PHPUnit_constraint']['constraint']->complies($phpunitVersion)) {
+                $missing[] = \sprintf(
+                    'PHPUnit version does not match the required constraint %s.',
+                    $required['PHPUnit_constraint']['constraint']->asString()
+                );
+            }
+        }
+
+        if (!empty($required['OS']) && !\preg_match($required['OS'], PHP_OS)) {
+            $missing[] = \sprintf('Operating system matching %s is required.', $required['OS']);
+        }
+
+        if (!empty($required['functions'])) {
+            foreach ($required['functions'] as $function) {
+                $pieces = \explode('::', $function);
+
+                if (2 === \count($pieces) && \method_exists($pieces[0], $pieces[1])) {
+                    continue;
+                }
+
+                if (\function_exists($function)) {
+                    continue;
+                }
+
+                $missing[] = \sprintf('Function %s is required.', $function);
+            }
+        }
+
+        if (!empty($required['extensions'])) {
+            foreach ($required['extensions'] as $extension) {
+                if (isset($required['extension_versions'][$extension])) {
+                    continue;
+                }
+
+                if (!\extension_loaded($extension)) {
+                    $missing[] = \sprintf('Extension %s is required.', $extension);
+                }
+            }
+        }
+
+        if (!empty($required['extension_versions'])) {
+            foreach ($required['extension_versions'] as $extension => $required) {
+                $actualVersion = \phpversion($extension);
+
+                $operator = empty($required['operator']) ? '>=' : $required['operator'];
+
+                if (false === $actualVersion || !\version_compare($actualVersion, $required['version'], $operator)) {
+                    $missing[] = \sprintf('Extension %s %s %s is required.', $extension, $operator, $required['version']);
+                }
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Returns the expected exception for a test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array|false
+     */
+    public static function getExpectedException($className, $methodName)
+    {
+        $reflector  = new ReflectionMethod($className, $methodName);
+        $docComment = $reflector->getDocComment();
+        $docComment = \substr($docComment, 3, -2);
+
+        if (\preg_match(self::REGEX_EXPECTED_EXCEPTION, $docComment, $matches)) {
+            $annotations = self::parseTestMethodAnnotations(
+                $className,
+                $methodName
+            );
+
+            $class         = $matches[1];
+            $code          = null;
+            $message       = '';
+            $messageRegExp = '';
+
+            if (isset($matches[2])) {
+                $message = \trim($matches[2]);
+            } elseif (isset($annotations['method']['expectedExceptionMessage'])) {
+                $message = self::parseAnnotationContent(
+                    $annotations['method']['expectedExceptionMessage'][0]
+                );
+            }
+
+            if (isset($annotations['method']['expectedExceptionMessageRegExp'])) {
+                $messageRegExp = self::parseAnnotationContent(
+                    $annotations['method']['expectedExceptionMessageRegExp'][0]
+                );
+            }
+
+            if (isset($matches[3])) {
+                $code = $matches[3];
+            } elseif (isset($annotations['method']['expectedExceptionCode'])) {
+                $code = self::parseAnnotationContent(
+                    $annotations['method']['expectedExceptionCode'][0]
+                );
+            }
+
+            if (\is_numeric($code)) {
+                $code = (int) $code;
+            } elseif (\is_string($code) && \defined($code)) {
+                $code = (int) \constant($code);
+            }
+
+            return [
+                'class' => $class, 'code' => $code, 'message' => $message, 'message_regex' => $messageRegExp
+            ];
+        }
+
+        return false;
+    }
+
+    /**
+     * Parse annotation content to use constant/class constant values
+     *
+     * Constants are specified using a starting '@'. For example: @ClassName::CONST_NAME
+     *
+     * If the constant is not found the string is used as is to ensure maximum BC.
+     *
+     * @param string $message
+     *
+     * @return string
+     */
+    private static function parseAnnotationContent($message)
+    {
+        if (\strpos($message, '::') !== false && \count(\explode('::', $message)) == 2) {
+            if (\defined($message)) {
+                $message = \constant($message);
+            }
+        }
+
+        return $message;
+    }
+
+    /**
+     * Returns the provided data for a method.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array When a data provider is specified and exists
+     *               null  When no data provider is specified
+     *
+     * @throws Exception
+     */
+    public static function getProvidedData($className, $methodName)
+    {
+        $reflector  = new ReflectionMethod($className, $methodName);
+        $docComment = $reflector->getDocComment();
+
+        $data = self::getDataFromDataProviderAnnotation($docComment, $className, $methodName);
+
+        if ($data === null) {
+            $data = self::getDataFromTestWithAnnotation($docComment);
+        }
+
+        if (\is_array($data) && empty($data)) {
+            throw new SkippedTestError;
+        }
+
+        if ($data !== null) {
+            foreach ($data as $key => $value) {
+                if (!\is_array($value)) {
+                    throw new Exception(
+                        \sprintf(
+                            'Data set %s is invalid.',
+                            \is_int($key) ? '#' . $key : '"' . $key . '"'
+                        )
+                    );
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Returns the provided data for a method.
+     *
+     * @param string $docComment
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array|Iterator when a data provider is specified and exists
+     *                        null           when no data provider is specified
+     *
+     * @throws Exception
+     */
+    private static function getDataFromDataProviderAnnotation($docComment, $className, $methodName)
+    {
+        if (\preg_match_all(self::REGEX_DATA_PROVIDER, $docComment, $matches)) {
+            $result = [];
+
+            foreach ($matches[1] as $match) {
+                $dataProviderMethodNameNamespace = \explode('\\', $match);
+                $leaf                            = \explode('::', \array_pop($dataProviderMethodNameNamespace));
+                $dataProviderMethodName          = \array_pop($leaf);
+
+                if (!empty($dataProviderMethodNameNamespace)) {
+                    $dataProviderMethodNameNamespace = \implode('\\', $dataProviderMethodNameNamespace) . '\\';
+                } else {
+                    $dataProviderMethodNameNamespace = '';
+                }
+
+                if (!empty($leaf)) {
+                    $dataProviderClassName = $dataProviderMethodNameNamespace . \array_pop($leaf);
+                } else {
+                    $dataProviderClassName = $className;
+                }
+
+                $dataProviderClass  = new ReflectionClass($dataProviderClassName);
+                $dataProviderMethod = $dataProviderClass->getMethod(
+                    $dataProviderMethodName
+                );
+
+                if ($dataProviderMethod->isStatic()) {
+                    $object = null;
+                } else {
+                    $object = $dataProviderClass->newInstance();
+                }
+
+                if ($dataProviderMethod->getNumberOfParameters() == 0) {
+                    $data = $dataProviderMethod->invoke($object);
+                } else {
+                    $data = $dataProviderMethod->invoke($object, $methodName);
+                }
+
+                if ($data instanceof Traversable) {
+                    $data = \iterator_to_array($data);
+                }
+
+                if (\is_array($data)) {
+                    $result = \array_merge($result, $data);
+                }
+            }
+
+            return $result;
+        }
+    }
+
+    /**
+     * @param string $docComment full docComment string
+     *
+     * @return array when @testWith annotation is defined
+     *               null  when @testWith annotation is omitted
+     *
+     * @throws Exception when @testWith annotation is defined but cannot be parsed
+     */
+    public static function getDataFromTestWithAnnotation($docComment)
+    {
+        $docComment = self::cleanUpMultiLineAnnotation($docComment);
+
+        if (\preg_match(self::REGEX_TEST_WITH, $docComment, $matches, PREG_OFFSET_CAPTURE)) {
+            $offset            = \strlen($matches[0][0]) + $matches[0][1];
+            $annotationContent = \substr($docComment, $offset);
+            $data              = [];
+
+            foreach (\explode("\n", $annotationContent) as $candidateRow) {
+                $candidateRow = \trim($candidateRow);
+
+                if ($candidateRow[0] !== '[') {
+                    break;
+                }
+
+                $dataSet = \json_decode($candidateRow, true);
+
+                if (\json_last_error() != JSON_ERROR_NONE) {
+                    throw new Exception(
+                        'The dataset for the @testWith annotation cannot be parsed: ' . \json_last_error_msg()
+                    );
+                }
+
+                $data[] = $dataSet;
+            }
+
+            if (!$data) {
+                throw new Exception('The dataset for the @testWith annotation cannot be parsed.');
+            }
+
+            return $data;
+        }
+    }
+
+    private static function cleanUpMultiLineAnnotation($docComment)
+    {
+        //removing initial '   * ' for docComment
+        $docComment = \str_replace("\r\n", "\n", $docComment);
+        $docComment = \preg_replace('/' . '\n' . '\s*' . '\*' . '\s?' . '/', "\n", $docComment);
+        $docComment = \substr($docComment, 0, -1);
+        $docComment = \rtrim($docComment, "\n");
+
+        return $docComment;
+    }
+
+    /**
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     *
+     * @throws ReflectionException
+     */
+    public static function parseTestMethodAnnotations($className, $methodName = '')
+    {
+        if (!isset(self::$annotationCache[$className])) {
+            $class       = new ReflectionClass($className);
+            $traits      = $class->getTraits();
+            $annotations = [];
+
+            foreach ($traits as $trait) {
+                $annotations = \array_merge(
+                    $annotations,
+                    self::parseAnnotations($trait->getDocComment())
+                );
+            }
+
+            self::$annotationCache[$className] = \array_merge(
+                $annotations,
+                self::parseAnnotations($class->getDocComment())
+            );
+        }
+
+        if (!empty($methodName) && !isset(self::$annotationCache[$className . '::' . $methodName])) {
+            try {
+                $method      = new ReflectionMethod($className, $methodName);
+                $annotations = self::parseAnnotations($method->getDocComment());
+            } catch (ReflectionException $e) {
+                $annotations = [];
+            }
+
+            self::$annotationCache[$className . '::' . $methodName] = $annotations;
+        }
+
+        return [
+            'class'  => self::$annotationCache[$className],
+            'method' => !empty($methodName) ? self::$annotationCache[$className . '::' . $methodName] : []
+        ];
+    }
+
+    /**
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     */
+    public static function getInlineAnnotations($className, $methodName)
+    {
+        $method      = new ReflectionMethod($className, $methodName);
+        $code        = \file($method->getFileName());
+        $lineNumber  = $method->getStartLine();
+        $startLine   = $method->getStartLine() - 1;
+        $endLine     = $method->getEndLine() - 1;
+        $methodLines = \array_slice($code, $startLine, $endLine - $startLine + 1);
+        $annotations = [];
+
+        foreach ($methodLines as $line) {
+            if (\preg_match('#/\*\*?\s*@(?P<name>[A-Za-z_-]+)(?:[ \t]+(?P<value>.*?))?[ \t]*\r?\*/$#m', $line, $matches)) {
+                $annotations[\strtolower($matches['name'])] = [
+                    'line'  => $lineNumber,
+                    'value' => $matches['value']
+                ];
+            }
+
+            $lineNumber++;
+        }
+
+        return $annotations;
+    }
+
+    /**
+     * @param string $docblock
+     *
+     * @return array
+     */
+    private static function parseAnnotations($docblock)
+    {
+        $annotations = [];
+        // Strip away the docblock header and footer to ease parsing of one line annotations
+        $docblock = \substr($docblock, 3, -2);
+
+        if (\preg_match_all('/@(?P<name>[A-Za-z_-]+)(?:[ \t]+(?P<value>.*?))?[ \t]*\r?$/m', $docblock, $matches)) {
+            $numMatches = \count($matches[0]);
+
+            for ($i = 0; $i < $numMatches; ++$i) {
+                $annotations[$matches['name'][$i]][] = (string) $matches['value'][$i];
+            }
+        }
+
+        return $annotations;
+    }
+
+    /**
+     * Returns the backup settings for a test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     */
+    public static function getBackupSettings($className, $methodName)
+    {
+        return [
+            'backupGlobals' => self::getBooleanAnnotationSetting(
+                $className,
+                $methodName,
+                'backupGlobals'
+            ),
+            'backupStaticAttributes' => self::getBooleanAnnotationSetting(
+                $className,
+                $methodName,
+                'backupStaticAttributes'
+            )
+        ];
+    }
+
+    /**
+     * Returns the dependencies for a test class or method.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     */
+    public static function getDependencies($className, $methodName)
+    {
+        $annotations = self::parseTestMethodAnnotations(
+            $className,
+            $methodName
+        );
+
+        $dependencies = [];
+
+        if (isset($annotations['class']['depends'])) {
+            $dependencies = $annotations['class']['depends'];
+        }
+
+        if (isset($annotations['method']['depends'])) {
+            $dependencies = \array_merge(
+                $dependencies,
+                $annotations['method']['depends']
+            );
+        }
+
+        return \array_unique($dependencies);
+    }
+
+    /**
+     * Returns the error handler settings for a test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return ?bool
+     */
+    public static function getErrorHandlerSettings($className, $methodName)
+    {
+        return self::getBooleanAnnotationSetting(
+            $className,
+            $methodName,
+            'errorHandler'
+        );
+    }
+
+    /**
+     * Returns the groups for a test class or method.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return array
+     */
+    public static function getGroups($className, $methodName = '')
+    {
+        $annotations = self::parseTestMethodAnnotations(
+            $className,
+            $methodName
+        );
+
+        $groups = [];
+
+        if (isset($annotations['method']['author'])) {
+            $groups = $annotations['method']['author'];
+        } elseif (isset($annotations['class']['author'])) {
+            $groups = $annotations['class']['author'];
+        }
+
+        if (isset($annotations['class']['group'])) {
+            $groups = \array_merge($groups, $annotations['class']['group']);
+        }
+
+        if (isset($annotations['method']['group'])) {
+            $groups = \array_merge($groups, $annotations['method']['group']);
+        }
+
+        if (isset($annotations['class']['ticket'])) {
+            $groups = \array_merge($groups, $annotations['class']['ticket']);
+        }
+
+        if (isset($annotations['method']['ticket'])) {
+            $groups = \array_merge($groups, $annotations['method']['ticket']);
+        }
+
+        foreach (['method', 'class'] as $element) {
+            foreach (['small', 'medium', 'large'] as $size) {
+                if (isset($annotations[$element][$size])) {
+                    $groups[] = $size;
+                    break 2;
+                }
+            }
+        }
+
+        return \array_unique($groups);
+    }
+
+    /**
+     * Returns the size of the test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
      * @return int
      */
-    public function getCCN()
+    public static function getSize($className, $methodName)
     {
-        if ($this->ccn !== null) {
-            return $this->ccn;
+        $groups = \array_flip(self::getGroups($className, $methodName));
+        $class  = new ReflectionClass($className);
+
+        if (isset($groups['large']) ||
+            (\class_exists('PHPUnit\DbUnit\TestCase', false) && $class->isSubclassOf('PHPUnit\DbUnit\TestCase'))) {
+            return self::LARGE;
         }
 
-        $this->ccn = 1;
-        $end       = $this->getEndTokenId();
-        $tokens    = $this->tokenStream->tokens();
+        if (isset($groups['medium'])) {
+            return self::MEDIUM;
+        }
 
-        for ($i = $this->id; $i <= $end; $i++) {
-            switch (get_class($tokens[$i])) {
-                case 'PHP_Token_IF':
-                case 'PHP_Token_ELSEIF':
-                case 'PHP_Token_FOR':
-                case 'PHP_Token_FOREACH':
-                case 'PHP_Token_WHILE':
-                case 'PHP_Token_CASE':
-                case 'PHP_Token_CATCH':
-                case 'PHP_Token_BOOLEAN_AND':
-                case 'PHP_Token_LOGICAL_AND':
-                case 'PHP_Token_BOOLEAN_OR':
-                case 'PHP_Token_LOGICAL_OR':
-                case 'PHP_Token_QUESTION_MARK':
-                    $this->ccn++;
-                    break;
+        if (isset($groups['small'])) {
+            return self::SMALL;
+        }
+
+        return self::UNKNOWN;
+    }
+
+    /**
+     * Returns the process isolation settings for a test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return bool
+     */
+    public static function getProcessIsolationSettings($className, $methodName)
+    {
+        $annotations = self::parseTestMethodAnnotations(
+            $className,
+            $methodName
+        );
+
+        if (isset($annotations['class']['runTestsInSeparateProcesses']) ||
+            isset($annotations['method']['runInSeparateProcess'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static function getClassProcessIsolationSettings($className, $methodName)
+    {
+        $annotations = self::parseTestMethodAnnotations(
+            $className,
+            $methodName
+        );
+
+        if (isset($annotations['class']['runClassInSeparateProcess'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns the preserve global state settings for a test.
+     *
+     * @param string $className
+     * @param string $methodName
+     *
+     * @return ?bool
+     */
+    public static function getPreserveGlobalStateSettings($className, $methodName)
+    {
+        return self::getBooleanAnnotationSetting(
+            $className,
+            $methodName,
+            'preserveGlobalState'
+        );
+    }
+
+    /**
+     * @param string $className
+     *
+     * @return array
+     */
+    public static function getHookMethods($className)
+    {
+        if (!\class_exists($className, false)) {
+            return self::emptyHookMethodsArray();
+        }
+
+        if (!isset(self::$hookMethods[$className])) {
+            self::$hookMethods[$className] = self::emptyHookMethodsArray();
+
+            try {
+                $class = new ReflectionClass($className);
+
+                foreach ($class->getMethods() as $method) {
+                    if (self::isBeforeClassMethod($method)) {
+                        \array_unshift(
+                            self::$hookMethods[$className]['beforeClass'],
+                            $method->getName()
+                        );
+                    }
+
+                    if (self::isBeforeMethod($method)) {
+                        \array_unshift(
+                            self::$hookMethods[$className]['before'],
+                            $method->getName()
+                        );
+                    }
+
+                    if (self::isAfterMethod($method)) {
+                        self::$hookMethods[$className]['after'][] = $method->getName();
+                    }
+
+                    if (self::isAfterClassMethod($method)) {
+                        self::$hookMethods[$className]['afterClass'][] = $method->getName();
+                    }
+                }
+            } catch (ReflectionException $e) {
             }
         }
 
-        return $this->ccn;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSignature()
-    {
-        if ($this->signature !== null) {
-            return $this->signature;
-        }
-
-        if ($this->isAnonymous()) {
-            $this->signature = 'anonymousFunction';
-            $i               = $this->id + 1;
-        } else {
-            $this->signature = '';
-            $i               = $this->id + 2;
-        }
-
-        $tokens = $this->tokenStream->tokens();
-
-        while (isset($tokens[$i]) &&
-               !$tokens[$i] instanceof PHP_Token_OPEN_CURLY &&
-               !$tokens[$i] instanceof PHP_Token_SEMICOLON) {
-            $this->signature .= $tokens[$i++];
-        }
-
-        $this->signature = trim($this->signature);
-
-        return $this->signature;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isAnonymous()
-    {
-        return $this->anonymous;
-    }
-}
-
-class PHP_Token_INTERFACE extends PHP_TokenWithScopeAndVisibility
-{
-    /**
-     * @var array
-     */
-    protected $interfaces;
-
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return (string) $this->tokenStream[$this->id + 2];
-    }
-
-    /**
-     * @return bool
-     */
-    public function hasParent()
-    {
-        return $this->tokenStream[$this->id + 4] instanceof PHP_Token_EXTENDS;
+        return self::$hookMethods[$className];
     }
 
     /**
      * @return array
      */
-    public function getPackage()
+    private static function emptyHookMethodsArray()
     {
-        $className  = $this->getName();
-        $docComment = $this->getDocblock();
-
-        $result = [
-            'namespace'   => '',
-            'fullPackage' => '',
-            'category'    => '',
-            'package'     => '',
-            'subpackage'  => ''
+        return [
+            'beforeClass' => ['setUpBeforeClass'],
+            'before'      => ['setUp'],
+            'after'       => ['tearDown'],
+            'afterClass'  => ['tearDownAfterClass']
         ];
-
-        for ($i = $this->id; $i; --$i) {
-            if ($this->tokenStream[$i] instanceof PHP_Token_NAMESPACE) {
-                $result['namespace'] = $this->tokenStream[$i]->getName();
-                break;
-            }
-        }
-
-        if (preg_match('/@category[\s]+([\.\w]+)/', $docComment, $matches)) {
-            $result['category'] = $matches[1];
-        }
-
-        if (preg_match('/@package[\s]+([\.\w]+)/', $docComment, $matches)) {
-            $result['package']     = $matches[1];
-            $result['fullPackage'] = $matches[1];
-        }
-
-        if (preg_match('/@subpackage[\s]+([\.\w]+)/', $docComment, $matches)) {
-            $result['subpackage']   = $matches[1];
-            $result['fullPackage'] .= '.' . $matches[1];
-        }
-
-        if (empty($result['fullPackage'])) {
-            $result['fullPackage'] = $this->arrayToName(
-                explode('_', str_replace('\\', '_', $className)),
-                '.'
-            );
-        }
-
-        return $result;
     }
 
     /**
-     * @param array  $parts
-     * @param string $join
+     * @param string $className
+     * @param string $methodName
+     * @param string $settingName
      *
-     * @return string
+     * @return ?bool
      */
-    protected function arrayToName(array $parts, $join = '\\')
+    private static function getBooleanAnnotationSetting($className, $methodName, $settingName)
     {
-        $result = '';
-
-        if (count($parts) > 1) {
-            array_pop($parts);
-
-            $result = implode($join, $parts);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @return bool|string
-     */
-    public function getParent()
-    {
-        if (!$this->hasParent()) {
-            return false;
-        }
-
-        $i         = $this->id + 6;
-        $tokens    = $this->tokenStream->tokens();
-        $className = (string) $tokens[$i];
-
-        while (isset($tokens[$i + 1]) &&
-               !$tokens[$i + 1] instanceof PHP_Token_WHITESPACE) {
-            $className .= (string) $tokens[++$i];
-        }
-
-        return $className;
-    }
-
-    /**
-     * @return bool
-     */
-    public function hasInterfaces()
-    {
-        return (isset($this->tokenStream[$this->id + 4]) &&
-                $this->tokenStream[$this->id + 4] instanceof PHP_Token_IMPLEMENTS) ||
-               (isset($this->tokenStream[$this->id + 8]) &&
-                $this->tokenStream[$this->id + 8] instanceof PHP_Token_IMPLEMENTS);
-    }
-
-    /**
-     * @return array|bool
-     */
-    public function getInterfaces()
-    {
-        if ($this->interfaces !== null) {
-            return $this->interfaces;
-        }
-
-        if (!$this->hasInterfaces()) {
-            return ($this->interfaces = false);
-        }
-
-        if ($this->tokenStream[$this->id + 4] instanceof PHP_Token_IMPLEMENTS) {
-            $i = $this->id + 3;
-        } else {
-            $i = $this->id + 7;
-        }
-
-        $tokens = $this->tokenStream->tokens();
-
-        while (!$tokens[$i + 1] instanceof PHP_Token_OPEN_CURLY) {
-            $i++;
-
-            if ($tokens[$i] instanceof PHP_Token_STRING) {
-                $this->interfaces[] = (string) $tokens[$i];
-            }
-        }
-
-        return $this->interfaces;
-    }
-}
-
-class PHP_Token_ABSTRACT extends PHP_Token
-{
-}
-
-class PHP_Token_AMPERSAND extends PHP_Token
-{
-}
-
-class PHP_Token_AND_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_ARRAY extends PHP_Token
-{
-}
-
-class PHP_Token_ARRAY_CAST extends PHP_Token
-{
-}
-
-class PHP_Token_AS extends PHP_Token
-{
-}
-
-class PHP_Token_AT extends PHP_Token
-{
-}
-
-class PHP_Token_BACKTICK extends PHP_Token
-{
-}
-
-class PHP_Token_BAD_CHARACTER extends PHP_Token
-{
-}
-
-class PHP_Token_BOOLEAN_AND extends PHP_Token
-{
-}
-
-class PHP_Token_BOOLEAN_OR extends PHP_Token
-{
-}
-
-class PHP_Token_BOOL_CAST extends PHP_Token
-{
-}
-
-class PHP_Token_BREAK extends PHP_Token
-{
-}
-
-class PHP_Token_CARET extends PHP_Token
-{
-}
-
-class PHP_Token_CASE extends PHP_Token
-{
-}
-
-class PHP_Token_CATCH extends PHP_Token
-{
-}
-
-class PHP_Token_CHARACTER extends PHP_Token
-{
-}
-
-class PHP_Token_CLASS extends PHP_Token_INTERFACE
-{
-    /**
-     * @var bool
-     */
-    private $anonymous = false;
-
-    /**
-     * @var string
-     */
-    private $name;
-
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        if ($this->name !== null) {
-            return $this->name;
-        }
-
-        $next = $this->tokenStream[$this->id + 1];
-
-        if ($next instanceof PHP_Token_WHITESPACE) {
-            $next = $this->tokenStream[$this->id + 2];
-        }
-
-        if ($next instanceof PHP_Token_STRING) {
-            $this->name =(string) $next;
-
-            return $this->name;
-        }
-
-        if ($next instanceof PHP_Token_OPEN_CURLY ||
-            $next instanceof PHP_Token_EXTENDS ||
-            $next instanceof PHP_Token_IMPLEMENTS) {
-
-            $this->name = sprintf(
-                'AnonymousClass:%s#%s',
-                $this->getLine(),
-                $this->getId()
-            );
-
-            $this->anonymous = true;
-
-            return $this->name;
-        }
-    }
-
-    public function isAnonymous()
-    {
-        return $this->anonymous;
-    }
-}
-
-class PHP_Token_CLASS_C extends PHP_Token
-{
-}
-
-class PHP_Token_CLASS_NAME_CONSTANT extends PHP_Token
-{
-}
-
-class PHP_Token_CLONE extends PHP_Token
-{
-}
-
-class PHP_Token_CLOSE_BRACKET extends PHP_Token
-{
-}
-
-class PHP_Token_CLOSE_CURLY extends PHP_Token
-{
-}
-
-class PHP_Token_CLOSE_SQUARE extends PHP_Token
-{
-}
-
-class PHP_Token_CLOSE_TAG extends PHP_Token
-{
-}
-
-class PHP_Token_COLON extends PHP_Token
-{
-}
-
-class PHP_Token_COMMA extends PHP_Token
-{
-}
-
-class PHP_Token_COMMENT extends PHP_Token
-{
-}
-
-class PHP_Token_CONCAT_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_CONST extends PHP_Token
-{
-}
-
-class PHP_Token_CONSTANT_ENCAPSED_STRING extends PHP_Token
-{
-}
-
-class PHP_Token_CONTINUE extends PHP_Token
-{
-}
-
-class PHP_Token_CURLY_OPEN extends PHP_Token
-{
-}
-
-class PHP_Token_DEC extends PHP_Token
-{
-}
-
-class PHP_Token_DECLARE extends PHP_Token
-{
-}
-
-class PHP_Token_DEFAULT extends PHP_Token
-{
-}
-
-class PHP_Token_DIV extends PHP_Token
-{
-}
-
-class PHP_Token_DIV_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_DNUMBER extends PHP_Token
-{
-}
-
-class PHP_Token_DO extends PHP_Token
-{
-}
-
-class PHP_Token_DOC_COMMENT extends PHP_Token
-{
-}
-
-class PHP_Token_DOLLAR extends PHP_Token
-{
-}
-
-class PHP_Token_DOLLAR_OPEN_CURLY_BRACES extends PHP_Token
-{
-}
-
-class PHP_Token_DOT extends PHP_Token
-{
-}
-
-class PHP_Token_DOUBLE_ARROW extends PHP_Token
-{
-}
-
-class PHP_Token_DOUBLE_CAST extends PHP_Token
-{
-}
-
-class PHP_Token_DOUBLE_COLON extends PHP_Token
-{
-}
-
-class PHP_Token_DOUBLE_QUOTES extends PHP_Token
-{
-}
-
-class PHP_Token_ECHO extends PHP_Token
-{
-}
-
-class PHP_Token_ELSE extends PHP_Token
-{
-}
-
-class PHP_Token_ELSEIF extends PHP_Token
-{
-}
-
-class PHP_Token_EMPTY extends PHP_Token
-{
-}
-
-class PHP_Token_ENCAPSED_AND_WHITESPACE extends PHP_Token
-{
-}
-
-class PHP_Token_ENDDECLARE extends PHP_Token
-{
-}
-
-class PHP_Token_ENDFOR extends PHP_Token
-{
-}
-
-class PHP_Token_ENDFOREACH extends PHP_Token
-{
-}
-
-class PHP_Token_ENDIF extends PHP_Token
-{
-}
-
-class PHP_Token_ENDSWITCH extends PHP_Token
-{
-}
-
-class PHP_Token_ENDWHILE extends PHP_Token
-{
-}
-
-class PHP_Token_END_HEREDOC extends PHP_Token
-{
-}
-
-class PHP_Token_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_EVAL extends PHP_Token
-{
-}
-
-class PHP_Token_EXCLAMATION_MARK extends PHP_Token
-{
-}
-
-class PHP_Token_EXIT extends PHP_Token
-{
-}
-
-class PHP_Token_EXTENDS extends PHP_Token
-{
-}
-
-class PHP_Token_FILE extends PHP_Token
-{
-}
-
-class PHP_Token_FINAL extends PHP_Token
-{
-}
-
-class PHP_Token_FOR extends PHP_Token
-{
-}
-
-class PHP_Token_FOREACH extends PHP_Token
-{
-}
-
-class PHP_Token_FUNC_C extends PHP_Token
-{
-}
-
-class PHP_Token_GLOBAL extends PHP_Token
-{
-}
-
-class PHP_Token_GT extends PHP_Token
-{
-}
-
-class PHP_Token_IF extends PHP_Token
-{
-}
-
-class PHP_Token_IMPLEMENTS extends PHP_Token
-{
-}
-
-class PHP_Token_INC extends PHP_Token
-{
-}
-
-class PHP_Token_INCLUDE extends PHP_Token_Includes
-{
-}
-
-class PHP_Token_INCLUDE_ONCE extends PHP_Token_Includes
-{
-}
-
-class PHP_Token_INLINE_HTML extends PHP_Token
-{
-}
-
-class PHP_Token_INSTANCEOF extends PHP_Token
-{
-}
-
-class PHP_Token_INT_CAST extends PHP_Token
-{
-}
-
-class PHP_Token_ISSET extends PHP_Token
-{
-}
-
-class PHP_Token_IS_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_IS_GREATER_OR_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_IS_IDENTICAL extends PHP_Token
-{
-}
-
-class PHP_Token_IS_NOT_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_IS_NOT_IDENTICAL extends PHP_Token
-{
-}
-
-class PHP_Token_IS_SMALLER_OR_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_LINE extends PHP_Token
-{
-}
-
-class PHP_Token_LIST extends PHP_Token
-{
-}
-
-class PHP_Token_LNUMBER extends PHP_Token
-{
-}
-
-class PHP_Token_LOGICAL_AND extends PHP_Token
-{
-}
-
-class PHP_Token_LOGICAL_OR extends PHP_Token
-{
-}
-
-class PHP_Token_LOGICAL_XOR extends PHP_Token
-{
-}
-
-class PHP_Token_LT extends PHP_Token
-{
-}
-
-class PHP_Token_METHOD_C extends PHP_Token
-{
-}
-
-class PHP_Token_MINUS extends PHP_Token
-{
-}
-
-class PHP_Token_MINUS_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_MOD_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_MULT extends PHP_Token
-{
-}
-
-class PHP_Token_MUL_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_NEW extends PHP_Token
-{
-}
-
-class PHP_Token_NUM_STRING extends PHP_Token
-{
-}
-
-class PHP_Token_OBJECT_CAST extends PHP_Token
-{
-}
-
-class PHP_Token_OBJECT_OPERATOR extends PHP_Token
-{
-}
-
-class PHP_Token_OPEN_BRACKET extends PHP_Token
-{
-}
-
-class PHP_Token_OPEN_CURLY extends PHP_Token
-{
-}
-
-class PHP_Token_OPEN_SQUARE extends PHP_Token
-{
-}
-
-class PHP_Token_OPEN_TAG extends PHP_Token
-{
-}
-
-class PHP_Token_OPEN_TAG_WITH_ECHO extends PHP_Token
-{
-}
-
-class PHP_Token_OR_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_PAAMAYIM_NEKUDOTAYIM extends PHP_Token
-{
-}
-
-class PHP_Token_PERCENT extends PHP_Token
-{
-}
-
-class PHP_Token_PIPE extends PHP_Token
-{
-}
-
-class PHP_Token_PLUS extends PHP_Token
-{
-}
-
-class PHP_Token_PLUS_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_PRINT extends PHP_Token
-{
-}
-
-class PHP_Token_PRIVATE extends PHP_Token
-{
-}
-
-class PHP_Token_PROTECTED extends PHP_Token
-{
-}
-
-class PHP_Token_PUBLIC extends PHP_Token
-{
-}
-
-class PHP_Token_QUESTION_MARK extends PHP_Token
-{
-}
-
-class PHP_Token_REQUIRE extends PHP_Token_Includes
-{
-}
-
-class PHP_Token_REQUIRE_ONCE extends PHP_Token_Includes
-{
-}
-
-class PHP_Token_RETURN extends PHP_Token
-{
-}
-
-class PHP_Token_SEMICOLON extends PHP_Token
-{
-}
-
-class PHP_Token_SL extends PHP_Token
-{
-}
-
-class PHP_Token_SL_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_SR extends PHP_Token
-{
-}
-
-class PHP_Token_SR_EQUAL extends PHP_Token
-{
-}
-
-class PHP_Token_START_HEREDOC extends PHP_Token
-{
-}
-
-class PHP_Token_STATIC extends PHP_Token
-{
-}
-
-class PHP_Token_STRING extends PHP_Token
-{
-}
-
-class PHP_Token_STRING_CAST extends PHP_Token
-{
-}
-
-class PHP_Token_STRING_VARNAME extends PHP_Token
-{
-}
-
-class PHP_Token_SWITCH extends PHP_Token
-{
-}
-
-class PHP_Token_THROW extends PHP_Token
-{
-}
-
-class PHP_Token_TILDE extends PHP_Token
-{
-}
-
-class PHP_Token_TRY extends PHP_Token
-{
-}
-
-class PHP_Token_UNSET extends PHP_Token
-{
-}
-
-class PHP_Token_UNSET_CAST extends PHP_Token
-{
-}
-
-class PHP_Token_USE extends PHP_Token
-{
-}
-
-class PHP_Token_USE_FUNCTION extends PHP_Token
-{
-}
-
-class PHP_Token_VAR extends PHP_Token
-{
-}
-
-class PHP_Token_VARIABLE extends PHP_Token
-{
-}
-
-class PHP_Token_WHILE extends PHP_Token
-{
-}
-
-class PHP_Token_WHITESPACE extends PHP_Token
-{
-}
-
-class PHP_Token_XOR_EQUAL extends PHP_Token
-{
-}
-
-// Tokens introduced in PHP 5.1
-class PHP_Token_HALT_COMPILER extends PHP_Token
-{
-}
-
-// Tokens introduced in PHP 5.3
-class PHP_Token_DIR extends PHP_Token
-{
-}
-
-class PHP_Token_GOTO extends PHP_Token
-{
-}
-
-class PHP_Token_NAMESPACE extends PHP_TokenWithScope
-{
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        $tokens    = $this->tokenStream->tokens();
-        $namespace = (string) $tokens[$this->id + 2];
-
-        for ($i = $this->id + 3;; $i += 2) {
-            if (isset($tokens[$i]) &&
-                $tokens[$i] instanceof PHP_Token_NS_SEPARATOR) {
-                $namespace .= '\\' . $tokens[$i + 1];
-            } else {
-                break;
-            }
-        }
-
-        return $namespace;
-    }
-}
-
-class PHP_Token_NS_C extends PHP_Token
-{
-}
-
-class PHP_Token_NS_SEPARATOR extends PHP_Token
-{
-}
-
-// Tokens introduced in PHP 5.4
-class PHP_Token_CALLABLE extends PHP_Token
-{
-}
-
-class PHP_Token_INSTEADOF extends PHP_Token
-{
-}
-
-class PHP_Token_TRAIT extends PHP_Token_INTERFACE
-{
-}
-
-class PHP_Token_TRAIT_C extends PHP_Token
-{
-}
-
-// Tokens introduced in PHP 5.5
-class PHP_Token_FINALLY extends PHP_Token
-{
-}
-
-class PHP_Token_YIELD extends PHP_Token
-{
-}
-
-// Tokens introduced in PHP 5.6
-class PHP_Token_ELLIPSIS extends PHP_Token
-{
-}
-
-class PHP_Token_POW extends PHP_Token
-{
-}
-
-cla<?php
-
-// Protocol Buffers - Google's data interchange format
-// Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-namespace Google\Protobuf\Internal;
-
-class GPBLabel
-{
-    const OPTIONAL = 1;
-    const REQUIRED = 2;
-    const REPEATED = 3;
-}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <?php
-
-// Protocol Buffers - Google's data interchange format
-// Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-namespace Google\Protobuf\Internal;
-
-class GPBType
-{
-    const DOUBLE   =  1;
-    const FLOAT    =  2;
-    const INT64    =  3;
-    const UINT64   =  4;
-    const INT32    =  5;
-    const FIXED64  =  6;
-    const FIXED32  =  7;
-    const BOOL     =  8;
-    const STRING   =  9;
-    const GROUP    = 10;
-    const MESSAGE  = 11;
-    const BYTES    = 12;
-    const UINT32   = 13;
-    const ENUM     = 14;
-    const SFIXED32 = 15;
-    const SFIXED64 = 16;
-    const SINT32   = 17;
-    const SINT64   = 18;
-}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <?php
-
-// Protocol Buffers - Google's data interchange format
-// Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-namespace Google\Protobuf\Internal;
-
-use Google\Protobuf\Duration;
-use Google\Protobuf\FieldMask;
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
-use Google\Protobuf\Internal\MapField;
-
-function camel2underscore($input) {
-    preg_match_all(
-        '!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!',
-        $input,
-        $matches);
-    $ret = $matches[0];
-    foreach ($ret as &$match) {
-        $match = $match == strtoupper($match) ? strtolower($match) : lcfirst($match);
-    }
-    return implode('_', $ret);
-}
-
-class GPBUtil
-{
-    const NANOS_PER_MILLISECOND = 1000000;
-    const NANOS_PER_MICROSECOND = 1000;
-    const TYPE_URL_PREFIX = 'type.googleapis.com/';
-
-    public static function divideInt64ToInt32($value, &$high, &$low, $trim = false)
-    {
-        $isNeg = (bccomp($value, 0) < 0);
-        if ($isNeg) {
-            $value = bcsub(0, $value);
-        }
-
-        $high = bcdiv($value, 4294967296);
-        $low = bcmod($value, 4294967296);
-        if (bccomp($high, 2147483647) > 0) {
-            $high = (int) bcsub($high, 4294967296);
-        } else {
-            $high = (int) $high;
-        }
-        if (bccomp($low, 2147483647) > 0) {
-            $low = (int) bcsub($low, 4294967296);
-        } else {
-            $low = (int) $low;
-        }
-
-        if ($isNeg) {
-            $high = ~$high;
-            $low = ~$low;
-            $low++;
-            if (!$low) {
-                $high = (int)($high + 1);
-            }
-        }
-
-        if ($trim) {
-            $high = 0;
-        }
-    }
-
-    public static function checkString(&$var, $check_utf8)
-    {
-        if (is_array($var) || is_object($var)) {
-            throw new \InvalidArgumentException("Expect string.");
-        }
-        if (!is_string($var)) {
-            $var = strval($var);
-        }
-        if ($check_utf8 && !preg_match('//u', $var)) {
-            throw new \Exception("Expect utf-8 encoding.");
-        }
-    }
-
-    public static function checkEnum(&$var)
-    {
-      static::checkInt32($var);
-    }
-
-    public static function checkInt32(&$var)
-    {
-        if (is_numeric($var)) {
-            $var = intval($var);
-        } else {
-            throw new \Exception("Expect integer.");
-        }
-    }
-
-    public static function checkUint32(&$var)
-    {
-        if (is_numeric($var)) {
-            if (PHP_INT_SIZE === 8) {
-                $var = intval($var);
-                $var |= ((-(($var >> 31) & 0x1)) & ~0xFFFFFFFF);
-            } else {
-                if (bccomp($var, 0x7FFFFFFF) > 0) {
-                    $var = bcsub($var, "4294967296");
-                }
-                $var = (int) $var;
-            }
-        } else {
-            throw new \Exception("Expect integer.");
-        }
-    }
-
-    public static function checkInt64(&$var)
-    {
-        if (is_numeric($var)) {
-            if (PHP_INT_SIZE == 8) {
-                $var = intval($var);
-            } else {
-                if (is_float($var) ||
-                    is_integer($var) ||
-                    (is_string($var) &&
-                         bccomp($var, "9223372036854774784") < 0)) {
-                    $var = number_format($var, 0, ".", "");
-                }
-            }
-        } else {
-            throw new \Exception("Expect integer.");
-        }
-    }
-
-    public static function checkUint64(&$var)
-    {
-        if (is_numeric($var)) {
-            if (PHP_INT_SIZE == 8) {
-                $var = intval($var);
-            } else {
-                $var = number_format($var, 0, ".", "");
-            }
-        } else {
-            throw new \Exception("Expect integer.");
-        }
-    }
-
-    public static function checkFloat(&$var)
-    {
-        if (is_float($var) || is_numeric($var)) {
-            $var = floatval($var);
-        } else {
-            throw new \Exception("Expect float.");
-        }
-    }
-
-    public static function checkDouble(&$var)
-    {
-        if (is_float($var) || is_numeric($var)) {
-            $var = floatval($var);
-        } else {
-            throw new \Exception("Expect float.");
-        }
-    }
-
-    public static function checkBool(&$var)
-    {
-        if (is_array($var) || is_object($var)) {
-            throw new \Exception("Expect boolean.");
-        }
-        $var = boolval($var);
-    }
-
-    public static function checkMessage(&$var, $klass, $newClass = null)
-    {
-        if (!$var instanceof $klass && !is_null($var)) {
-            throw new \Exception("Expect $klass.");
-        }
-    }
-
-    public static function checkRepeatedField(&$var, $type, $klass = null)
-    {
-        if (!$var instanceof RepeatedField && !is_array($var)) {
-            throw new \Exception("Expect array.");
-        }
-        if (is_array($var)) {
-            $tmp = new RepeatedField($type, $klass);
-            foreach ($var as $value) {
-                $tmp[] = $value;
-            }
-            return $tmp;
-        } else {
-            if ($var->getType() != $type) {
-                throw new \Exception(
-                    "Expect repeated field of different type.");
-            }
-            if ($var->getType() === GPBType::MESSAGE &&
-                $var->getClass() !== $klass &&
-                $var->getLegacyClass() !== $klass) {
-                throw new \Exception(
-                    "Expect repeated field of " . $klass . ".");
-            }
-            return $var;
-        }
-    }
-
-    public static function checkMapField(&$var, $key_type, $value_type, $klass = null)
-    {
-        if (!$var instanceof MapField && !is_array($var)) {
-            throw new \Exception("Expect dict.");
-        }
-        if (is_array($var)) {
-            $tmp = new MapField($key_type, $value_type, $klass);
-            foreach ($var as $key => $value) {
-                $tmp[$key] = $value;
-            }
-            return $tmp;
-        } else {
-            if ($var->getKeyType() != $key_type) {
-                throw new \Exception("Expect map field of key type.");
-            }
-            if ($var->getValueType() != $value_type) {
-                throw new \Exception("Expect map field of value type.");
-            }
-            if ($var->getValueType() === GPBType::MESSAGE &&
-                $var->getValueClass() !== $klass &&
-                $var->getLegacyValueClass() !== $klass) {
-                throw new \Exception(
-                    "Expect map field of " . $klass . ".");
-            }
-            return $var;
-        }
-    }
-
-    public static function Int64($value)
-    {
-        return new Int64($value);
-    }
-
-    public static function Uint64($value)
-    {
-        return new Uint64($value);
-    }
-
-    public static function getClassNamePrefix(
-        $classname,
-        $file_proto)
-    {
-        $option = $file_proto->getOptions();
-        $prefix = is_null($option) ? "" : $option->getPhpClassPrefix();
-        if ($prefix !== "") {
-            return $prefix;
-        }
-
-        $reserved_words = array(
-            "abstract"=>0, "and"=>0, "array"=>0, "as"=>0, "break"=>0,
-            "callable"=>0, "case"=>0, "catch"=>0, "class"=>0, "clone"=>0,
-            "const"=>0, "continue"=>0, "declare"=>0, "default"=>0, "die"=>0,
-            "do"=>0, "echo"=>0, "else"=>0, "elseif"=>0, "empty"=>0,
-            "enddeclare"=>0, "endfor"=>0, "endforeach"=>0, "endif"=>0,
-            "endswitch"=>0, "endwhile"=>0, "eval"=>0, "exit"=>0, "extends"=>0,
-            "final"=>0, "for"=>0, "foreach"=>0, "function"=>0, "global"=>0,
-            "goto"=>0, "if"=>0, "implements"=>0, "include"=>0,
-            "include_once"=>0, "instanceof"=>0, "insteadof"=>0, "interface"=>0,
-            "isset"=>0, "list"=>0, "namespace"=>0, "new"=>0, "or"=>0,
-            "print"=>0, "private"=>0, "protected"=>0, "public"=>0, "require"=>0,
-            "require_once"=>0, "return"=>0, "static"=>0, "switch"=>0,
-            "throw"=>0, "trait"=>0, "try"=>0, "unset"=>0, "use"=>0, "var"=>0,
-            "while"=>0, "xor"=>0, "int"=>0, "float"=>0, "bool"=>0, "string"=>0,
-            "true"=>0, "false"=>0, "null"=>0, "void"=>0, "iterable"=>0
+        $annotations = self::parseTestMethodAnnotations(
+            $className,
+            $methodName
         );
 
-        if (array_key_exists(strtolower($classname), $reserved_words)) {
-            if ($file_proto->getPackage() === "google.protobuf") {
-                return "GPB";
+        if (isset($annotations['class'][$settingName])) {
+            if ($annotations['class'][$settingName][0] == 'enabled') {
+                return true;
+            }
+
+            if ($annotations['class'][$settingName][0] == 'disabled') {
+                return false;
+            }
+        }
+
+        if (isset($annotations['method'][$settingName])) {
+            if ($annotations['method'][$settingName][0] == 'enabled') {
+                return true;
+            }
+
+            if ($annotations['method'][$settingName][0] == 'disabled') {
+                return false;
+            }
+        }
+
+        return;
+    }
+
+    /**
+     * @param string $element
+     *
+     * @return array
+     *
+     * @throws InvalidCoversTargetException
+     */
+    private static function resolveElementToReflectionObjects($element)
+    {
+        $codeToCoverList = [];
+
+        if (\strpos($element, '\\') !== false && \function_exists($element)) {
+            $codeToCoverList[] = new ReflectionFunction($element);
+        } elseif (\strpos($element, '::') !== false) {
+            list($className, $methodName) = \explode('::', $element);
+
+            if (isset($methodName[0]) && $methodName[0] == '<') {
+                $classes = [$className];
+
+                foreach ($classes as $className) {
+                    if (!\class_exists($className) &&
+                        !\interface_exists($className) &&
+                        !\trait_exists($className)) {
+                        throw new InvalidCoversTargetException(
+                            \sprintf(
+                                'Trying to @cover or @use not existing class or ' .
+                                'interface "%s".',
+                                $className
+                            )
+                        );
+                    }
+
+                    $class   = new ReflectionClass($className);
+                    $methods = $class->getMethods();
+                    $inverse = isset($methodName[1]) && $methodName[1] == '!';
+
+                    if (\strpos($methodName, 'protected')) {
+                        $visibility = 'isProtected';
+                    } elseif (\strpos($methodName, 'private')) {
+                        $visibility = 'isPrivate';
+                    } elseif (\strpos($methodName, 'public')) {
+                        $visibility = 'isPublic';
+                    }
+
+                    foreach ($methods as $method) {
+                        if ($inverse && !$method->$visibility()) {
+                            $codeToCoverList[] = $method;
+                        } elseif (!$inverse && $method->$visibility()) {
+                            $codeToCoverList[] = $method;
+                        }
+                    }
+                }
             } else {
-                return "PB";
+                $classes = [$className];
+
+                foreach ($classes as $className) {
+                    if ($className == '' && \function_exists($methodName)) {
+                        $codeToCoverList[] = new ReflectionFunction(
+                            $methodName
+                        );
+                    } else {
+                        if (!((\class_exists($className) || \interface_exists($className) || \trait_exists($className)) &&
+                            \method_exists($className, $methodName))) {
+                            throw new InvalidCoversTargetException(
+                                \sprintf(
+                                    'Trying to @cover or @use not existing method "%s::%s".',
+                                    $className,
+                                    $methodName
+                                )
+                            );
+                        }
+
+                        $codeToCoverList[] = new ReflectionMethod(
+                            $className,
+                            $methodName
+                        );
+                    }
+                }
             }
-        }
-
-        return "";
-    }
-
-    public static function getLegacyClassNameWithoutPackage(
-        $name,
-        $file_proto)
-    {
-        $classname = implode('_', explode('.', $name));
-        return static::getClassNamePrefix($classname, $file_proto) . $classname;
-    }
-
-    public static function getClassNameWithoutPackage(
-        $name,
-        $file_proto)
-    {
-        $parts = explode('.', $name);
-        foreach ($parts as $i => $part) {
-            $parts[$i] = static::getClassNamePrefix($parts[$i], $file_proto) . $parts[$i];
-        }
-        return implode('\\', $parts);
-    }
-
-    public static function getFullClassName(
-        $proto,
-        $containing,
-        $file_proto,
-        &$message_name_without_package,
-        &$classname,
-        &$legacy_classname,
-        &$fullname)
-    {
-        // Full name needs to start with '.'.
-        $message_name_without_package = $proto->getName();
-        if ($containing !== "") {
-            $message_name_without_package =
-                $containing . "." . $message_name_without_package;
-        }
-
-        $package = $file_proto->getPackage();
-        if ($package === "") {
-            $fullname = "." . $message_name_without_package;
         } else {
-            $fullname = "." . $package . "." . $message_name_without_package;
-        }
+            $extended = false;
 
-        $class_name_without_package =
-            static::getClassNameWithoutPackage($message_name_without_package, $file_proto);
-        $legacy_class_name_without_package =
-            static::getLegacyClassNameWithoutPackage(
-                $message_name_without_package, $file_proto);
+            if (\strpos($element, '<extended>') !== false) {
+                $element  = \str_replace('<extended>', '', $element);
+                $extended = true;
+            }
 
-        $option = $file_proto->getOptions();
-        if (!is_null($option) && $option->hasPhpNamespace()) {
-            $namespace = $option->getPhpNamespace();
-            if ($namespace !== "") {
-                $classname = $namespace . "\\" . $class_name_without_package;
-                $legacy_classname =
-                    $namespace . "\\" . $legacy_class_name_without_package;
-                return;
-            } else {
-                $classname = $class_name_without_package;
-                $legacy_classname = $legacy_class_name_without_package;
-                return;
+            $classes = [$element];
+
+            if ($extended) {
+                $classes = \array_merge(
+                    $classes,
+                    \class_implements($element),
+                    \class_parents($element)
+                );
+            }
+
+            foreach ($classes as $className) {
+                if (!\class_exists($className) &&
+                    !\interface_exists($className) &&
+                    !\trait_exists($className)) {
+                    throw new InvalidCoversTargetException(
+                        \sprintf(
+                            'Trying to @cover or @use not existing class or ' .
+                            'interface "%s".',
+                            $className
+                        )
+                    );
+                }
+
+                $codeToCoverList[] = new ReflectionClass($className);
             }
         }
 
-        if ($package === "") {
-            $classname = $class_name_without_package;
-            $legacy_classname = $legacy_class_name_without_package;
-        } else {
-            $parts = array_map('ucwords', explode('.', $package));
-            foreach ($parts as $i => $part) {
-                $parts[$i] = self::getClassNamePrefix($part, $file_proto).$part;
-            }
-            $classname =
-                implode('\\', $parts) .
-                "\\".self::getClassNamePrefix($class_name_without_package,$file_proto).
-                $class_name_without_package;
-            $legacy_classname =
-                implode('\\', array_map('ucwords', explode('.', $package))).
-                "\\".$legacy_class_name_without_package;
-        }
+        return $codeToCoverList;
     }
 
-    public static function combineInt32ToInt64($high, $low)
+    /**
+     * @param array $reflectors
+     *
+     * @return array
+     */
+    private static function resolveReflectionObjectsToLines(array $reflectors)
     {
-        $isNeg = $high < 0;
-        if ($isNeg) {
-            $high = ~$high;
-            $low = ~$low;
-            $low++;
-            if (!$low) {
-                $high = (int) ($high + 1);
+        $result = [];
+
+        foreach ($reflectors as $reflector) {
+            $filename = $reflector->getFileName();
+
+            if (!isset($result[$filename])) {
+                $result[$filename] = [];
             }
+
+            $result[$filename] = \array_merge(
+                $result[$filename],
+                \range($reflector->getStartLine(), $reflector->getEndLine())
+            );
         }
-        $result = bcadd(bcmul($high, 4294967296), $low);
-        if ($low < 0) {
-            $result = bcadd($result, 4294967296);
+
+        foreach ($result as $filename => $lineNumbers) {
+            $result[$filename] = \array_keys(\array_flip($lineNumbers));
         }
-        if ($i
+
+        return $result;
+    }
+
+    /**
+     * @param ReflectionMethod $method
+     *
+     * @return bool
+     */
+    private static function isBeforeClassMethod(ReflectionMethod $method)
+    {
+        return $method->isStatic() && \strpos($method->getDocComment(), '@beforeClass') !== false;
+    }
+
+    /**
+     * @param ReflectionMethod $method
+     *
+     * @return bool
+     */
+    private static function isBeforeMethod(ReflectionMethod $method)
+    {
+        return \preg_match('/@before\b/', $method->getDocComment()) > 0;
+    }
+
+    /**
+     * @param ReflectionMethod $method
+     *
+     * @return bool
+     */
+    private static function isAfterClassMethod(ReflectionMethod $method)
+    {
+        return $method->isStatic() && \strpos($method->getDocComment(), '@afterClass') !== false;
+    }
+
+    /**
+     * @param ReflectionMethod $method
+     *
+     * @return bool
+     */
+    private static function isAfterMethod(ReflectionMethod $method)
+    {
+        return \preg_match('/@after\b/', $method->getDocComment()) > 0;
+    }
+
+    /**
+     * Trims any extensions from version string that follows after
+     * the <major>.<minor>[.<patch>] format
+     *
+     * @param $version (Optional)
+     *
+     * @return mixed
+     */
+    private static function sanitizeVersionNumber($version)
+    {
+        return \preg_replace(
+            '/^(\d+\.\d+(?:.\d+)?).*$/',
+            '$1',
+            $version
+        );
+    }
+}

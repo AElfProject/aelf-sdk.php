@@ -1,38 +1,77 @@
-eneath', 'hang', 'mom', 'paint', 'emotion', 'quiet', 'clear',
-            'cloud', 'few', 'pretty', 'bird', 'outside', 'paper', 'picture',
-            'front', 'rock', 'simple', 'anyone', 'meant', 'reality', 'road',
-            'sense', 'waste', 'bit', 'leaf', 'thank', 'happiness', 'meet', 'men',
-            'smoke', 'truly', 'decide', 'self', 'age', 'book', 'form', 'alive',
-            'carry', 'escape', 'damn', 'instead', 'able', 'ice', 'minute',
-            'throw', 'catch', 'leg', 'ring', 'course', 'goodbye', 'lead', 'poem',
-            'sick', 'corner', 'desire', 'known', 'problem', 'remind',
-            'shoulder', 'suppose', 'toward', 'wave', 'drink', 'jump', 'woman',
-            'pretend', 'sister', 'week', 'human', 'joy', 'crack', 'grey', 'pray',
-            'surprise', 'dry', 'knee', 'less', 'search', 'bleed', 'caught',
-            'clean', 'embrace', 'future', 'king', 'son', 'sorrow', 'chest',
-            'hug', 'remain', 'sat', 'worth', 'blow', 'daddy', 'final', 'parent',
-            'tight', 'also', 'create', 'lonely', 'safe', 'cross', 'dress',
-            'evil', 'silent', 'bone', 'fate', 'perhaps', 'anger', 'class',
-            'scar', 'snow', 'tiny', 'tonight', 'continue', 'control', 'dog',
-            'edge', 'mirror', 'month', 'suddenly', 'comfort', 'given', 'loud',
-            'quickly', 'gaze', 'plan', 'rush', 'stone', 'town', 'battle',
-            'ignore', 'spirit', 'stood', 'stupid', 'yours', 'brown', 'build',
-            'dust', 'hey', 'kept', 'pay', 'phone', 'twist', 'although', 'ball',
-            'beyond', 'hidden', 'nose', 'taken', 'fail', 'float', 'pure',
-            'somehow', 'wash', 'wrap', 'angry', 'cheek', 'creature', 'forgotten',
-            'heat', 'rip', 'single', 'space', 'special', 'weak', 'whatever',
-            'yell', 'anyway', 'blame', 'job', 'choose', 'country', 'curse',
-            'drift', 'echo', 'figure', 'grew', 'laughter', 'neck', 'suffer',
-            'worse', 'yeah', 'disappear', 'foot', 'forward', 'knife', 'mess',
-            'somewhere', 'stomach', 'storm', 'beg', 'idea', 'lift', 'offer',
-            'breeze', 'field', 'five', 'often', 'simply', 'stuck', 'win',
-            'allow', 'confuse', 'enjoy', 'except', 'flower', 'seek', 'strength',
-            'calm', 'grin', 'gun', 'heavy', 'hill', 'large', 'ocean', 'shoe',
-            'sigh', 'straight', 'summer', 'tongue', 'accept', 'crazy',
-            'everyday', 'exist', 'grass', 'mistake', 'sent', 'shut', 'surround',
-            'table', 'ache', 'brain', 'destroy', 'heal', 'nature', 'shout',
-            'sign', 'stain', 'choice', 'doubt', 'glance', 'glow', 'mountain',
-            'queen', 'stranger', 'throat', 'tomorrow', 'city', 'either', 'fish',
-            'flame', 'rather', 'shape', 'spin', 'spread', 'ash', 'distance',
-            'finish', 'image', 'imagine', 'important', 'nobody', 'shatter',
-            'warmth', 'became', 'feed', 'flesh', 'funny', '
+<?php
+$header = <<<'EOF'
+This file is part of the phpunit-mock-objects package.
+
+(c) Sebastian Bergmann <sebastian@phpunit.de>
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+EOF;
+
+return PhpCsFixer\Config::create()
+    ->setRiskyAllowed(true)
+    ->setRules(
+        [
+            'array_syntax' => ['syntax' => 'short'],
+            'binary_operator_spaces' => [
+                'align_double_arrow' => true,
+                'align_equals' => true
+            ],
+            'blank_line_after_namespace' => true,
+            'blank_line_before_return' => true,
+            'braces' => true,
+            'cast_spaces' => true,
+            'concat_space' => ['spacing' => 'one'],
+            'elseif' => true,
+            'encoding' => true,
+            'full_opening_tag' => true,
+            'function_declaration' => true,
+            'header_comment' => ['header' => $header, 'separate' => 'none'],
+            'indentation_type' => true,
+            'line_ending' => true,
+            'lowercase_constants' => true,
+            'lowercase_keywords' => true,
+            'method_argument_space' => true,
+            'no_alias_functions' => true,
+            'no_blank_lines_after_class_opening' => true,
+            'no_blank_lines_after_phpdoc' => true,
+            'no_closing_tag' => true,
+            'no_empty_phpdoc' => true,
+            'no_empty_statement' => true,
+            'no_extra_consecutive_blank_lines' => true,
+            'no_leading_namespace_whitespace' => true,
+            'no_singleline_whitespace_before_semicolons' => true,
+            'no_spaces_after_function_name' => true,
+            'no_spaces_inside_parenthesis' => true,
+            'no_trailing_comma_in_list_call' => true,
+            'no_trailing_whitespace' => true,
+            'no_unused_imports' => true,
+            'no_whitespace_in_blank_line' => true,
+            'phpdoc_align' => true,
+            'phpdoc_indent' => true,
+            'phpdoc_no_access' => true,
+            'phpdoc_no_empty_return' => true,
+            'phpdoc_no_package' => true,
+            'phpdoc_scalar' => true,
+            'phpdoc_separation' => true,
+            'phpdoc_to_comment' => true,
+            'phpdoc_trim' => true,
+            'phpdoc_types' => true,
+            'phpdoc_var_without_name' => true,
+            'self_accessor' => true,
+            'simplified_null_return' => true,
+            'single_blank_line_at_eof' => true,
+            'single_import_per_statement' => true,
+            'single_line_after_imports' => true,
+            'single_quote' => true,
+            'ternary_operator_spaces' => true,
+            'trim_array_spaces' => true,
+            'visibility_required' => true,
+        ]
+    )
+    ->setFinder(
+        PhpCsFixer\Finder::create()
+        ->files()
+        ->in(__DIR__ . '/src')
+        ->name('*.php')
+    );

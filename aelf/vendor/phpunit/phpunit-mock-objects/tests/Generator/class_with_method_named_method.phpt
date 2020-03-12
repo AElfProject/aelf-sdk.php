@@ -1,110 +1,92 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('Foo', array(), 'MockFoo', true, true)
+--FILE--
 <?php
-
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Serializer;
-
-use BitWasp\Buffertools\CachingTypeFactory;
-use BitWasp\Buffertools\Types\ByteString;
-use BitWasp\Buffertools\Types\Int128;
-use BitWasp\Buffertools\Types\Int16;
-use BitWasp\Buffertools\Types\Int256;
-use BitWasp\Buffertools\Types\Int32;
-use BitWasp\Buffertools\Types\Int64;
-use BitWasp\Buffertools\Types\Int8;
-use BitWasp\Buffertools\Types\Uint128;
-use BitWasp\Buffertools\Types\Uint16;
-use BitWasp\Buffertools\Types\Uint256;
-use BitWasp\Buffertools\Types\Uint32;
-use BitWasp\Buffertools\Types\Uint64;
-use BitWasp\Buffertools\Types\Uint8;
-use BitWasp\Buffertools\Types\VarInt;
-use BitWasp\Buffertools\Types\VarString;
-
-class Types
+class Foo
 {
-    /**
-     * @return CachingTypeFactory
-     */
-    public static function factory()
+    public function method()
     {
-        static $factory;
-        if (null === $factory) {
-            $factory = new CachingTypeFactory();
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'Foo',
+    array(),
+    'MockFoo',
+    true,
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = ['method'];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+    }
+
+    public function method()
+    {
+        $arguments = array();
+        $count     = func_num_args();
+
+        if ($count > 0) {
+            $_arguments = func_get_args();
+
+            for ($i = 0; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
         }
 
-        return $factory;
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'Foo', 'method', $arguments, '', $this, true
+            )
+        );
+
+        return $result;
     }
 
-    /**
-     * @param int $length
-     * @return ByteString
-     */
-    public static function bytestring($length)
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
     {
-        return static::factory()->{__FUNCTION__}($length);
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
     }
 
-    /**
-     * @param int $length
-     * @return ByteString
-     */
-    public static function bytestringle($length)
+    public function __phpunit_setOriginalObject($originalObject)
     {
-        return static::factory()->{__FUNCTION__}($length);
+        $this->__phpunit_originalObject = $originalObject;
     }
 
-    /**
-     * @return Uint8
-     */
-    public static function uint8()
+    public function __phpunit_getInvocationMocker()
     {
-        return static::factory()->{__FUNCTION__}();
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
     }
 
-    /**
-     * @return Uint8
-     */
-    public static function uint8le()
+    public function __phpunit_hasMatchers()
     {
-        return static::factory()->{__FUNCTION__}();
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
     }
 
-    /**
-     * @return Uint16
-     */
-    public static function uint16()
+    public function __phpunit_verify($unsetInvocationMocker = true)
     {
-        return static::factory()->{__FUNCTION__}();
-    }
+        $this->__phpunit_getInvocationMocker()->verify();
 
-    /**
-     * @return Uint16
-     */
-    public static function uint16le()
-    {
-        return static::factory()->{__FUNCTION__}();
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
     }
-
-    /**
-     * @return Uint32
-     */
-    public static function uint32()
-    {
-        return static::factory()->{__FUNCTION__}();
-    }
-
-    /**
-     * @return Uint32
-     */
-    public static function uint32le()
-    {
-        return static::factory()->{__FUNCTION__}();
-    }
-
-    /**
-     * @return Uint64
-     */
-    public static function uint64()
-    {
-        return static::factory()->{__FUNCT
+}

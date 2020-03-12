@@ -1,1 +1,125 @@
-,  'foot',  'force',  'forest',  'forget',  'fork',  'fortune',  'forum',  'forward',  'fossil',  'foster',  'found',  'fox',  'fragile',  'frame',  'frequent',  'fresh',  'friend',  'fringe',  'frog',  'front',  'frost',  'frown',  'frozen',  'fruit',  'fuel',  'fun',  'funny',  'furnace',  'fury',  'future',  'gadget',  'gain',  'galaxy',  'gallery',  'game',  'gap',  'garage',  'garbage',  'garden',  'garlic',  'garment',  'gas',  'gasp',  'gate',  'gather',  'gauge',  'gaze',  'general',  'genius',  'genre',  'gentle',  'genuine',  'gesture',  'ghost',  'giant',  'gift',  'giggle',  'ginger',  'giraffe',  'girl',  'give',  'glad',  'glance',  'glare',  'glass',  'glide',  'glimpse',  'globe',  'gloom',  'glory',  'glove',  'glow',  'glue',  'goat',  'goddess',  'gold',  'good',  'goose',  'gorilla',  'gospel',  'gossip',  'govern',  'gown',  'grab',  'grace',  'grain',  'grant',  'grape',  'grass',  'gravity',  'great',  'green',  'grid',  'grief',  'grit',  'grocery',  'group',  'grow',  'grunt',  'guard',  'guess',  'guide',  'guilt',  'guitar',  'gun',  'gym',  'habit',  'hair',  'half',  'hammer',  'hamster',  'hand',  'happy',  'harbor',  'hard',  'harsh',  'harvest',  'hat',  'have',  'hawk',  'hazard',  'head',  'health',  'heart',  'heavy',  'hedgehog',  'height',  'hello',  'helmet',  'help',  'hen',  'hero',  'hidden',  'high',  'hill',  'hint',  'hip',  'hire',  'history',  'hobby',  'hockey',  'hold',  'hole',  'holiday',  'hollow',  'home',  'honey',  'hood',  'hope',  'horn',  'horror',  'horse',  'hospital',  'host',  'hotel',  'hour',  'hover',  'hub',  'huge',  'human',  'humble',  'humor',  'hundred',  'hungry',  'hunt',  'hurdle',  'hurry',  'hurt',  'husband',  'hybrid',  'ice',  'icon',  'idea',  'identify',  'idle',  'ignore',  'ill',  'illegal',  'illness',  'image',  'imitate',  'immense',  'immune',  'impact',  'impose',  'improve',  'impulse',  'inch',  'include',  'income',  'increase',  'index',  'indicate',  'indoor',  'industry',  'infant',  'inflict',  'inform',  'inhale',  'inherit',  'initial',  'inject',  'injury',  'inmate',  'inner',  'innocent',  'input',  'inquiry',  'insane',  'insect',  'inside',  'inspire',  'install',  'intact',  'interest',  'into',  'invest',  'invite',  'involve',  'iron',  'island',  'isolate',  'issue',  'item',  'ivory',  'jacket',  'jaguar',  'jar',  'jazz',  'jealous',  'jeans',  'jelly',  'jewel',  'job',  'join',  'joke',  'journey',  'joy',  'judge',  'juice',  'jump',  'jungle',  'junior',  'junk',  'just',  'kangaroo',  'keen',  'keep',  'ketchup',  'key',  'kick',  'kid',  'kidney',  'kind',  'kingdom',  'kiss',  'kit',  'kitchen',  'kite',  'kitten',  'kiwi',  'knee',  'knife',  'knock',  'know',  'lab',  'label',  'labor',  'ladder',  'lady',  'lake',  'lamp',  'language',  'laptop',  'large',  'later',  'latin',  'laugh',  'laundry',  'lava',  'law',  'lawn',  'lawsuit',  'layer',  'lazy',  'leader',  'leaf',  'learn',  'leave',  'lecture',  'left',  'leg',  'legal',  'legend',  'leisure',  'lemon',  'lend',  'length',  'lens',  'leopard',  'lesson',  'letter',  'level',  'liar',  'liberty', 
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('Foo', array(), 'MockFoo', true, true)
+--FILE--
+<?php
+class Foo
+{
+    public function bar(Foo $foo)
+    {
+    }
+
+    public function baz(Foo $foo)
+    {
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'Foo',
+    array(),
+    'MockFoo',
+    true,
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = ['bar', 'baz'];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+    }
+
+    public function bar(Foo $foo)
+    {
+        $arguments = array($foo);
+        $count     = func_num_args();
+
+        if ($count > 1) {
+            $_arguments = func_get_args();
+
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
+        }
+
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'Foo', 'bar', $arguments, '', $this, true
+            )
+        );
+
+        return $result;
+    }
+
+    public function baz(Foo $foo)
+    {
+        $arguments = array($foo);
+        $count     = func_num_args();
+
+        if ($count > 1) {
+            $_arguments = func_get_args();
+
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
+        }
+
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'Foo', 'baz', $arguments, '', $this, true
+            )
+        );
+
+        return $result;
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

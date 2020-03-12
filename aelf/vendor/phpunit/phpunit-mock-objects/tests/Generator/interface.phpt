@@ -1,96 +1,97 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('Foo', array(), 'MockFoo', true, true)
+--FILE--
 <?php
-
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin;
-
-class Locktime
+interface Foo
 {
-    const INT_MAX = 0xffffffff;
+    public function bar(Foo $foo);
+}
 
-    /**
-     * Maximum block height that can be used in locktime, as beyond
-     * this is reserved for timestamp locktimes
-     */
-    const BLOCK_MAX = 500000000;
+require __DIR__ . '/../../vendor/autoload.php';
 
-    /**
-     * Maximum timestamp that can be encoded in locktime
-     * (TIME_MAX + BLOCK_MAX = INT_MAX)
-     */
-    const TIME_MAX = self::INT_MAX - self::BLOCK_MAX;
+$generator = new PHPUnit_Framework_MockObject_Generator;
 
-    /**
-     * @param int $nLockTime
-     * @return bool
-     */
-    public function isLockedToBlock(int $nLockTime): bool
+$mock = $generator->generate(
+    'Foo',
+    array(),
+    'MockFoo',
+    true,
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo implements PHPUnit_Framework_MockObject_MockObject, Foo
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = ['bar'];
+
+    public function __clone()
     {
-        return $nLockTime > 0 && $nLockTime <= self::BLOCK_MAX;
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
     }
 
-    /**
-     * Convert a $timestamp to a locktime.
-     * Max timestamp is 3794967296 - 04/04/2090 @ 5:34am (UTC)
-     *
-     * @param int $timestamp
-     * @return int
-     * @throws \Exception
-     */
-    public function fromTimestamp(int $timestamp): int
+    public function bar(Foo $foo)
     {
-        if ($timestamp > self::TIME_MAX) {
-            throw new \Exception('Timestamp out of range');
+        $arguments = array($foo);
+        $count     = func_num_args();
+
+        if ($count > 1) {
+            $_arguments = func_get_args();
+
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
         }
 
-        $locktime = self::BLOCK_MAX + $timestamp;
-        return $locktime;
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'Foo', 'bar', $arguments, '', $this, true
+            )
+        );
+
+        return $result;
     }
 
-    /**
-     * Convert a lock time to the timestamp it's locked to.
-     * Throws an exception when:
-     *  - Lock time appears to be in the block locktime range ( < Locktime::BLOCK_MAX )
-     *  - When the lock time exceeds the max possible lock time ( > Locktime::INT_MAX )
-     *
-     * @param int $lockTime
-     * @return int
-     * @throws \Exception
-     */
-    public function toTimestamp(int $lockTime): int
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
     {
-        if ($lockTime <= self::BLOCK_MAX) {
-            throw new \Exception('Lock time out of range for timestamp');
-        }
-
-        if ($lockTime > self::INT_MAX) {
-            throw new \Exception('Lock time too large');
-        }
-
-        $timestamp = $lockTime - self::BLOCK_MAX;
-        return $timestamp;
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
     }
 
-    /**
-     * Convert $blockHeight to lock time. Doesn't convert anything really,
-     * but does check the bounds of the given block height.
-     *
-     * @param int $blockHeight
-     * @return int
-     * @throws \Exception
-     */
-    public function fromBlockHeight(int $blockHeight): int
+    public function method()
     {
-        if ($blockHeight > self::BLOCK_MAX) {
-            throw new \Exception('This block height is too high');
-        }
-
-        return $blockHeight;
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
     }
 
-    /**
-     * Convert locktime to block height tx is locked to. Doesn't convert anything
-     * really, but does check the bounds of the supplied locktime.
-     *
-     * @param int $lockTime
-     * @re
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

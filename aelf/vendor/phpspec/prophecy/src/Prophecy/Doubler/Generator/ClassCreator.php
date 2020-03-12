@@ -1,66 +1,67 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace BitWasp\Bitcoin\Transaction\Factory\ScriptInfo;
+namespace Prophecy\Doubler\Generator;
 
-use BitWasp\Bitcoin\Locktime;
-use BitWasp\Bitcoin\Script\Interpreter\Number;
-use BitWasp\Bitcoin\Script\Opcodes;
-use BitWasp\Bitcoin\Script\Parser\Operation;
-use BitWasp\Bitcoin\Script\ScriptInterface;
+use Prophecy\Exception\Doubler\ClassCreatorException;
 
-class CheckLocktimeVerify
+/**
+ * Class creator.
+ * Creates specific class in current environment.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class ClassCreator
 {
-    /**
-     * @var int
-     */
-    private $nLockTime;
+    private $generator;
 
     /**
-     * @var bool
+     * Initializes creator.
+     *
+     * @param ClassCodeGenerator $generator
      */
-    private $toBlock;
-
-    /**
-     * CheckLocktimeVerify constructor.
-     * @param int $nLockTime
-     */
-    public function __construct(int $nLockTime)
+    public function __construct(ClassCodeGenerator $generator = null)
     {
-        if ($nLockTime < 0) {
-            throw new \RuntimeException("locktime cannot be negative");
-        }
-
-        if ($nLockTime > Locktime::INT_MAX) {
-            throw new \RuntimeException("nLockTime exceeds maximum value");
-        }
-
-        $this->nLockTime = $nLockTime;
-        $this->toBlock = (new Locktime())->isLockedToBlock($nLockTime);
+        $this->generator = $generator ?: new ClassCodeGenerator;
     }
 
     /**
-     * @param Operation[] $chunks
-     * @param bool $fMinimal
-     * @return CheckLocktimeVerify
+     * Creates class.
+     *
+     * @param string         $classname
+     * @param Node\ClassNode $class
+     *
+     * @return mixed
+     *
+     * @throws \Prophecy\Exception\Doubler\ClassCreatorException
      */
-    public static function fromDecodedScript(array $chunks, bool $fMinimal = false): CheckLocktimeVerify
+    public function create($classname, Node\ClassNode $class)
     {
-        if (count($chunks) !== 3) {
-            throw new \RuntimeException("Invalid number of items for CLTV");
+        $code = $this->generator->generate($classname, $class);
+        $return = eval($code);
+
+        if (!class_exists($classname, false)) {
+            if (count($class->getInterfaces())) {
+                throw new ClassCreatorException(sprintf(
+                    'Could not double `%s` and implement interfaces: [%s].',
+                    $class->getParentClass(), implode(', ', $class->getInterfaces())
+                ), $class);
+            }
+
+            throw new ClassCreatorException(
+                sprintf('Could not double `%s`.', $class->getParentClass()),
+                $class
+            );
         }
 
-        if (!$chunks[0]->isPush()) {
-            throw new \InvalidArgumentException('CLTV script had invalid value for time');
-        }
-
-        if ($chunks[1]->getOp() !== Opcodes::OP_CHECKLOCKTIMEVERIFY) {
-            throw new \InvalidArgumentException('CLTV script invalid opcode');
-        }
-
-        if ($chunks[2]->getOp() !== Opcodes::OP_DROP) {
-            throw new \InvalidArgumentException('CLTV script invalid opcode');
-        }
-
-        $numLo
+        return $return;
+    }
+}

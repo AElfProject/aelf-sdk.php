@@ -1,174 +1,195 @@
- duplicates and not inside media rule
-        // and the selector is complex
-        gridAreaRule.walkDecls(/-ms-grid-(row|column)/, function (d) {
-          return d.remove();
-        });
-        getMSDecls(area, area.row.updateSpan, area.column.updateSpan).reverse().forEach(function (i) {
-          return gridAreaRule.prepend(Object.assign(i, {
-            raws: {
-              between: gridArea.raws.between
+<?php
+/*
+ * This file is part of php-token-stream.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+use PHPUnit\Framework\TestCase;
+
+class PHP_Token_InterfaceTest extends TestCase
+{
+    /**
+     * @var PHP_Token_CLASS
+     */
+    private $class;
+
+    /**
+     * @var PHP_Token_INTERFACE[]
+     */
+    private $interfaces;
+
+    protected function setUp()
+    {
+        $ts = new PHP_Token_Stream(TEST_FILES_PATH . 'source4.php');
+        $i  = 0;
+
+        foreach ($ts as $token) {
+            if ($token instanceof PHP_Token_CLASS) {
+                $this->class = $token;
+            } elseif ($token instanceof PHP_Token_INTERFACE) {
+                $this->interfaces[$i] = $token;
+                $i++;
             }
-          }));
-        });
-      } else if (rule.params) {
-        (function () {
-          // grid-template is inside media rule
-          // if we're inside media rule, we need to store prefixed rules
-          // inside rulesToInsert object to be able to preserve the order of media
-          // rules and merge them easily
-          var cloned = gridAreaRule.clone();
-          cloned.removeAll();
-          getMSDecls(area, area.row.updateSpan, area.column.updateSpan).reverse().forEach(function (i) {
-            return cloned.prepend(Object.assign(i, {
-              raws: {
-                between: gridArea.raws.between
-              }
-            }));
-          });
-
-          if (rule.hasDuplicates && hasDuplicateName) {
-            cloned.selectors = changeDuplicateAreaSelectors(cloned.selectors, rule.selectors);
-          }
-
-          cloned.raws = rule.node.raws;
-
-          if (css.index(rule.node.parent) > gridAreaRuleIndex) {
-            // append the prefixed rules right inside media rule
-            // with grid-template
-            rule.node.parent.append(cloned);
-          } else {
-            // store the rule to insert later
-            rulesToInsert[lastArea][rule.params].push(cloned);
-          } // set new rule as last rule ONLY if we didn't set lastRule for
-          // this grid-area before
-
-
-          if (!lastRuleIsSet) {
-            rulesToInsert[lastArea].lastRule = gridAreaMedia || gridAreaRule;
-          }
-        })();
-      }
+        }
     }
 
-    return undefined;
-  }); // append stored rules inside the media rules
+    /**
+     * @covers PHP_Token_INTERFACE::getName
+     */
+    public function testGetName()
+    {
+        $this->assertEquals(
+            'iTemplate', $this->interfaces[0]->getName()
+        );
+    }
 
-  Object.keys(rulesToInsert).forEach(function (area) {
-    var data = rulesToInsert[area];
-    var lastRule = data.lastRule;
-    Object.keys(data).reverse().filter(function (p) {
-      return p !== 'lastRule';
-    }).forEach(function (params) {
-      if (data[params].length > 0 && lastRule) {
-        lastRule.after({
-          name: 'media',
-          params: params
-        });
-        lastRule.next().append(data[params]);
-      }
-    });
-  });
-  return undefined;
-}
-/**
- * Warn user if grid area identifiers are not found
- * @param  {Object} areas
- * @param  {Declaration} decl
- * @param  {Result} result
- * @return {void}
- */
+    /**
+     * @covers PHP_Token_INTERFACE::getParent
+     */
+    public function testGetParentNotExists()
+    {
+        $this->assertFalse(
+            $this->interfaces[0]->getParent()
+        );
+    }
 
+    /**
+     * @covers PHP_Token_INTERFACE::hasParent
+     */
+    public function testHasParentNotExists()
+    {
+        $this->assertFalse(
+            $this->interfaces[0]->hasParent()
+        );
+    }
 
-function warnMissedAreas(areas, decl, result) {
-  var missed = Object.keys(areas);
-  decl.root().walkDecls('grid-area', function (gridArea) {
-    missed = missed.filter(function (e) {
-      return e !== gridArea.value;
-    });
-  });
+    /**
+     * @covers PHP_Token_INTERFACE::getParent
+     */
+    public function testGetParentExists()
+    {
+        $this->assertEquals(
+            'a', $this->interfaces[2]->getParent()
+        );
+    }
 
-  if (missed.length > 0) {
-    decl.warn(result, 'Can not find grid areas: ' + missed.join(', '));
-  }
+    /**
+     * @covers PHP_Token_INTERFACE::hasParent
+     */
+    public function testHasParentExists()
+    {
+        $this->assertTrue(
+            $this->interfaces[2]->hasParent()
+        );
+    }
 
-  return undefined;
-}
-/**
- * compare selectors with grid-area rule and grid-template rule
- * show warning if grid-template selector is not found
- * (this function used for grid-area rule)
- * @param  {Declaration} decl
- * @param  {Result} result
- * @return {void}
- */
+    /**
+     * @covers PHP_Token_INTERFACE::getInterfaces
+     */
+    public function testGetInterfacesExists()
+    {
+        $this->assertEquals(
+            ['b'],
+            $this->class->getInterfaces()
+        );
+    }
 
+    /**
+     * @covers PHP_Token_INTERFACE::hasInterfaces
+     */
+    public function testHasInterfacesExists()
+    {
+        $this->assertTrue(
+            $this->class->hasInterfaces()
+        );
+    }
 
-function warnTemplateSelectorNotFound(decl, result) {
-  var rule = decl.parent;
-  var root = decl.root();
-  var duplicatesFound = false; // slice selector array. Remove the last part (for comparison)
-
-  var slicedSelectorArr = list.space(rule.selector).filter(function (str) {
-    return str !== '>';
-  }).slice(0, -1); // we need to compare only if selector is complex.
-  // e.g '.grid-cell' is simple, but '.parent > .grid-cell' is complex
-
-  if (slicedSelectorArr.length > 0) {
-    var gridTemplateFound = false;
-    var foundAreaSelector = null;
-    root.walkDecls(/grid-template(-areas)?$/, function (d) {
-      var parent = d.parent;
-      var templateSelectors = parent.selectors;
-
-      var _parseTemplate2 = parseTemplate({
-        decl: d,
-        gap: getGridGap(d)
-      }),
-          areas = _parseTemplate2.areas;
-
-      var hasArea = areas[decl.value]; // find the the matching selectors
-
-      for (var _iterator3 = templateSelectors, _isArray3 = Array.isArray(_iterator3), _i3 = 0, _iterator3 = _isArray3 ? _iterator3 : _iterator3[Symbol.iterator]();;) {
-        var _ref10;
-
-        if (_isArray3) {
-          if (_i3 >= _iterator3.length) break;
-          _ref10 = _iterator3[_i3++];
-        } else {
-          _i3 = _iterator3.next();
-          if (_i3.done) break;
-          _ref10 = _i3.value;
+    /**
+     * @covers PHP_Token_INTERFACE::getPackage
+     */
+    public function testGetPackageNamespace()
+    {
+        $tokenStream = new PHP_Token_Stream(TEST_FILES_PATH . 'classInNamespace.php');
+        foreach ($tokenStream as $token) {
+            if ($token instanceof PHP_Token_INTERFACE) {
+                $package = $token->getPackage();
+                $this->assertSame('Foo\\Bar', $package['namespace']);
+            }
         }
+    }
 
-        var tplSelector = _ref10;
 
-        if (gridTemplateFound) {
-          break;
+    public function provideFilesWithClassesWithinMultipleNamespaces()
+    {
+        return [
+            [TEST_FILES_PATH . 'multipleNamespacesWithOneClassUsingBraces.php'],
+            [TEST_FILES_PATH . 'multipleNamespacesWithOneClassUsingNonBraceSyntax.php'],
+        ];
+    }
+
+    /**
+     * @dataProvider provideFilesWithClassesWithinMultipleNamespaces
+     * @covers PHP_Token_INTERFACE::getPackage
+     */
+    public function testGetPackageNamespaceForFileWithMultipleNamespaces($filepath)
+    {
+        $tokenStream     = new PHP_Token_Stream($filepath);
+        $firstClassFound = false;
+        foreach ($tokenStream as $token) {
+            if ($firstClassFound === false && $token instanceof PHP_Token_INTERFACE) {
+                $package = $token->getPackage();
+                $this->assertSame('TestClassInBar', $token->getName());
+                $this->assertSame('Foo\\Bar', $package['namespace']);
+                $firstClassFound = true;
+                continue;
+            }
+            // Secound class
+            if ($token instanceof PHP_Token_INTERFACE) {
+                $package = $token->getPackage();
+                $this->assertSame('TestClassInBaz', $token->getName());
+                $this->assertSame('Foo\\Baz', $package['namespace']);
+
+                return;
+            }
         }
+        $this->fail('Seachring for 2 classes failed');
+    }
 
-        var tplSelectorArr = list.space(tplSelector).filter(function (str) {
-          return str !== '>';
-        });
-        gridTemplateFound = tplSelectorArr.every(function (item, idx) {
-          return item === slicedSelectorArr[idx];
-        });
-      }
+    public function testGetPackageNamespaceIsEmptyForInterfacesThatAreNotWithinNamespaces()
+    {
+        foreach ($this->interfaces as $token) {
+            $package = $token->getPackage();
+            $this->assertSame('', $package['namespace']);
+        }
+    }
 
-      if (gridTemplateFound || !hasArea) {
-        return true;
-      }
+    /**
+     * @covers PHP_Token_INTERFACE::getPackage
+     */
+    public function testGetPackageNamespaceWhenExtentingFromNamespaceClass()
+    {
+        $tokenStream     = new PHP_Token_Stream(TEST_FILES_PATH . 'classExtendsNamespacedClass.php');
+        $firstClassFound = false;
+        foreach ($tokenStream as $token) {
+            if ($firstClassFound === false && $token instanceof PHP_Token_INTERFACE) {
+                $package = $token->getPackage();
+                $this->assertSame('Baz', $token->getName());
+                $this->assertSame('Foo\\Bar', $package['namespace']);
+                $firstClassFound = true;
+                continue;
+            }
+            if ($token instanceof PHP_Token_INTERFACE) {
+                $package = $token->getPackage();
+                $this->assertSame('Extender', $token->getName());
+                $this->assertSame('Other\\Space', $package['namespace']);
 
-      if (!foundAreaSelector) {
-        foundAreaSelector = parent.selector;
-      } // if we found the duplicate area with different selector
-
-
-      if (foundAreaSelector && foundAreaSelector !== parent.selector) {
-        duplicatesFound = true;
-      }
-
-      return undefined;
-    }); // warn user if we didn't find template
-
-    if (!gridTemplateFound && duplicatesFound) {
-      decl.warn(result, "Autoprefixer cannot find a grid-template " + ("containing the duplicate grid
+                return;
+            }
+        }
+        $this->fail('Searching for 2 classes failed');
+    }
+}

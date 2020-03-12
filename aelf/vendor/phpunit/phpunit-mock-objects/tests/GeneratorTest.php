@@ -1,223 +1,211 @@
 <?php
 /*
- * This file is part of the PHPASN1 library.
+ * This file is part of the phpunit-mock-objects package.
  *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-namespace FG\ASN1;
-
-use FG\ASN1\Exception\ParserException;
-use FG\ASN1\Universal\BitString;
-use FG\ASN1\Universal\Boolean;
-use FG\ASN1\Universal\Enumerated;
-use FG\ASN1\Universal\GeneralizedTime;
-use FG\ASN1\Universal\Integer;
-use FG\ASN1\Universal\NullObject;
-use FG\ASN1\Universal\ObjectIdentifier;
-use FG\ASN1\Universal\RelativeObjectIdentifier;
-use FG\ASN1\Universal\OctetString;
-use FG\ASN1\Universal\Sequence;
-use FG\ASN1\Universal\Set;
-use FG\ASN1\Universal\UTCTime;
-use FG\ASN1\Universal\IA5String;
-use FG\ASN1\Universal\PrintableString;
-use FG\ASN1\Universal\NumericString;
-use FG\ASN1\Universal\UTF8String;
-use FG\ASN1\Universal\UniversalString;
-use FG\ASN1\Universal\CharacterString;
-use FG\ASN1\Universal\GeneralString;
-use FG\ASN1\Universal\VisibleString;
-use FG\ASN1\Universal\GraphicString;
-use FG\ASN1\Universal\BMPString;
-use FG\ASN1\Universal\T61String;
-use FG\ASN1\Universal\ObjectDescriptor;
-use FG\Utility\BigInteger;
-use LogicException;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Class ASNObject is the base class for all concrete ASN.1 objects.
+ * @covers PHPUnit_Framework_MockObject_Generator
+ *
+ * @uses PHPUnit_Framework_MockObject_InvocationMocker
+ * @uses PHPUnit_Framework_MockObject_Builder_InvocationMocker
+ * @uses PHPUnit_Framework_MockObject_Invocation_Object
+ * @uses PHPUnit_Framework_MockObject_Invocation_Static
+ * @uses PHPUnit_Framework_MockObject_Matcher
+ * @uses PHPUnit_Framework_MockObject_Matcher_InvokedRecorder
+ * @uses PHPUnit_Framework_MockObject_Matcher_MethodName
+ * @uses PHPUnit_Framework_MockObject_Stub_Return
+ * @uses PHPUnit_Framework_MockObject_Matcher_InvokedCount
  */
-abstract class ASNObject implements Parsable
+class Framework_MockObject_GeneratorTest extends TestCase
 {
-    private $contentLength;
-    private $nrOfLengthOctets;
-
     /**
-     * Must return the number of octets of the content part.
-     *
-     * @return int
+     * @var PHPUnit_Framework_MockObject_Generator
      */
-    abstract protected function calculateContentLength();
+    private $generator;
 
-    /**
-     * Encode the object using DER encoding.
-     *
-     * @see http://en.wikipedia.org/wiki/X.690#DER_encoding
-     *
-     * @return string the binary representation of an objects value
-     */
-    abstract protected function getEncodedValue();
-
-    /**
-     * Return the content of this object in a non encoded form.
-     * This can be used to print the value in human readable form.
-     *
-     * @return mixed
-     */
-    abstract public function getContent();
-
-    /**
-     * Return the object type octet.
-     * This should use the class constants of Identifier.
-     *
-     * @see Identifier
-     *
-     * @return int
-     */
-    abstract public function getType();
-
-    /**
-     * Returns all identifier octets. If an inheriting class models a tag with
-     * the long form identifier format, it MUST reimplement this method to
-     * return all octets of the identifier.
-     *
-     * @throws LogicException If the identifier format is long form
-     *
-     * @return string Identifier as a set of octets
-     */
-    public function getIdentifier()
+    protected function setUp()
     {
-        $firstOctet = $this->getType();
-
-        if (Identifier::isLongForm($firstOctet)) {
-            throw new LogicException(sprintf('Identifier of %s uses the long form and must therefor override "ASNObject::getIdentifier()".', get_class($this)));
-        }
-
-        return chr($firstOctet);
+        $this->generator = new PHPUnit_Framework_MockObject_Generator;
     }
 
     /**
-     * Encode this object using DER encoding.
-     *
-     * @return string the full binary representation of the complete object
+     * @expectedException PHPUnit_Framework_MockObject_RuntimeException
      */
-    public function getBinary()
+    public function testGetMockFailsWhenInvalidFunctionNameIsPassedInAsAFunctionToMock()
     {
-        $result  = $this->getIdentifier();
-        $result .= $this->createLengthPart();
-        $result .= $this->getEncodedValue();
-
-        return $result;
+        $this->generator->getMock(stdClass::class, [0]);
     }
 
-    private function createLengthPart()
+    public function testGetMockCanCreateNonExistingFunctions()
     {
-        $contentLength = $this->getContentLength();
-        $nrOfLengthOctets = $this->getNumberOfLengthOctets($contentLength);
+        $mock = $this->generator->getMock(stdClass::class, ['testFunction']);
 
-        if ($nrOfLengthOctets == 1) {
-            return chr($contentLength);
-        } else {
-            // the first length octet determines the number subsequent length octets
-            $lengthOctets = chr(0x80 | ($nrOfLengthOctets - 1));
-            for ($shiftLength = 8 * ($nrOfLengthOctets - 2); $shiftLength >= 0; $shiftLength -= 8) {
-                $lengthOctets .= chr($contentLength >> $shiftLength);
-            }
-
-            return $lengthOctets;
-        }
-    }
-
-    protected function getNumberOfLengthOctets($contentLength = null)
-    {
-        if (!isset($this->nrOfLengthOctets)) {
-            if ($contentLength == null) {
-                $contentLength = $this->getContentLength();
-            }
-
-            $this->nrOfLengthOctets = 1;
-            if ($contentLength > 127) {
-                do { // long form
-                    $this->nrOfLengthOctets++;
-                    $contentLength = $contentLength >> 8;
-                } while ($contentLength > 0);
-            }
-        }
-
-        return $this->nrOfLengthOctets;
-    }
-
-    protected function getContentLength()
-    {
-        if (!isset($this->contentLength)) {
-            $this->contentLength = $this->calculateContentLength();
-        }
-
-        return $this->contentLength;
-    }
-
-    protected function setContentLength($newContentLength)
-    {
-        $this->contentLength = $newContentLength;
-        $this->getNumberOfLengthOctets($newContentLength);
+        $this->assertTrue(method_exists($mock, 'testFunction'));
     }
 
     /**
-     * Returns the length of the whole object (including the identifier and length octets).
+     * @expectedException PHPUnit_Framework_MockObject_RuntimeException
+     * @expectedExceptionMessage duplicates: "foo, bar, foo" (duplicate: "foo")
      */
-    public function getObjectLength()
+    public function testGetMockGeneratorFails()
     {
-        $nrOfIdentifierOctets = strlen($this->getIdentifier());
-        $contentLength = $this->getContentLength();
-        $nrOfLengthOctets = $this->getNumberOfLengthOctets($contentLength);
-
-        return $nrOfIdentifierOctets + $nrOfLengthOctets + $contentLength;
-    }
-
-    public function __toString()
-    {
-        return $this->getContent();
+        $this->generator->getMock(stdClass::class, ['foo', 'bar', 'foo']);
     }
 
     /**
-     * Returns the name of the ASN.1 Type of this object.
-     *
-     * @see Identifier::getName()
+     * @requires PHP 7
      */
-    public function getTypeName()
+    public function testGetMockBlacklistedMethodNamesPhp7()
     {
-        return Identifier::getName($this->getType());
+        $mock = $this->generator->getMock(InterfaceWithSemiReservedMethodName::class);
+
+        $this->assertTrue(method_exists($mock, 'unset'));
+        $this->assertInstanceOf(InterfaceWithSemiReservedMethodName::class, $mock);
+    }
+
+    public function testGetMockForAbstractClassDoesNotFailWhenFakingInterfaces()
+    {
+        $mock = $this->generator->getMockForAbstractClass(Countable::class);
+
+        $this->assertTrue(method_exists($mock, 'count'));
+    }
+
+    public function testGetMockForAbstractClassStubbingAbstractClass()
+    {
+        $mock = $this->generator->getMockForAbstractClass(AbstractMockTestClass::class);
+
+        $this->assertTrue(method_exists($mock, 'doSomething'));
+    }
+
+    public function testGetMockForAbstractClassWithNonExistentMethods()
+    {
+        $mock = $this->generator->getMockForAbstractClass(
+            AbstractMockTestClass::class,
+            [],
+            '',
+            true,
+            true,
+            true,
+            ['nonexistentMethod']
+        );
+
+        $this->assertTrue(method_exists($mock, 'nonexistentMethod'));
+        $this->assertTrue(method_exists($mock, 'doSomething'));
+    }
+
+    public function testGetMockForAbstractClassShouldCreateStubsOnlyForAbstractMethodWhenNoMethodsWereInformed()
+    {
+        $mock = $this->generator->getMockForAbstractClass(AbstractMockTestClass::class);
+
+        $mock->expects($this->any())
+             ->method('doSomething')
+             ->willReturn('testing');
+
+        $this->assertEquals('testing', $mock->doSomething());
+        $this->assertEquals(1, $mock->returnAnything());
     }
 
     /**
-     * @param string $binaryData
-     * @param int $offsetIndex
-     *
-     * @throws ParserException
-     *
-     * @return \FG\ASN1\ASNObject
+     * @dataProvider getMockForAbstractClassExpectsInvalidArgumentExceptionDataprovider
+     * @expectedException PHPUnit\Framework\Exception
      */
-    public static function fromBinary(&$binaryData, &$offsetIndex = 0)
+    public function testGetMockForAbstractClassExpectingInvalidArgumentException($className, $mockClassName)
     {
-        if (strlen($binaryData) <= $offsetIndex) {
-            throw new ParserException('Can not parse binary from data: Offset index larger than input size', $offsetIndex);
-        }
+        $this->generator->getMockForAbstractClass($className, [], $mockClassName);
+    }
 
-        $identifierOctet = ord($binaryData[$offsetIndex]);
-        if (Identifier::isContextSpecificClass($identifierOctet) && Identifier::isConstructed($identifierOctet)) {
-            return ExplicitlyTaggedObject::fromBinary($binaryData, $offsetIndex);
-        }
+    /**
+     * @expectedException PHPUnit_Framework_MockObject_RuntimeException
+     */
+    public function testGetMockForAbstractClassAbstractClassDoesNotExist()
+    {
+        $this->generator->getMockForAbstractClass('Tux');
+    }
 
-        switch ($identifierOctet) {
-            case Identifier::BITSTRING:
-                return BitString::fromBinary($binaryData, $offsetIndex);
-            case Identifier::BOOLEAN:
-                return Boolean::fromBinary($binaryData, $offsetIndex);
-            case Identifier::ENUMERATED:
-                return Enumerated::fromBinary($binaryData, $offsetIndex);
-            case Identifier::INTEGER:
-         
+    public function getMockForAbstractClassExpectsInvalidArgumentExceptionDataprovider()
+    {
+        return [
+            'className not a string'     => [[], ''],
+            'mockClassName not a string' => [Countable::class, new stdClass],
+        ];
+    }
+
+    public function testGetMockForTraitWithNonExistentMethodsAndNonAbstractMethods()
+    {
+        $mock = $this->generator->getMockForTrait(
+            AbstractTrait::class,
+            [],
+            '',
+            true,
+            true,
+            true,
+            ['nonexistentMethod']
+        );
+
+        $this->assertTrue(method_exists($mock, 'nonexistentMethod'));
+        $this->assertTrue(method_exists($mock, 'doSomething'));
+        $this->assertTrue($mock->mockableMethod());
+        $this->assertTrue($mock->anotherMockableMethod());
+    }
+
+    public function testGetMockForTraitStubbingAbstractMethod()
+    {
+        $mock = $this->generator->getMockForTrait(AbstractTrait::class);
+
+        $this->assertTrue(method_exists($mock, 'doSomething'));
+    }
+
+    public function testGetMockForSingletonWithReflectionSuccess()
+    {
+        $mock = $this->generator->getMock(SingletonClass::class, ['doSomething'], [], '', false);
+
+        $this->assertInstanceOf('SingletonClass', $mock);
+    }
+
+    /**
+     * @expectedException PHPUnit_Framework_MockObject_RuntimeException
+     */
+    public function testExceptionIsRaisedForMutuallyExclusiveOptions()
+    {
+        $this->generator->getMock(stdClass::class, [], [], '', false, true, true, true, true);
+    }
+
+    /**
+     * @requires PHP 7
+     */
+    public function testCanImplementInterfacesThatHaveMethodsWithReturnTypes()
+    {
+        $stub = $this->generator->getMock([AnInterfaceWithReturnType::class, AnInterface::class]);
+
+        $this->assertInstanceOf(AnInterfaceWithReturnType::class, $stub);
+        $this->assertInstanceOf(AnInterface::class, $stub);
+        $this->assertInstanceOf(PHPUnit_Framework_MockObject_MockObject::class, $stub);
+    }
+
+    public function testCanConfigureMethodsForDoubleOfNonExistentClass()
+    {
+        $className = 'X' . md5(microtime());
+
+        $mock = $this->generator->getMock($className, ['someMethod']);
+
+        $this->assertInstanceOf($className, $mock);
+    }
+
+    public function testCanInvokeMethodsOfNonExistentClass()
+    {
+        $className = 'X' . md5(microtime());
+
+        $mock = $this->generator->getMock($className, ['someMethod']);
+
+        $mock->expects($this->once())->method('someMethod');
+
+        $this->assertNull($mock->someMethod());
+    }
+}

@@ -1,52 +1,58 @@
 <?php
-
-declare(strict_types=1);
-
-/**
- * This file is part of phpDocumentor.
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * @link      http://phpdoc.org
  */
 
-namespace phpDocumentor\Reflection\DocBlock\Tags;
+namespace PharIo\Version;
 
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\Types\Context as TypeContext;
-use Webmozart\Assert\Assert;
-use function preg_match;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Reflection class for a {@}source tag in a Docblock.
+ * @covers PharIo\Version\ExactVersionConstraint
  */
-final class Source extends BaseTag implements Factory\StaticMethod
-{
-    /** @var string */
-    protected $name = 'source';
-
-    /** @var int The starting line, relative to the structural element's location. */
-    private $startingLine;
-
-    /** @var int|null The number of lines, relative to the starting line. NULL means "to the end". */
-    private $lineCount;
-
-    /**
-     * @param int|string      $startingLine should be a to int convertible value
-     * @param int|string|null $lineCount    should be a to int convertible value
-     */
-    public function __construct($startingLine, $lineCount = null, ?Description $description = null)
-    {
-        Assert::integerish($startingLine);
-        Assert::nullOrIntegerish($lineCount);
-
-        $this->startingLine = (int) $startingLine;
-        $this->lineCount    = $lineCount !== null ? (int) $lineCount : null;
-        $this->description  = $description;
+class ExactVersionConstraintTest extends TestCase {
+    public function compliantVersionProvider() {
+        return [
+            ['1.0.2', new Version('1.0.2')],
+            ['4.8.9', new Version('4.8.9')],
+            ['4.8', new Version('4.8')],
+        ];
     }
 
-    public static function create(
-        string $body,
-        ?DescriptionFactory $descriptionFactory = nu
+    public function nonCompliantVersionProvider() {
+        return [
+            ['1.0.2', new Version('1.0.3')],
+            ['4.8.9', new Version('4.7.9')],
+            ['4.8', new Version('4.8.5')],
+        ];
+    }
+
+    /**
+     * @dataProvider compliantVersionProvider
+     *
+     * @param string  $constraintValue
+     * @param Version $version
+     */
+    public function testReturnsTrueForCompliantVersion($constraintValue, Version $version) {
+        $constraint = new ExactVersionConstraint($constraintValue);
+
+        $this->assertTrue($constraint->complies($version));
+    }
+
+    /**
+     * @dataProvider nonCompliantVersionProvider
+     *
+     * @param string  $constraintValue
+     * @param Version $version
+     */
+    public function testReturnsFalseForNonCompliantVersion($constraintValue, Version $version) {
+        $constraint = new ExactVersionConstraint($constraintValue);
+
+        $this->assertFalse($constraint->complies($version));
+    }
+}

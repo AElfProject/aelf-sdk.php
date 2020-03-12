@@ -1,31 +1,26 @@
 <?php
-
-declare(strict_types=1);
-
-/**
- * This file is part of phpDocumentor.
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * @link      http://phpdoc.org
  */
 
-namespace phpDocumentor\Reflection\DocBlock\Tags;
+namespace PharIo\Manifest;
 
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\Types\Context as TypeContext;
-use Webmozart\Assert\Assert;
-use function preg_match;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Reflection class for a {@}since tag in a Docblock.
+ * @covers PharIo\Manifest\PhpExtensionRequirement
  */
-final class Since extends BaseTag implements Factory\StaticMethod
-{
-    /** @var string */
-    protected $name = 'since';
+class PhpExtensionRequirementTest extends TestCase {
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(PhpExtensionRequirement::class, new PhpExtensionRequirement('dom'));
+    }
 
-    /**
-     * PCRE regular
+    public function testCanBeUsedAsString() {
+        $this->assertEquals('dom', new PhpExtensionRequirement('dom'));
+    }
+}

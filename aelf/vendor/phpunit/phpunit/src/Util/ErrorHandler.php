@@ -1,89 +1,114 @@
-
-# Fast Elliptic Curve Cryptography in PHP
-
-
-## Information
-
-This library is a PHP port of [elliptic](https://github.com/indutny/elliptic), a great JavaScript ECC library.
-
-* Supported curve types: Short Weierstrass, Montgomery, Edwards, Twisted Edwards.
-* Curve 'presets': `secp256k1`, `p192`, `p224`, `p256`, `p384`, `p521`, `curve25519`, `ed25519`.
-
-This software is licensed under the MIT License.
-
-Projects which use Fast ECC PHP library: [PrivMX WebMail](https://privmx.com), ...
-
-
-## Benchmarks
-
-```
-+------------------------+----------------+--------+-----+------+
-| subject                | mode           | rstdev | its | revs |
-+------------------------+----------------+--------+-----+------+
-| elliptic#genKeyPair    | 323.682ops/s   | 2.72%  | 5   | 50   |
-| mdanter#genKeyPair     | 13.794ops/s    | 3.18%  | 5   | 50   |
-+------------------------+----------------+--------+-----+------+
-| elliptic#sign          | 307.228ops/s   | 3.82%  | 5   | 50   |
-| mdanter#sign           | 14.118ops/s    | 2.12%  | 5   | 50   |
-+------------------------+----------------+--------+-----+------+
-| elliptic#verify        | 93.913ops/s    | 5.93%  | 5   | 50   |
-| mdanter#verify         | 6.859ops/s     | 2.95%  | 5   | 50   |
-+------------------------+----------------+--------+-----+------+
-| elliptic#dh            | 135.166ops/s   | 1.67%  | 5   | 50   |
-| mdanter#dh             | 14.302ops/s    | 0.89%  | 5   | 50   |
-+------------------------+----------------+--------+-----+------+
-| elliptic#EdDSASign     | 296.756ops/s   | 1.09%  | 5   | 50   |
-+------------------------+----------------+--------+-----+------+
-| elliptic#EdDSAVerify   | 67.481ops/s    | 2.76%  | 5   | 50   |
-+------------------------+----------------+--------+-----+------+
-```
-
-
-## Installation
-
-You can install this library via Composer:
-```
-composer require simplito/elliptic-php
-```
-
-
-## Implementation details
-
-ECDSA is using deterministic `k` value generation as per [RFC6979][0]. Most of
-the curve operations are performed on non-affine coordinates (either projective
-or extended), various windowing techniques are used for different cases.
-
-NOTE: `curve25519` could not be used for ECDSA, use `ed25519` instead.
-
-All operations are performed in reduction context using [bn-php][1].
-
-
-## API
-
-### ECDSA
-
-```php
 <?php
-use Elliptic\EC;
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-// Create and initialize EC context
-// (better do it once and reuse it)
-$ec = new EC('secp256k1');
+namespace PHPUnit\Util;
 
-// Generate keys
-$key = $ec->genKeyPair();
+use PHPUnit\Framework\Error\Error;
+use PHPUnit\Framework\Error\Deprecated;
+use PHPUnit\Framework\Error\Notice;
+use PHPUnit\Framework\Error\Warning;
 
-// Sign message (can be hex sequence or array)
-$msg = 'ab4c3451';
-$signature = $key->sign($msg);
+/**
+ * Error handler that converts PHP errors and warnings to exceptions.
+ */
+class ErrorHandler
+{
+    protected static $errorStack = [];
 
-// Export DER encoded signature to hex string
-$derSign = $signature->toDER('hex');
+    /**
+     * Returns the error stack.
+     *
+     * @return array
+     */
+    public static function getErrorStack()
+    {
+        return self::$errorStack;
+    }
 
-// Verify signature
-echo "Verified: " . (($key->verify($msg, $derSign) == TRUE) ? "true" : "false") . "\n";
+    /**
+     * @param int    $errno
+     * @param string $errstr
+     * @param string $errfile
+     * @param int    $errline
+     *
+     * @throws Error
+     */
+    public static function handleError($errno, $errstr, $errfile, $errline)
+    {
+        if (!($errno & \error_reporting())) {
+            return false;
+        }
 
-// CHECK WITH NO PRIVATE KEY
+        self::$errorStack[] = [$errno, $errstr, $errfile, $errline];
 
-// Public key as '04 + x + y'
-$pub = "049a1eedae838f2f8ad94597dc4368899ecc751342b464862da80c280d841875ab4607fb6ce14100e71dd7648
+        $trace = \debug_backtrace(false);
+        \array_shift($trace);
+
+        foreach ($trace as $frame) {
+            if ($frame['function'] == '__toString') {
+                return false;
+            }
+        }
+
+        if ($errno == E_NOTICE || $errno == E_USER_NOTICE || $errno == E_STRICT) {
+            if (Notice::$enabled !== true) {
+                return false;
+            }
+
+            $exception = Notice::class;
+        } elseif ($errno == E_WARNING || $errno == E_USER_WARNING) {
+            if (Warning::$enabled !== true) {
+                return false;
+            }
+
+            $exception = Warning::class;
+        } elseif ($errno == E_DEPRECATED || $errno == E_USER_DEPRECATED) {
+            if (Deprecated::$enabled !== true) {
+                return false;
+            }
+
+            $exception = Deprecated::class;
+        } else {
+            $exception = Error::class;
+        }
+
+        throw new $exception($errstr, $errno, $errfile, $errline);
+    }
+
+    /**
+     * Registers an error handler and returns a function that will restore
+     * the previous handler when invoked
+     *
+     * @param int $severity PHP predefined error constant
+     *
+     * @throws \Exception if event of specified severity is emitted
+     */
+    public static function handleErrorOnce($severity = E_WARNING)
+    {
+        $terminator = function () {
+            static $expired = false;
+            if (!$expired) {
+                $expired = true;
+                // cleans temporary error handler
+                return \restore_error_handler();
+            }
+        };
+
+        \set_error_handler(function ($errno, $errstr) use ($severity) {
+            if ($errno === $severity) {
+                return;
+            }
+
+            return false;
+        });
+
+        return $terminator;
+    }
+}

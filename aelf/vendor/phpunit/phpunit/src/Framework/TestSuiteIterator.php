@@ -1,79 +1,104 @@
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework;
 
-declare(strict_types=1);
+use RecursiveIterator;
 
-namespace BitWasp\Buffertools\Types;
-
-use BitWasp\Buffertools\ByteOrder;
-use BitWasp\Buffertools\Parser;
-
-abstract class AbstractUint extends AbstractType implements UintInterface
+/**
+ * Iterator for test suites.
+ */
+class TestSuiteIterator implements RecursiveIterator
 {
     /**
-     * @param int $byteOrder
+     * @var int
      */
-    public function __construct(int $byteOrder = ByteOrder::BE)
+    protected $position;
+
+    /**
+     * @var Test[]
+     */
+    protected $tests;
+
+    /**
+     * @param TestSuite $testSuite
+     */
+    public function __construct(TestSuite $testSuite)
     {
-        parent::__construct($byteOrder);
+        $this->tests = $testSuite->tests();
     }
 
     /**
-     * @param int|string $integer - decimal integer
-     * @return string
+     * Rewinds the Iterator to the first element.
      */
-    public function writeBits($integer): string
+    public function rewind()
     {
-        return str_pad(
-            gmp_strval(gmp_init($integer, 10), 2),
-            $this->getBitSize(),
-            '0',
-            STR_PAD_LEFT
+        $this->position = 0;
+    }
+
+    /**
+     * Checks if there is a current element after calls to rewind() or next().
+     *
+     * @return bool
+     */
+    public function valid()
+    {
+        return $this->position < \count($this->tests);
+    }
+
+    /**
+     * Returns the key of the current element.
+     *
+     * @return int
+     */
+    public function key()
+    {
+        return $this->position;
+    }
+
+    /**
+     * Returns the current element.
+     *
+     * @return Test
+     */
+    public function current()
+    {
+        return $this->valid() ? $this->tests[$this->position] : null;
+    }
+
+    /**
+     * Moves forward to next element.
+     */
+    public function next()
+    {
+        $this->position++;
+    }
+
+    /**
+     * Returns the sub iterator for the current element.
+     *
+     * @return TestSuiteIterator
+     */
+    public function getChildren()
+    {
+        return new self(
+            $this->tests[$this->position]
         );
     }
 
     /**
-     * @param Parser $parser
-     * @return int|string
-     * @throws \BitWasp\Buffertools\Exceptions\ParserOutOfRange
-     * @throws \Exception
+     * Checks whether the current element has children.
+     *
+     * @return bool
      */
-    public function readBits(Parser $parser)
+    public function hasChildren()
     {
-        $bitSize = $this->getBitSize();
-        $bits = str_pad(
-            gmp_strval(gmp_init($parser->readBytes($bitSize / 8)->getHex(), 16), 2),
-            $bitSize,
-            '0',
-            STR_PAD_LEFT
-        );
-
-        $finalBits = $this->isBigEndian()
-            ? $bits
-            : $this->flipBits($bits);
-
-        $integer = gmp_strval(gmp_init($finalBits, 2), 10);
-
-        return $integer;
+        return $this->tests[$this->position] instanceof TestSuite;
     }
-
-    /**
-     * {@inheritdoc}
-     * @see \BitWasp\Buffertools\Types\TypeInterface::write()
-     */
-    public function write($integer): string
-    {
-        return pack(
-            "H*",
-            str_pad(
-                gmp_strval(
-                    gmp_init(
-                        $this->isBigEndian()
-                        ? $this->writeBits($integer)
-                        : $this->flipBits($this->writeBits($integer)),
-                        2
-                    ),
-                    16
-                ),
-                $this->getBitSize()/4,
-                '0',
-                STR_PAD
+}

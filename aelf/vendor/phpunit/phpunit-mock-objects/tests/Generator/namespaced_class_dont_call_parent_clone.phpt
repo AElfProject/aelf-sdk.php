@@ -1,47 +1,78 @@
-       }
-        if (is_a($this, "Google\Protobuf\Timestamp")) {
-            $this->mergeFrom(GPBUtil::parseTimestamp($array));
-            return;
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('NS\Foo', array(), 'MockFoo', false)
+--FILE--
+<?php
+namespace NS;
+
+class Foo
+{
+    public function __clone()
+    {
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new \PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'NS\Foo',
+    array(),
+    'MockFoo',
+    false
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends NS\Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = [];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
         }
-        if (is_a($this, "Google\Protobuf\Struct")) {
-            $fields = $this->getFields();
-            foreach($array as $key => $value) {
-                $v = new Value();
-                $v->mergeFromJsonArray($value);
-                $fields[$key] = $v;
-            }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
         }
-        if (is_a($this, "Google\Protobuf\Value")) {
-            if (is_bool($array)) {
-                $this->setBoolValue($array);
-            } elseif (is_string($array)) {
-                $this->setStringValue($array);
-            } elseif (is_null($array)) {
-                $this->setNullValue(0);
-            } elseif (is_double($array) || is_integer($array)) {
-                $this->setNumberValue($array);
-            } elseif (is_array($array)) {
-                if (array_values($array) !== $array) {
-                    // Associative array
-                    $struct_value = $this->getStructValue();
-                    if (is_null($struct_value)) {
-                        $struct_value = new Struct();
-                        $this->setStructValue($struct_value);
-                    }
-                    foreach ($array as $key => $v) {
-                        $value = new Value();
-                        $value->mergeFromJsonArray($v);
-                        $values = $struct_value->getFields();
-                        $values[$key]= $value;
-                    }
-                } else {
-                    // Array
-                    $list_value = $this->getListValue();
-                    if (is_null($list_value)) {
-                        $list_value = new ListValue();
-                        $this->setListValue($list_value);
-                    }
-                    foreach ($array as $v) {
-                        $value = new Value();
-                        $value->mergeFromJsonArray($v);
-         
+    }
+}

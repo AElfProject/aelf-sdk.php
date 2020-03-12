@@ -1,161 +1,177 @@
- $resolvedType);
-        $this->assertSame('(string|\stdClass|bool)[]', (string) $resolvedType);
-
-        $valueType = $resolvedType->getValueType();
-
-        $this->assertInstanceOf(Compound::class, $valueType);
-
-        $firstType = $valueType->get(0);
-
-        $secondType = $valueType->get(1);
-
-        $thirdType = $valueType->get(2);
-
-        $this->assertInstanceOf(String_::class, $firstType);
-        $this->assertInstanceOf(Object_::class, $secondType);
-        $this->assertInstanceOf(Boolean::class, $thirdType);
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Compound
-     * @uses \phpDocumentor\Reflection\Types\Array_
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testResolvingArrayOfArrayExpressionTypes() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve('(string|\stdClass)[][]', new Context(''));
-
-        $this->assertInstanceOf(Array_::class, $resolvedType);
-        $this->assertSame('(string|\stdClass)[][]', (string) $resolvedType);
-
-        $parentArrayType = $resolvedType->getValueType();
-        $this->assertInstanceOf(Array_::class, $parentArrayType);
-
-        $valueType = $parentArrayType->getValueType();
-        $this->assertInstanceOf(Compound::class, $valueType);
-
-        $firstType = $valueType->get(0);
-
-        $secondType = $valueType->get(1);
-
-        $this->assertInstanceOf(String_::class, $firstType);
-        $this->assertInstanceOf(Object_::class, $secondType);
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Compound
-     * @uses \phpDocumentor\Reflection\Types\Array_
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testReturnEmptyCompoundOnAnUnclosedArrayExpressionType() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve('(string|\stdClass', new Context(''));
-
-        $this->assertInstanceOf(Compound::class, $resolvedType);
-        $this->assertSame('', (string) $resolvedType);
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Compound
-     * @uses \phpDocumentor\Reflection\Types\Array_
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testResolvingArrayExpressionOrCompoundTypes() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve('\stdClass|(string|\stdClass)[]|bool', new Context(''));
-
-        $this->assertInstanceOf(Compound::class, $resolvedType);
-        $this->assertSame('\stdClass|(string|\stdClass)[]|bool', (string) $resolvedType);
-
-        $firstType = $resolvedType->get(0);
-        $this->assertInstanceOf(Object_::class, $firstType);
-
-        $secondType = $resolvedType->get(1);
-        $this->assertInstanceOf(Array_::class, $secondType);
-
-        $thirdType = $resolvedType->get(2);
-        $this->assertInstanceOf(Boolean::class, $thirdType);
-
-        $valueType = $secondType->getValueType();
-        $this->assertInstanceOf(Compound::class, $valueType);
-
-        $firstArrayType = $valueType->get(0);
-
-        $secondArrayType = $valueType->get(1);
-
-        $this->assertInstanceOf(String_::class, $firstArrayType);
-        $this->assertInstanceOf(Object_::class, $secondArrayType);
-    }
-
-    /**
-     * @uses \phpDocumentor\Reflection\Types\Context
-     * @uses \phpDocumentor\Reflection\Types\Compound
-     * @uses \phpDocumentor\Reflection\Types\Iterable_
-     * @uses \phpDocumentor\Reflection\Types\Object_
-     * @uses \phpDocumentor\Reflection\Fqsen
-     * @uses \phpDocumentor\Reflection\FqsenResolver
-     *
-     * @covers ::__construct
-     * @covers ::resolve
-     * @covers ::<private>
-     */
-    public function testResolvingIterableExpressionSimpleTypes() : void
-    {
-        $fixture = new TypeResolver();
-
-        $resolvedType = $fixture->resolve('iterable<string|\stdClass|boolean>', new Context(''));
-
-        $this->assertInstanceOf(Iterable_::class, $resolvedType);
-        $this->assertSame('iterable<string|\stdClass|bool>', (string) $resolvedType);
-
-        $valueType = $resolvedType->getValueType();
-
-        $this->assertInstanceOf(Compound::class, $valueType);
-
-        $firstType = $valueType->get(0);
-
-        $secondType = $valueType->get(1);
-
-        $thirdType = $valueType->get(2);
-
-        $this->assertInstanceOf(String_::class, $firstType);
-        $this->assertInstanceOf(Object_::class, $secondType);
-        $this->assertInstanceOf(Boolean::class, $thirdType);
-    }
-
-    /**
-     * This test asserts that the parameter order is correct.
-     *
-     * When you pass two arrays separated by the compound operator (i.e. 'integer[]|string[]') then we always split the
-     * expression in its compound parts and then we parse the types with the array operators. If we were to switch the
-     * order around then 'integer[]|string[]' would read as an array of string or integer array; which is something
-     * other than what we intend.
-     *
-     * @uses \phpDocumentor\Reflection\Types\C
+<?xml version="1.0"?>
+<source xmlns="custom:xml:namespace">
+ <line no="1">
+  <token name="T_OPEN_TAG">&lt;?php </token>
+  <token name="T_DECLARE">declare</token>
+  <token name="T_OPEN_BRACKET">(</token>
+  <token name="T_STRING">strict_types</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_EQUAL">=</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_LNUMBER">1</token>
+  <token name="T_CLOSE_BRACKET">)</token>
+  <token name="T_SEMICOLON">;</token>
+ </line>
+ <line no="2">
+  <token name="T_NAMESPACE">namespace</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">foo</token>
+  <token name="T_SEMICOLON">;</token>
+ </line>
+ <line no="3"/>
+ <line no="4">
+  <token name="T_CLASS">class</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">bar</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_OPEN_CURLY">{</token>
+ </line>
+ <line no="5">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_CONST">const</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">x</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_EQUAL">=</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_CONSTANT_ENCAPSED_STRING">'abc'</token>
+  <token name="T_SEMICOLON">;</token>
+ </line>
+ <line no="6"/>
+ <line no="7">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_DOC_COMMENT">/** @var int */</token>
+ </line>
+ <line no="8">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_PRIVATE">private</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_VARIABLE">$y</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_EQUAL">=</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_LNUMBER">1</token>
+  <token name="T_SEMICOLON">;</token>
+ </line>
+ <line no="9"/>
+ <line no="10">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_PUBLIC">public</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_FUNCTION">function</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">__construct</token>
+  <token name="T_OPEN_BRACKET">(</token>
+  <token name="T_CLOSE_BRACKET">)</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_OPEN_CURLY">{</token>
+ </line>
+ <line no="11">
+  <token name="T_WHITESPACE">        </token>
+  <token name="T_COMMENT">// do something</token>
+ </line>
+ <line no="12">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_CLOSE_CURLY">}</token>
+ </line>
+ <line no="13"/>
+ <line no="14">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_PUBLIC">public</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_FUNCTION">function</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">getY</token>
+  <token name="T_OPEN_BRACKET">(</token>
+  <token name="T_CLOSE_BRACKET">)</token>
+  <token name="T_COLON">:</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">int</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_OPEN_CURLY">{</token>
+ </line>
+ <line no="15">
+  <token name="T_WHITESPACE">        </token>
+  <token name="T_RETURN">return</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_VARIABLE">$this</token>
+  <token name="T_OBJECT_OPERATOR">-&gt;</token>
+  <token name="T_STRING">y</token>
+  <token name="T_SEMICOLON">;</token>
+ </line>
+ <line no="16">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_CLOSE_CURLY">}</token>
+ </line>
+ <line no="17"/>
+ <line no="18">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_PUBLIC">public</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_FUNCTION">function</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">getSomeX</token>
+  <token name="T_OPEN_BRACKET">(</token>
+  <token name="T_CLOSE_BRACKET">)</token>
+  <token name="T_COLON">:</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">string</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_OPEN_CURLY">{</token>
+ </line>
+ <line no="19">
+  <token name="T_WHITESPACE">        </token>
+  <token name="T_RETURN">return</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">self</token>
+  <token name="T_DOUBLE_COLON">::</token>
+  <token name="T_STRING">x</token>
+  <token name="T_SEMICOLON">;</token>
+ </line>
+ <line no="20">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_CLOSE_CURLY">}</token>
+ </line>
+ <line no="21"/>
+ <line no="22">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_PUBLIC">public</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_FUNCTION">function</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">some</token>
+  <token name="T_OPEN_BRACKET">(</token>
+  <token name="T_STRING">bar</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_VARIABLE">$b</token>
+  <token name="T_CLOSE_BRACKET">)</token>
+  <token name="T_COLON">:</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_STRING">string</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_OPEN_CURLY">{</token>
+ </line>
+ <line no="23">
+  <token name="T_WHITESPACE">        </token>
+  <token name="T_RETURN">return</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_VARIABLE">$b</token>
+  <token name="T_OBJECT_OPERATOR">-&gt;</token>
+  <token name="T_STRING">getSomeX</token>
+  <token name="T_OPEN_BRACKET">(</token>
+  <token name="T_CLOSE_BRACKET">)</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_DOT">.</token>
+  <token name="T_WHITESPACE"> </token>
+  <token name="T_CONSTANT_ENCAPSED_STRING">'-def'</token>
+  <token name="T_SEMICOLON">;</token>
+ </line>
+ <line no="24">
+  <token name="T_WHITESPACE">    </token>
+  <token name="T_CLOSE_CURLY">}</token>
+ </line>
+ <line no="25">
+  <token name="T_CLOSE_CURLY">}</token>
+ </line>
+ <line no="26"/>
+</source>

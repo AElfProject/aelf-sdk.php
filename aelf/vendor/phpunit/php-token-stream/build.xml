@@ -1,30 +1,21 @@
-<?php
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="php-token-stream" default="setup">
+    <target name="setup" depends="clean,composer"/>
 
-declare(strict_types=1);
+    <target name="clean" description="Cleanup build artifacts">
+        <delete dir="${basedir}/vendor"/>
+        <delete file="${basedir}/composer.lock"/>
+    </target>
 
-namespace BitWasp\Bitcoin\MessageSigner;
+    <target name="composer" depends="clean" description="Install dependencies with Composer">
+        <exec executable="composer" taskname="composer">
+            <env key="COMPOSER_DISABLE_XDEBUG_WARN" value="1"/>
+            <arg value="update"/>
+            <arg value="--no-interaction"/>
+            <arg value="--no-progress"/>
+            <arg value="--no-ansi"/>
+            <arg value="--no-suggest"/>
+        </exec>
+    </target>
+</project>
 
-use BitWasp\Bitcoin\Address\PayToPubKeyHashAddress;
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
-use BitWasp\Bitcoin\Crypto\Hash;
-use BitWasp\Bitcoin\Crypto\Random\Rfc6979;
-use BitWasp\Bitcoin\Network\NetworkInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Buffertools;
-
-class MessageSigner
-{
-    /**
-     * @var EcAdapterInterface
-     */
-    private $ecAdapter;
-
-    /**
-     * @param EcAdapterInterface $ecAdapter
-     */
-    public function __construct(EcAdapterInterface $ecAdapter = null)
-    {
-        $this->ecAda

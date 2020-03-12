@@ -1,1 +1,42 @@
-module.exports={A:{A:{"1":"K D G E A B iB"},B:{"1":"2 C d J M H I"},C:{"1":"0 1 2 3 4 6 7 8 9 E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB","2":"fB DB F N K D G ZB YB"},D:{"1":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB"},E:{"1":"5 K D G E A B C UB VB WB XB p aB","16":"F N RB IB TB"},F:{"1":"0 1 5 6 B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z cB dB eB p AB gB","16":"E bB"},G:{"1":"G lB mB nB oB pB qB rB sB tB uB","2":"IB hB","16":"EB jB KB"},H:{"2":"vB"},I:{"1":"4 zB EB 0B 1B","2":"DB F wB xB yB"},J:{"1":"A","2":"D"},K:{"1":"5 A B C L p AB"},L:{"1":"JB"},M:{"1":"3"},N:{"1":"B","2":"A"},O:{"2":"2B"},P:{"
+--TEST--
+GH-581: PHPUnit_Util_Type::export adds extra newlines in Windows
+--FILE--
+<?php
+
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = 'Issue581Test';
+$_SERVER['argv'][3] = __DIR__ . '/581/Issue581Test.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+?>
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+F                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 failure:
+
+1) Issue581Test::testExportingObjectsDoesNotBreakWindowsLineFeeds
+Failed asserting that two objects are equal.
+--- Expected
++++ Actual
+@@ @@
+ stdClass Object (
+     0 => 1
+     1 => 2
+     2 => 'Test\r\n'
+     3 => 4
+-    4 => 5
++    4 => 1
+     5 => 6
+     6 => 7
+     7 => 8
+ )
+
+%s:%i
+
+FAILURES!
+Tests: 1, Assertions: 1, Failures: 1.

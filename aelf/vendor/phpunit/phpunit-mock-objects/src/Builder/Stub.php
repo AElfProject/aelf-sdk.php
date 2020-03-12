@@ -1,11 +1,25 @@
-"use strict";
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var Declaration = require('../declaration');
-
-var OverscrollBehavior =
+/**
+ * Builder interface for stubs which are actions replacing an invocation.
+ */
+interface PHPUnit_Framework_MockObject_Builder_Stub extends PHPUnit_Framework_MockObject_Builder_Identity
+{
+    /**
+     * Stubs the matching method with the stub object $stub. Any invocations of
+     * the matched method will now be handled by the stub instead.
+     *
+     * @param PHPUnit_Framework_MockObject_Stub $stub
+     *
+     * @return PHPUnit_Framework_MockObject_Builder_Identity
+     */
+    public function will(PHPUnit_Framework_MockObject_Stub $stub);
+}

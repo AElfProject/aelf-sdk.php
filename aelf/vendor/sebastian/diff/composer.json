@@ -1,20 +1,33 @@
-<?php
-
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Key;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Adapter\EcAdapter;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Serializer\Key\PublicKeySerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\Secp256k1\Signature\Signature;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\Key;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\KeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignatureInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class PublicKey extends Key implements PublicKeyInterface
 {
-    /**
-    
+    "name": "sebastian/diff",
+    "description": "Diff implementation",
+    "keywords": ["diff"],
+    "homepage": "https://github.com/sebastianbergmann/diff",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Sebastian Bergmann",
+            "email": "sebastian@phpunit.de"
+        },
+        {
+            "name": "Kore Nordmann",
+            "email": "mail@kore-nordmann.de"
+        }
+    ],
+    "require": {
+        "php": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.2"
+    },
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0-dev"
+        }
+    }
+}

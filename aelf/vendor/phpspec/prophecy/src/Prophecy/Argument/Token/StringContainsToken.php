@@ -1,38 +1,67 @@
-"use strict";
+<?php
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+namespace Prophecy\Argument\Token;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+/**
+ * String contains token.
+ *
+ * @author Peter Mitchell <pete@peterjmit.com>
+ */
+class StringContainsToken implements TokenInterface
+{
+    private $value;
 
-var list = require('postcss').list;
-
-var flexSpec = require('./flex-spec');
-
-var Declaration = require('../declaration');
-
-var Flex =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(Flex, _Declaration);
-
-  function Flex() {
-    return _Declaration.apply(this, arguments) || this;
-  }
-
-  var _proto = Flex.prototype;
-
-  _proto.prefixed = function prefixed(prop, prefix) {
-    var spec;
-
-    var _flexSpec = flexSpec(prefix);
-
-    spec = _flexSpec[0];
-    prefix = _flexSpec[1];
-
-    if (spec === 2009) {
-      return prefix + 'box-flex';
+    /**
+     * Initializes token.
+     *
+     * @param string $value
+     */
+    public function __construct($value)
+    {
+        $this->value = $value;
     }
 
-    return _
+    public function scoreArgument($argument)
+    {
+        return is_string($argument) && strpos($argument, $this->value) !== false ? 6 : false;
+    }
+
+    /**
+     * Returns preset value against which token checks arguments.
+     *
+     * @return mixed
+     */
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    /**
+     * Returns false.
+     *
+     * @return bool
+     */
+    public function isLast()
+    {
+        return false;
+    }
+
+    /**
+     * Returns string representation for token.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return sprintf('contains("%s")', $this->value);
+    }
+}

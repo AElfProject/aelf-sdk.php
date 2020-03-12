@@ -1,63 +1,67 @@
 <?php
+/*
+ * This file is part of sebastian/environment.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 declare(strict_types=1);
 
-namespace BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Serializer\Signature;
+namespace SebastianBergmann\Environment;
 
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Adapter\EcAdapter;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Signature\Signature;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Signature\DerSignatureSerializerInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignatureInterface;
-use BitWasp\Bitcoin\Serializer\Types;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Buffertools;
-use BitWasp\Buffertools\Exceptions\ParserOutOfRange;
-use BitWasp\Buffertools\Parser;
+use PHPUnit\Framework\TestCase;
 
-class DerSignatureSerializer implements DerSignatureSerializerInterface
+/**
+ * @covers \SebastianBergmann\Environment\Console
+ */
+final class ConsoleTest extends TestCase
 {
     /**
-     * @var EcAdapter
+     * @var \SebastianBergmann\Environment\Console
      */
-    private $ecAdapter;
+    private $console;
 
-    /**
-     * @var \BitWasp\Buffertools\Types\VarString
-     */
-    private $varstring;
-
-    /**
-     * @param EcAdapter $adapter
-     */
-    public function __construct(EcAdapter $adapter)
+    protected function setUp()/*: void*/
     {
-        $this->ecAdapter = $adapter;
-        $this->varstring = Types::varstring();
+        $this->console = new Console;
     }
 
     /**
-     * @return EcAdapterInterface
+     * @todo Now that this component is PHP 7-only and uses return type declarations
+     * this test makes even less sense than before
      */
-    public function getEcAdapter(): EcAdapterInterface
+    public function testCanDetectIfStdoutIsInteractiveByDefault()/*: void*/
     {
-        return $this->ecAdapter;
+        $this->assertInternalType('boolean', $this->console->isInteractive());
     }
 
     /**
-     * @param SignatureInterface $signature
-     * @return BufferInterface
-     * @throws \Exception
+     * @todo Now that this component is PHP 7-only and uses return type declarations
+     * this test makes even less sense than before
      */
-    public function serialize(SignatureInterface $signature): BufferInterface
+    public function testCanDetectIfFileDescriptorIsInteractive()/*: void*/
     {
-        // Ensure that the R and S hex's are of even length
-        $rBin = gmp_export($signature->getR(), 1, GMP_MSW_FIRST | GMP_BIG_ENDIAN);
-        $sBin = gmp_export($signature->getS(), 1, GMP_MSW_FIRST | GMP_BIG_ENDIAN);
+        $this->assertInternalType('boolean', $this->console->isInteractive(STDOUT));
+    }
 
-        // Pad R and S if their highest bit is flipped, ie,
-        // they are negative.
-        if ((ord($rBin[0]) & 0x80) === 0x80) {
-            $rBin = "\x00$rBin";
-       
+    /**
+     * @todo Now that this component is PHP 7-only and uses return type declarations
+     * this test makes even less sense than before
+     */
+    public function testCanDetectColorSupport()/*: void*/
+    {
+        $this->assertInternalType('boolean', $this->console->hasColorSupport());
+    }
+
+    /**
+     * @todo Now that this component is PHP 7-only and uses return type declarations
+     * this test makes even less sense than before
+     */
+    public function testCanDetectNumberOfColumns()/*: void*/
+    {
+        $this->assertInternalType('integer', $this->console->getNumberOfColumns());
+    }
+}

@@ -1,61 +1,45 @@
 <?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-namespace BitWasp\Bitcoin\Network;
+use PHPUnit\Framework\TestCase;
 
-class NetworkFactory
-{
+/**
+ * @covers PharIo\Manifest\Author
+ *
+ * @uses PharIo\Manifest\Email
+ */
+class AuthorTest extends TestCase {
     /**
-     * @return NetworkInterface
-     * @throws \Exception
+     * @var Author
      */
-    public static function bitcoin(): NetworkInterface
-    {
-        return new Networks\Bitcoin();
+    private $author;
+
+    protected function setUp() {
+        $this->author = new Author('Joe Developer', new Email('user@example.com'));
     }
 
-    /**
-     * @return NetworkInterface
-     * @throws \Exception
-     */
-    public static function bitcoinTestnet(): NetworkInterface
-    {
-        return new Networks\BitcoinTestnet();
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(Author::class, $this->author);
     }
 
-    /**
-     * @return NetworkInterface
-     * @throws \Exception
-     */
-    public static function bitcoinRegtest(): NetworkInterface
-    {
-        return new Networks\BitcoinRegtest();
+    public function testNameCanBeRetrieved() {
+        $this->assertEquals('Joe Developer', $this->author->getName());
     }
 
-    /**
-     * @return NetworkInterface
-     */
-    public static function litecoin(): NetworkInterface
-    {
-        return new Networks\Litecoin();
+    public function testEmailCanBeRetrieved() {
+        $this->assertEquals('user@example.com', $this->author->getEmail());
     }
 
-    /**
-     * @return Networks\LitecoinTestnet
-     */
-    public static function litecoinTestnet(): NetworkInterface
-    {
-        return new Networks\LitecoinTestnet();
+    public function testCanBeUsedAsString() {
+        $this->assertEquals('Joe Developer <user@example.com>', $this->author);
     }
-
-    /**
-     * @return Networks\Viacoin
-     */
-    public static function viacoin(): NetworkInterface
-    {
-        return new Networks\Viacoin();
-    }
-
-    /**
-     * @
+}

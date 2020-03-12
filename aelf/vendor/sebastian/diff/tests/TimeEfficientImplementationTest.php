@@ -1,34 +1,22 @@
-<?php
+<?php declare(strict_types=1);
+/*
+ * This file is part of sebastian/diff.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace Mdanter\Ecc\Math;
+namespace SebastianBergmann\Diff;
 
-class ModularArithmetic
+/**
+ * @covers SebastianBergmann\Diff\TimeEfficientLongestCommonSubsequenceCalculator
+ */
+final class TimeEfficientImplementationTest extends LongestCommonSubsequenceTest
 {
-    /**
-     * @var GmpMathInterface
-     */
-    private $adapter;
-
-    /**
-     * @var \GMP
-     */
-    private $modulus;
-
-    /**
-     * @param GmpMathInterface $adapter
-     * @param \GMP $modulus
-     */
-    public function __construct(GmpMathInterface $adapter, \GMP $modulus)
+    protected function createImplementation()
     {
-        $this->adapter = $adapter;
-        $this->modulus = $modulus;
+        return new TimeEfficientLongestCommonSubsequenceCalculator;
     }
-
-    /**
-     * @param \GMP $augend
-     * @param \GMP $addend
-     * @return \GMP
-     */
-    public function add(\GMP $augend, \GMP $addend): \GMP
-    {
-        return $
+}

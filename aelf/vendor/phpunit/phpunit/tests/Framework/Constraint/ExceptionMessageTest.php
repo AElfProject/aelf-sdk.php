@@ -1,20 +1,52 @@
-[$i]->compressedAddr;
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-            $this->assertEquals($addr, $sxAddr, 'Something went wrong for privateKey : ' . $bitcoinECDSA->getPrivateKey() . ', please report us the issue');
+namespace PHPUnit\Framework\Constraint;
 
-            $this->assertTrue($bitcoinECDSA->validateAddress($addr), 'Something went wrong while validating address : ' . $addr . ' with private key : ' . $bitcoinECDSA->getPrivateKey() . ', please report us the issue');
+use PHPUnit\Framework\TestCase;
 
-            $this->assertTrue($bitcoinECDSA->validateWifKey($bitcoinECDSA->getWif()), 'Something went wrong while validating Wif key : ' . $bitcoinECDSA->getWif() . ' with private key : ' . $bitcoinECDSA->getPrivateKey() . ', please report us the issue');
+class ExceptionMessageTest extends TestCase
+{
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage A literal exception message
+     */
+    public function testLiteralMessage()
+    {
+        throw new \Exception('A literal exception message');
+    }
 
-            //test : uncompressed public key
-            if(!$expectedRes)
-                $ucSxPubKey = exec('echo -n "' . $privKey . '" | sx pubkey false');
-            else
-                $ucSxPubKey = $expectedRes[$i]->unCompressedPubKey;
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage A partial
+     */
+    public function testPartialMessageBegin()
+    {
+        throw new \Exception('A partial exception message');
+    }
 
-            $bpUcPubKey = $bitcoinECDSA->getUncompressedPubKey();
-            $this->assertEquals($bpUcPubKey, $ucSxPubKey, 'Something went wrong for privateKey : ' . $bitcoinECDSA->getPrivateKey() . ', please report us the issue');
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage partial exception
+     */
+    public function testPartialMessageMiddle()
+    {
+        throw new \Exception('A partial exception message');
+    }
 
-            // test : uncompressed address
-            if(!$expectedRes)
-                $ucSxAddr = ex
+    /**
+     * @expectedException \Exception
+     * @expectedExceptionMessage exception message
+     */
+    public function testPartialMessageEnd()
+    {
+        throw new \Exception('A partial exception message');
+    }
+}

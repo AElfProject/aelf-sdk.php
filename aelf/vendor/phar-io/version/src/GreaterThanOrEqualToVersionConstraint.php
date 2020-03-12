@@ -1,22 +1,38 @@
-"use strict";
+<?php
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+namespace PharIo\Version;
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+class GreaterThanOrEqualToVersionConstraint extends AbstractVersionConstraint {
+    /**
+     * @var Version
+     */
+    private $minimalVersion;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+    /**
+     * @param string  $originalValue
+     * @param Version $minimalVersion
+     */
+    public function __construct($originalValue, Version $minimalVersion) {
+        parent::__construct($originalValue);
 
-var flexSpec = require('./flex-spec');
+        $this->minimalVersion = $minimalVersion;
+    }
 
-var Declaration = require('../declaration');
-
-var FlexDirection =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(FlexDirection, _Declaration);
-
-  function FlexDirection() {
-    return _Declaration.apply(this, arguments) || this;
-  }
-
-  var _proto =
+    /**
+     * @param Version $version
+     *
+     * @return bool
+     */
+    public function complies(Version $version) {
+        return $version->getVersionString() == $this->minimalVersion->getVersionString() ||
+        $version->isGreaterThan($this->minimalVersion);
+    }
+}

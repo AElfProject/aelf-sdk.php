@@ -1,25 +1,51 @@
-Object Enumerator
+<?php
 
-Copyright (c) 2016-2017, Sebastian Bergmann <sebastian@phpunit.de>.
-All rights reserved.
+namespace DeepCopy\TypeFilter\Spl;
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+use Closure;
+use DeepCopy\DeepCopy;
+use DeepCopy\TypeFilter\TypeFilter;
+use SplDoublyLinkedList;
 
- * Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
+/**
+ * @final
+ */
+class SplDoublyLinkedListFilter implements TypeFilter
+{
+    private $copier;
 
- * Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in
-   the documentation and/or other materials provided with the
-   distribution.
+    public function __construct(DeepCopy $copier)
+    {
+        $this->copier = $copier;
+    }
 
- * Neither the name of Sebastian Bergmann nor the names of his
-   contributors may be used to endorse or promote products derived
-   from this software without specific prior written permission.
+    /**
+     * {@inheritdoc}
+     */
+    public function apply($element)
+    {
+        $newElement = clone $element;
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
+        $copy = $this->createCopyClosure();
+
+        return $copy($newElement);
+    }
+
+    private function createCopyClosure()
+    {
+        $copier = $this->copier;
+
+        $copy = function (SplDoublyLinkedList $list) use ($copier) {
+            // Replace each element in the list with a deep copy of itself
+            for ($i = 1; $i <= $list->count(); $i++) {
+                $copy = $copier->recursiveCopy($list->shift());
+
+                $list->push($copy);
+            }
+
+            return $list;
+        };
+
+        return Closure::bind($copy, null, DeepCopy::class);
+    }
+}

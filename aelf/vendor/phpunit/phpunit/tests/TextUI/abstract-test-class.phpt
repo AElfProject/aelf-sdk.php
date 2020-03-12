@@ -1,21 +1,24 @@
-import sublime
-import sublime_plugin
-import json
-from os.path import dirname, realpath, join, splitext, basename
+--TEST--
+phpunit AbstractTest ../_files/AbstractTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = 'AbstractTest';
+$_SERVER['argv'][3] = __DIR__ . '/../_files/AbstractTest.php';
 
-try:
-	# Python 2
-	from node_bridge import node_bridge
-except:
-	from .node_bridge import node_bridge
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
 
-# Monkeypatch `Region` to be iterable
-sublime.Region.totuple = lambda self: (self.a, self.b)
-sublime.Region.__iter__ = lambda self: self.totuple().__iter__()
+W                                                                   1 / 1 (100%)
 
-BIN_PATH = join(sublime.packages_path(), dirname(realpath(__file__)), 'autoprefixer.js')
+Time: %s, Memory: %s
 
-def get_setting(view, key):
-	settings = view.settings().get('Autoprefixer')
-	if settings is None:
-		settings = subli
+There was 1 warning:
+
+1) Warning
+Cannot instantiate class "AbstractTest".
+
+WARNINGS!
+Tests: 1, Assertions: 0, Warnings: 1.

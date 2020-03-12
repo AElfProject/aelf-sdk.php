@@ -1,60 +1,40 @@
-ile;
-    }
+[![Latest Stable Version](https://poser.pugx.org/phpunit/php-code-coverage/v/stable.png)](https://packagist.org/packages/phpunit/php-code-coverage)
+[![Build Status](https://travis-ci.org/sebastianbergmann/php-code-coverage.svg?branch=5.3)](https://travis-ci.org/sebastianbergmann/php-code-coverage)
 
-    /**
-     * Identifies the filesystem path to the original source .proto.
-     *
-     * Generated from protobuf field <code>optional string source_file = 2;</code>
-     * @param string $var
-     * @return $this
-     */
-    public function setSourceFile($var)
-    {
-        GPBUtil::checkString($var, True);
-        $this->source_file = $var;
-        $this->has_source_file = true;
+# SebastianBergmann\CodeCoverage
 
-        return $this;
-    }
+**SebastianBergmann\CodeCoverage** is a library that provides collection, processing, and rendering functionality for PHP code coverage information.
 
-    public function hasSourceFile()
-    {
-        return $this->has_source_file;
-    }
+## Installation
 
-    /**
-     * Identifies the starting offset in bytes in the generated code
-     * that relates to the identified object.
-     *
-     * Generated from protobuf field <code>optional int32 begin = 3;</code>
-     * @return int
-     */
-    public function getBegin()
-    {
-        return $this->begin;
-    }
+You can add this library as a local, per-project dependency to your project using [Composer](https://getcomposer.org/):
 
-    /**
-     * Identifies the starting offset in bytes in the generated code
-     * that relates to the identified object.
-     *
-     * Generated from protobuf field <code>optional int32 begin = 3;</code>
-     * @param int $var
-     * @return $this
-     */
-    public function setBegin($var)
-    {
-        GPBUtil::checkInt32($var);
-        $this->begin = $var;
-        $this->has_begin = true;
+    composer require phpunit/php-code-coverage
 
-        return $this;
-    }
+If you only need this library during development, for instance to run your project's test suite, then you should add it as a development-time dependency:
 
-    public function hasBegin()
-    {
-        return $this->has_begin;
-    }
+    composer require --dev phpunit/php-code-coverage
 
-    /**
-     * Identifies the ending offset in bytes in the genera
+## Using the SebastianBergmann\CodeCoverage API
+
+```php
+<?php
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+
+$coverage = new CodeCoverage;
+
+$coverage->filter()->addDirectoryToWhitelist('/path/to/src');
+
+$coverage->start('<name of test>');
+
+// ...
+
+$coverage->stop();
+
+$writer = new \SebastianBergmann\CodeCoverage\Report\Clover;
+$writer->process($coverage, '/tmp/clover.xml');
+
+$writer = new \SebastianBergmann\CodeCoverage\Report\Html\Facade;
+$writer->process($coverage, '/tmp/code-coverage-report');
+```
+

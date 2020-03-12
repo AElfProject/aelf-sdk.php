@@ -1,43 +1,43 @@
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PHPUnit\Util;
 
-namespace BitWasp\Buffertools;
-
-class TemplateFactory
+/**
+ * Utility class for textual type (and value) representation.
+ */
+class Type
 {
     /**
-     * @var \BitWasp\Buffertools\Template
-     */
-    private $template;
-
-    /**
-     * @var TypeFactoryInterface
-     */
-    private $types;
-
-    /**
-     * TemplateFactory constructor.
-     * @param Template|null $template
-     * @param TypeFactoryInterface|null $typeFactory
-     */
-    public function __construct(Template $template = null, TypeFactoryInterface $typeFactory = null)
-    {
-        $this->template = $template ?: new Template();
-        $this->types = $typeFactory ?: new CachingTypeFactory();
-    }
-
-    /**
-     * Return the Template as it stands.
+     * @param string $type
      *
-     * @return Template
+     * @return bool
      */
-    public function getTemplate()
+    public static function isType($type)
     {
-        return $this->template;
+        return \in_array(
+            $type,
+            [
+                'numeric',
+                'integer',
+                'int',
+                'float',
+                'string',
+                'boolean',
+                'bool',
+                'null',
+                'array',
+                'object',
+                'resource',
+                'scalar'
+            ]
+        );
     }
-
-    /**
-     * Add a Uint8 serializer to the template
-     *
-     * 
+}

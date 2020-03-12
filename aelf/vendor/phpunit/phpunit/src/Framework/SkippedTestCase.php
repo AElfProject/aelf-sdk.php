@@ -1,53 +1,81 @@
-on uint128le(): Uint128
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework;
+
+/**
+ * A skipped test case
+ */
+class SkippedTestCase extends TestCase
+{
+    /**
+     * @var string
+     */
+    protected $message = '';
+
+    /**
+     * @var bool
+     */
+    protected $backupGlobals = false;
+
+    /**
+     * @var bool
+     */
+    protected $backupStaticAttributes = false;
+
+    /**
+     * @var bool
+     */
+    protected $runTestInSeparateProcess = false;
+
+    /**
+     * @var bool
+     */
+    protected $useErrorHandler = false;
+
+    /**
+     * @var bool
+     */
+    protected $useOutputBuffering = false;
+
+    /**
+     * @param string $message
+     */
+    public function __construct($className, $methodName, $message = '')
     {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
+        $this->message = $message;
+        parent::__construct($className . '::' . $methodName);
     }
 
     /**
-     * Add a Uint256 serializer to the template
-     *
-     * @return Uint256
+     * @throws Exception
      */
-    public function uint256(): Uint256
+    protected function runTest()
     {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
+        $this->markTestSkipped($this->message);
     }
 
     /**
-     * Add a little-endian Uint256 serializer to the template
-     *
-     * @return Uint256
+     * @return string
      */
-    public function uint256le(): Uint256
+    public function getMessage()
     {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
+        return $this->message;
     }
 
     /**
-     * Add a int8 serializer to the template
+     * Returns a string representation of the test case.
      *
-     * @return Int8
+     * @return string
      */
-    public function int8(): Int8
+    public function toString()
     {
-        if (!isset($this->cache[__FUNCTION__])) {
-            $this->cache[__FUNCTION__] = call_user_func_array(['parent', __FUNCTION__], func_get_args());
-        }
-        return $this->cache[__FUNCTION__];
+        return $this->getName();
     }
-
-    /**
-     * Add a little-endian Int8 serializer to the template
-     *
-     * @return Int8
-     */
-    public function int
+}

@@ -1,134 +1,198 @@
 <?php
-declare(strict_types=1);
 
-/***********************************************************************
-Copyright (C) 2012 Matyas Danter
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
+namespace Prophecy\Doubler\Generator\Node;
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
-OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
- *************************************************************************/
-namespace Mdanter\Ecc\Primitives;
-
-use Mdanter\Ecc\Exception\PointRecoveryException;
-use Mdanter\Ecc\Exception\SquareRootException;
-use Mdanter\Ecc\Math\GmpMathInterface;
-use Mdanter\Ecc\Math\ModularArithmetic;
-use Mdanter\Ecc\Random\RandomNumberGeneratorInterface;
+use Prophecy\Doubler\Generator\TypeHintReference;
+use Prophecy\Exception\InvalidArgumentException;
 
 /**
- * This class is a representation of an EC over a field modulo a prime number
+ * Method node.
  *
- * Important objectives for this class are:
- * - Does the curve contain a point?
- * - Comparison of two curves.
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
  */
-class CurveFp implements CurveFpInterface
+class MethodNode
 {
+    private $name;
+    private $code;
+    private $visibility = 'public';
+    private $static = false;
+    private $returnsReference = false;
+    private $returnType;
+    private $nullableReturnType = false;
 
     /**
-     * @var CurveParameters
+     * @var ArgumentNode[]
      */
-    protected $parameters;
+    private $arguments = array();
 
     /**
-     *
-     * @var GmpMathInterface
+     * @var TypeHintReference
      */
-    protected $adapter = null;
+    private $typeHintReference;
 
     /**
-     *
-     * @var ModularArithmetic
+     * @param string $name
+     * @param string $code
      */
-    protected $modAdapter = null;
-
-    /**
-     * Constructor that sets up the instance variables.
-     *
-     * @param CurveParameters $parameters
-     * @param GmpMathInterface $adapter
-     */
-    public function __construct(CurveParameters $parameters, GmpMathInterface $adapter)
+    public function __construct($name, $code = null, TypeHintReference $typeHintReference = null)
     {
-        $this->parameters = $parameters;
-        $this->adapter = $adapter;
-        $this->modAdapter = new ModularArithmetic($this->adapter, $this->parameters->getPrime());
+        $this->name = $name;
+        $this->code = $code;
+        $this->typeHintReference = $typeHintReference ?: new TypeHintReference();
+    }
+
+    public function getVisibility()
+    {
+        return $this->visibility;
     }
 
     /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Primitives\CurveFpInterface::getModAdapter()
+     * @param string $visibility
      */
-    public function getModAdapter(): ModularArithmetic
+    public function setVisibility($visibility)
     {
-        return $this->modAdapter;
-    }
+        $visibility = strtolower($visibility);
 
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Primitives\CurveFpInterface::getPoint()
-     */
-    public function getPoint(\GMP $x, \GMP $y, \GMP $order = null): PointInterface
-    {
-        return new Point($this->adapter, $this, $x, $y, $order);
-    }
-    
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Primitives\CurveFpInterface::getInfinity()
-     */
-    public function getInfinity(): PointInterface
-    {
-        return new Point($this->adapter, $this, gmp_init(0, 10), gmp_init(0, 10), null, true);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Primitives\CurveFpInterface::getGenerator()
-     */
-    public function getGenerator(\GMP $x, \GMP $y, \GMP $order, RandomNumberGeneratorInterface $randomGenerator = null): GeneratorPoint
-    {
-        return new GeneratorPoint($this->adapter, $this, $x, $y, $order, $randomGenerator);
-    }
-
-    /**
-     * @param bool $wasOdd
-     * @param \GMP $xCoord
-     * @return \GMP
-     */
-    public function recoverYfromX(bool $wasOdd, \GMP $xCoord): \GMP
-    {
-        $math = $this->adapter;
-        $prime = $this->getPrime();
-
-        try {
-            $root = $this->adapter->getNumberTheory()->squareRootModP(
-                $math->add(
-                    $math->add(
-                        $this->modAdapter->pow($xCoord, gmp_init(3, 10)),
-                        $math->mul($this->getA(), $xCoord)
-                    ),
-                    $this->getB()
-                ),
-                $prime
-            );
-        } catch (SquareRootException $e) {
-            throw new PointRecoveryException("Failed to recover y coordinate for point", 0, $e);
+        if (!in_array($visibility, array('public', 'private', 'protected'))) {
+            throw new InvalidArgumentException(sprintf(
+                '`%s` method visibility is not supported.', $visibility
+            ));
         }
 
-        if ($math->equals($math->mod($root, gmp_init(2, 10)), gmp_init(1)) === $wasOdd) {
+        $this->visibility = $visibility;
+    }
+
+    public function isStatic()
+    {
+        return $this->static;
+    }
+
+    public function setStatic($static = true)
+    {
+        $this->static = (bool) $static;
+    }
+
+    public function returnsReference()
+    {
+        return $this->returnsReference;
+    }
+
+    public function setReturnsReference()
+    {
+        $this->returnsReference = true;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function addArgument(ArgumentNode $argument)
+    {
+        $this->arguments[] = $argument;
+    }
+
+    /**
+     * @return ArgumentNode[]
+     */
+    public function getArguments()
+    {
+        return $this->arguments;
+    }
+
+    public function hasReturnType()
+    {
+        return null !== $this->returnType;
+    }
+
+    /**
+     * @param string $type
+     */
+    public function setReturnType($type = null)
+    {
+        if ($type === '' || $type === null) {
+            $this->returnType = null;
+            return;
+        }
+        $typeMap = array(
+            'double' => 'float',
+            'real' => 'float',
+            'boolean' => 'bool',
+            'integer' => 'int',
+        );
+        if (isset($typeMap[$type])) {
+            $type = $typeMap[$type];
+        }
+        $this->returnType = $this->typeHintReference->isBuiltInReturnTypeHint($type) ?
+            $type :
+            '\\' . ltrim($type, '\\');
+    }
+
+    public function getReturnType()
+    {
+        return $this->returnType;
+    }
+
+    /**
+     * @param bool $bool
+     */
+    public function setNullableReturnType($bool = true)
+    {
+        $this->nullableReturnType = (bool) $bool;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasNullableReturnType()
+    {
+        return $this->nullableReturnType;
+    }
+
+    /**
+     * @param string $code
+     */
+    public function setCode($code)
+    {
+        $this->code = $code;
+    }
+
+    public function getCode()
+    {
+        if ($this->returnsReference)
+        {
+            return "throw new \Prophecy\Exception\Doubler\ReturnByReferenceException('Returning by reference not supported', get_class(\$this), '{$this->name}');";
+        }
+
+        return (string) $this->code;
+    }
+
+    public function useParentCode()
+    {
+        $this->code = sprintf(
+            'return parent::%s(%s);', $this->getName(), implode(', ',
+                array_map(array($this, 'generateArgument'), $this->arguments)
+            )
+        );
+    }
+
+    private function generateArgument(ArgumentNode $arg)
+    {
+        $argument = '$'.$arg->getName();
+
+        if ($arg->isVariadic()) {
+            $argument = '...'.$argument;
+        }
+
+        return $argument;
+    }
+}

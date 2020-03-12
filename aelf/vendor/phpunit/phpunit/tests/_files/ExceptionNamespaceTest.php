@@ -1,1 +1,38 @@
-いそう','めいぶつ','めいれい','めいわく','めぐまれる','めざす','めした','めずらしい','めだつ','めまい','めやす','めんきょ','めんせき','めんどう','もうしあげる','もうどうけん','もえる','もくし','もくてき','もくようび','もちろん','もどる','もらう','もんく','もんだい','やおや','やける','やさい','やさしい','やすい','やすたろう','やすみ','やせる','やそう','やたい','やちん','やっと','やっぱり','やぶる','やめる','ややこしい','やよい','やわらかい','ゆうき','ゆうびんきょく','ゆうべ','ゆうめい','ゆけつ','ゆしゅつ','ゆせん','ゆそう','ゆたか','ゆちゃく','ゆでる','ゆにゅう','ゆびわ','ゆら�
+<?php
+
+namespace My\Space;
+
+class ExceptionNamespaceTest extends \PHPUnit\Framework\TestCase
+{
+    /**
+     * Exception message
+     *
+     * @var string
+     */
+    const ERROR_MESSAGE = 'Exception namespace message';
+
+    /**
+     * Exception code
+     *
+     * @var int
+     */
+    const ERROR_CODE = 200;
+
+    /**
+     * @expectedException Class
+     * @expectedExceptionMessage My\Space\ExceptionNamespaceTest::ERROR_MESSAGE
+     * @expectedExceptionCode My\Space\ExceptionNamespaceTest::ERROR_CODE
+     */
+    public function testConstants()
+    {
+    }
+
+    /**
+     * @expectedException Class
+     * @expectedExceptionCode My\Space\ExceptionNamespaceTest::UNKNOWN_CODE_CONSTANT
+     * @expectedExceptionMessage My\Space\ExceptionNamespaceTest::UNKNOWN_MESSAGE_CONSTANT
+     */
+    public function testUnknownConstants()
+    {
+    }
+}

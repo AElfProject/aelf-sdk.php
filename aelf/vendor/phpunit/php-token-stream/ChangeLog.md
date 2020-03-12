@@ -1,36 +1,19 @@
-  {
-        $this->tolerateInvalidPublicKey = $setting;
-        return $this;
-    }
+# Change Log
 
-    /**
-     * @param bool $setting
-     * @return $this
-     */
-    public function allowComplexScripts(bool $setting)
-    {
-        $this->allowComplexScripts = $setting;
-        return $this;
-    }
+All notable changes to `sebastianbergmann/php-token-stream` are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-    /**
-     * @param BufferInterface $vchPubKey
-     * @return PublicKeyInterface|null
-     * @throws \Exception
-     */
-    protected function parseStepPublicKey(BufferInterface $vchPubKey)
-    {
-        try {
-            return $this->pubKeySerializer->parse($vchPubKey);
-        } catch (\Exception $e) {
-            if ($this->tolerateInvalidPublicKey) {
-                return null;
-            }
+## [2.0.2] - 2017-11-27
 
-            throw $e;
-        }
-    }
+* Fixed [#69](https://github.com/sebastianbergmann/php-token-stream/issues/69): `PHP_Token_USE_FUNCTION` does not serialize correctly
 
-    /**
-     * @param ScriptInterface $script
-     * @param Buffer
+## [2.0.1] - 2017-08-20
+
+### Fixed
+
+* Fixed [#68](https://github.com/sebastianbergmann/php-token-stream/issues/68): Method with name `empty` wrongly recognized as anonymous function
+
+## [2.0.0] - 2017-08-03
+
+[2.0.2]: https://github.com/sebastianbergmann/php-token-stream/compare/2.0.1...2.0.2
+[2.0.1]: https://github.com/sebastianbergmann/php-token-stream/compare/2.0.0...2.0.1
+[2.0.0]: https://github.com/sebastianbergmann/php-token-stream/compare/1.4.11...2.0.0

@@ -1,30 +1,43 @@
->setParams($Hash->serializeToString());
-        $transaction->setRefBlockNumber($chainStatus['BestChainHeight']);
-        $transaction->setRefBlockPrefix(substr(hex2bin($chainStatus['BestChainHash']),0,4));
-        return $transaction;
-        
-    }
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
+namespace PharIo\Manifest;
+
+class AuthorCollection implements \Countable, \IteratorAggregate {
     /**
-     * Sign a transaction using private key.
+     * @var Author[]
      */
-    public function signTransaction($privateKeyHex,$transaction)
-    {
-        $transactionData = sha256($transaction->serializeToString());
-        return $this->getSignatureWithPrivateKey($privateKeyHex,$transactionData);
+    private $authors = [];
+
+    public function add(Author $author) {
+        $this->authors[] = $author;
     }
 
     /**
-     * Get the address of genesis contract.
-     *
-     * @return address
+     * @return Author[]
      */
-    public function getGenesisContractAddress(){
-        $chainstatusDto = $this->getBlockChainSdkObj()->getChainStatus();
-        return $chainstatusDto['GenesisContractAddress'];
+    public function getAuthors() {
+        return $this->authors;
     }
 
     /**
-     * Get the account address through the public key.
-     *
-     * @param
+     * @return int
+     */
+    public function count() {
+        return count($this->authors);
+    }
+
+    /**
+     * @return AuthorCollectionIterator
+     */
+    public function getIterator() {
+        return new AuthorCollectionIterator($this);
+    }
+}

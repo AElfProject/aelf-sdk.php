@@ -1,8 +1,445 @@
-a8cd40bce6bd325c129f977000e88468ebf2dc158ac0f207212db00fb60b8ec8bae229372e9a6b01530a7ed1bc9d389ec8913f59030d5b54af56ae1ccc28f37cc96a8e53204e92a677766adfaada99b0281f867f61ac9ff7d972ee3ed427d72faae75d4aec01b5ffc37061b6f0f7e5714c4cf30d5b731b0746065f19e4c8922dde642f80fe24a3c8dcb2e5f1c266e2af6c37decf55a2baa54f0d5cf0839370c3e0b4e77a4f36bbb3162014933a4a4ebcae8c60961ac6dcf134f30828d31402ae74e7e8513c9d2ad8ee46b7a9d53a1f87ebfce04f461bded1749b6fc4c4f25793525692d7a0e426c84e06082cc3e6abb51368370cbb106c7a0897f66d92c9739cff9f2706d6a2980ecea3ac4945f0f47e656bd9637777e853d2a839104327dc049ebc34f049d6c2f80eca99db7b418424acef752260d2d427949323997cd9617edf50d441d0088b1d47912e35cf542315265829f383f45860d3b45e735bb2f8586dcf58db4f2acfb4a68853a96eed7b89769d365613:d2113f80d6cf928486a250a679d6e74b35ea9d26061fa94d769e1a8fbfa0a734227f55537e4ebff59336db141cf5d6d482a0711f1e9fc72ff70956a11b4fb9094776e9d60085481fa537bf295bdabd8b1cf632a8cd40bce6bd325c129f977000e88468ebf2dc158ac0f207212db00fb60b8ec8bae229372e9a6b01530a7ed1bc9d389ec8913f59030d5b54af56ae1ccc28f37cc96a8e53204e92a677766adfaada99b0281f867f61ac9ff7d972ee3ed427d72faae75d4aec01b5ffc37061b6f0f7e5714c4cf30d5b731b0746065f19e4c8922dde642f80fe24a3c8dcb2e5f1c266e2af6c37decf55a2baa54f0d5cf0839370c3e0b4e77a4f36bbb3162014933a4a4ebcae8c60961ac6dcf134f30828d31402ae74e7e8513c9d2ad8ee46b7a9d53a1f87ebfce04f461bded1749b6fc4c4f25793525692d7a0e426c84e06082cc3e6abb51368370cbb106c7a0897f66d92c9739cff9f2706d6a2980ecea3ac4945f0f47e656bd9637777e853d2a839104327dc049ebc34f049d6c2f80eca99db7b418424acef752260d2d427949323997cd9617edf50d441d0088b1d47912e35cf542315265829f383f45860d3b45e735bb2f8586dcf58db4f2acfb4a68853a96eed7b89769d365613:
-5d9585736ab209b0abe8bf74aca4eea4f6d1650b532550a223e044580f8e20dee77729edfd2144b2b12078765417fa21f1594f09b269e9b6706802b4f3bdfe85:e77729edfd2144b2b12078765417fa21f1594f09b269e9b6706802b4f3bdfe85:08693591e6c58a5ead9c85fe8ec58508f81a3467636c2d34fcc1f466e5c6dafdc37c35cbee35589c6997e2b15448132744e5a1e131bb49bf5c2563f87ead3efe01e88cbf24cc1769c78cdfc167e378215b15859c7a28ece70e188fa330267d3fc57b4ace6c1520ec67875067fd33be86f4a1967afb3eb164c797cf28d8072aa69d82afa38374f8e5797c4c28471b7d69f5b9c7b4acdbc19f3c5c5d400808a982a47837aed1b3841d69890eeb31494e10e3e513d12d0ca686c7ce651778092703fef0dcc0214077dfb361251bdea4364dd41b97bceb0fb1475a50e4708f47f7878c74401e9771cc3fceace89169981aa77250850090d181d8358ebba65e290acb0352bece8c579832a601551816d1c05621ccbbee0fbe39ea2f195393199e69c234c2fb1c37e474840860ce609161fcfce2869574be0d38f95e20f4f8725247b9627b46e834905101ac12b934cbf87cb2d190d2f51490a82c4e810eddb81f956a9f36bda497bca506a49ee9cd47fda5b7f2b884a3648cadd12ab61898ada46ecc970f81dc9f876845db:e7b08e1d5809fdd8529443d65ada5dd655ea55b5415a011393be7071676486d358e8d2a460ebe075b0e701b24c9e3ab5f2b033592d4de3b7f37fd541f692090908693591e6c58a5ead9c85fe8ec58508f81a3467636c2d34fcc1f466e5c6dafdc37c35cbee35589c6997e2b15448132744e5a1e131bb49bf5c2563f87ead3efe01e88cbf24cc1769c78cdfc167e378215b15859c7a28ece70e188fa330267d3fc57b4ace6c1520ec67875067fd33be86f4a1967afb3eb164c797cf28d8072aa69d82afa38374f8e5797c4c28471b7d69f5b9c7b4acdbc19f3c5c5d400808a982a47837aed1b3841d69890eeb31494e10e3e513d12d0ca686c7ce651778092703fef0dcc0214077dfb361251bdea4364dd41b97bceb0fb1475a50e4708f47f7878c74401e9771cc3fceace89169981aa77250850090d181d8358ebba65e290acb0352bece8c579832a601551816d1c05621ccbbee0fbe39ea2f195393199e69c234c2fb1c37e474840860ce609161fcfce2869574be0d38f95e20f4f8725247b9627b46e834905101ac12b934cbf87cb2d190d2f51490a82c4e810eddb81f956a9f36bda497bca506a49ee9cd47fda5b7f2b884a3648cadd12ab61898ada46ecc970f81dc9f876845db:
-60b142f165114143ca30a604fef51c686436aa1b9afdb266b3e398ccb3c4d855eaf6c5a76ca99bf7306498888c3b7a1feae98bf8988d7f2e1547f8f53a4528aa:eaf6c5a76ca99bf7306498888c3b7a1feae98bf8988d7f2e1547f8f53a4528aa:1815dee1173b78264720d35b7cc2454a000a65fff214e2473e20bc83f3ecde9c04c1e0696ce6e55519dd2a75ce0464bf601adc381e793ecb9f8ce7ab87b6ca2a3e410f639069451978d14873d3390fab8623969713c3dfcd58d86d124073761ee09a652a48767f9646cb726ac454ac9a1bc5faed3026b703982bc2b1e0758210e1d62519230eb2b2f4a486bc55168560c4363df5ff5adfda11ac7ef51b18196c94337c07aef117990f770c0f1e8c0f88eb6ffc40e8ed7c3a80a632db1e7f63b63096e2ac49e57792b31143e2f4faabceae66b27471681c36fc1139007f9b548cdc6e3b8fbbdaba7a8adb843431238bb461ba24f6e09f62c72d6377b4048cb0134c25a5411a20bfcfc13e48d80e36bfb0da7e0185d33f1928636e15dee0e5df8992a16572b13ea8f7cf85cae32d529f66e8f6d2fb2ad0bbfe7199169b2567ba00c781b20a48e1d70df9fa3119cd7e5bbe58884b0b51218940fa815f85625fa203471cee8084780eb0b9356f9f3d4f6df740301d707ef1ffb3519e3f90b8064b98e70f375d071426881718:a621f084ea1a36ef812a9755c9afbb53dadaae6b3a53fa8344ca40d3612a268a35fed0fd398ab75bcd639c547937c94155ab1a7a3467dd4bfddfacab1655e9081815dee1173b78264720d35b7cc2454a000a65fff214e2473e20bc83f3ecde9c04c1e0696ce6e55519dd2a75ce0464bf601adc381e793ecb9f8ce7ab87b6ca2a3e410f639069451978d14873d3390fab8623969713c3dfcd58d86d124073761ee09a652a48767f9646cb726ac454ac9a1bc5faed3026b703982bc2b1e0758210e1d62519230eb2b2f4a486bc55168560c4363df5ff5adfda11ac7ef51b18196c94337c07aef117990f770c0f1e8c0f88eb6ffc40e8ed7c3a80a632db1e7f63b63096e2ac49e57792b31143e2f4faabceae66b27471681c36fc1139007f9b548cdc6e3b8fbbdaba7a8adb843431238bb461ba24f6e09f62c72d6377b4048cb0134c25a5411a20bfcfc13e48d80e36bfb0da7e0185d33f1928636e15dee0e5df8992a16572b13ea8f7cf85cae32d529f66e8f6d2fb2ad0bbfe7199169b2567ba00c781b20a48e1d70df9fa3119cd7e5bbe58884b0b51218940fa815f85625fa203471cee8084780eb0b9356f9f3d4f6df740301d707ef1ffb3519e3f90b8064b98e70f375d071426881718:
-734ba47033c6140232dd4a7a14f1a7743eefe9070bad9662491630cc9d28c1f32fa5df3026d60742e2aff6b57842c7126846c8a7bbe9266efa7b3f2398c357ea:2fa5df3026d60742e2aff6b57842c7126846c8a7bbe9266efa7b3f2398c357ea:5d3c659810c3fea52a6df3861e5cdc5b703cc1cef48558c61d8c51d0edea5a1479cfe5063d82ded9ca681e5748887c40ecfb9e1a9a8b7f8509d10776461c3923399693a78189089178d5aabd15f8c846642be47d6d4caf13824edcefb809868fa72ddf035c4de8ef0a9c832264f66f012761ce6955bc3c416e93e29188025ebbb13a553258c1d7c499c9a4aeb10bb36f61d1bb4cec5ae55d175722b9a9696df881951e35200b9653cf6ed4b3d15de087a9d1c319fce8582156bebf3fc91e0e610ff7a15308fd1d2c6069fbbb2947d3110731d245ae2963014bd76dea42db125cecc493c8e9091a76646577729aed4966fce9699fe12e367d665df9e95a9193e1133e143af92f82b66ac7764e5033178690521809a7107d8ae9b88e0ed1f35b1719901b930ad0e1cbce7fb30267b1155204f605f525e49de2988ea7f74be8815177fd976a1bcc126d9c9c135c5b4276d38019c34aefb7a0220f7f5aeff380aed627b070c2c9e21533bb35c08e394c85ae25e6862942599c65dbae5977a584a88180e0c8c71e5a8409e04ef7:9bd074d1d0bd28001baf7d2d4e82435df08c4264d8cbb1c381183c2f01223f79f94923ca178cac75564e16c7f56079088f7ed885de4d509fbc78f438fba3f6075d3c659810c3fea52a6df3861e5cdc5b703cc1cef48558c61d8c51d0edea5a1479cfe5063d82ded9ca681e5748887c40ecfb9e1a9a8b7f8509d10776461c3923399693a78189089178d5aabd15f8c846642be47d6d4caf13824edcefb809868fa72ddf035c4de8ef0a9c832264f66f012761ce6955bc3c416e93e29188025ebbb13a553258c1d7c499c9a4aeb10bb36f61d1bb4cec5ae55d175722b9a9696df881951e35200b9653cf6ed4b3d15de087a9d1c319fce8582156bebf3fc91e0e610ff7a15308fd1d2c6069fbbb2947d3110731d245ae2963014bd76dea42db125cecc493c8e9091a76646577729aed4966fce9699fe12e367d665df9e95a9193e1133e143af92f82b66ac7764e5033178690521809a7107d8ae9b88e0ed1f35b1719901b930ad0e1cbce7fb30267b1155204f605f525e49de2988ea7f74be8815177fd976a1bcc126d9c9c135c5b4276d38019c34aefb7a0220f7f5aeff380aed627b070c2c9e21533bb35c08e394c85ae25e6862942599c65dbae5977a584a88180e0c8c71e5a8409e04ef7:
-45e34d0ef4c196fa6d572b6b1774b5218f7c3291304c13500df7070d90e8039e13a7304dff423359177abafa5e6508d26769ca99cf8af45c383f3ff634406003:13a7304dff423359177abafa5e6508d26769ca99cf8af45c383f3ff634406003:3d9ed5c64b75e135df2f5e85300d90f21b363935e2817556fc9311751ba7535477dec8356ec385efb82b414062f35bb6d3edeafde305f9900a25e9813c9ee0237d46409650cdcdb5dfa2301a8e2647f8d3819d86f7b7e3070d33440f82c4054b1ab5edebeb27f95b3c4c6fdd468f21600f03b3494da200bab9293c38d02fc44048e52ff5fd0f7217a04d4ce912a180d1628f368280b6892672e8ff98d4629ac28b60c02a301e6c6026c1b9e9ef21cf0392df225008d5a0e0284b282631ad1710f811615697066c98296519948a7cfed5aeeb454ee7a61cc271bd3d499be17df09d3a0e790ee6b9bd99e1b919bed4a063b8d1a34f1afd2e952b9dfefd770969c8b2fc37977abb0fee6317253a23ecc97578168973334c8f91763ab97f29c49baeee7b35f3ae7f5cd3a4a6e697ef255a3c2ec0c752a3396f69f663ca1fc2b332dfe6c0faf78afe9c68d99571e8e896c5093085e9863a27648a9e58f3a9a84cbbfe2b41ca3633dd5cf6e82cb77cecacad8d78b353f48db42d99c36bcad170ea9e98abb2788c33a3c706268f3631:b42c1f925f4baccd129efb109db354aca31c6898f4f451294749a26a6da1677bd3a5c04119e35f47319f20cfdfc08bb4528b21009e00bd41ebc0f46863bed10b3d9ed5c64b75e135df2f5e85300d90f21b363935e2817556fc9311751ba7535477dec8356ec385efb82b414062f35bb6d3edeafde305f9900a25e9813c9ee0237d46409650cdcdb5dfa2301a8e2647f8d3819d86f7b7e3070d33440f82c4054b1ab5edebeb27f95b3c4c6fdd468f21600f03b3494da200bab9293c38d02fc44048e52ff5fd0f7217a04d4ce912a180d1628f368280b6892672e8ff98d4629ac28b60c02a301e6c6026c1b9e9ef21cf0392df225008d5a0e0284b282631ad1710f811615697066c98296519948a7cfed5aeeb454ee7a61cc271bd3d499be17df09d3a0e790ee6b9bd99e1b919bed4a063b8d1a34f1afd2e952b9dfefd770969c8b2fc37977abb0fee6317253a23ecc97578168973334c8f91763ab97f29c49baeee7b35f3ae7f5cd3a4a6e697ef255a3c2ec0c752a3396f69f663ca1fc2b332dfe6c0faf78afe9c68d99571e8e896c5093085e9863a27648a9e58f3a9a84cbbfe2b41ca3633dd5cf6e82cb77cecacad8d78b353f48db42d99c36bcad170ea9e98abb2788c33a3c706268f3631:
-888ce2ecceda9ca2b948ac1443c2aedd7595aacf36edaf27255bde7a6991dcc0016e572b4f98417c6ee297abd784ea48226ff4fbf0050a5ade8806e7046d3ba3:016e572b4f98417c6ee297abd784ea48226ff4fbf0050a5ade8806e7046d3ba3:5c801a8e664e7660760a25a5e1431a62159fc3f3aa713780ae7cbce23b8564782799bf2be4817ee2921965bab7e1d44833824c1628d42dcee3e46ae42b2816d0a432a1ab0bd21fcf30adb63d8dd76569544343d0035c760522ca68bea72c404edda1e9095ec90f3325681c6de0f4c12d1afbcba2c7871a1b1e1f19c35b0bed9ec2a87c043d36d819396bd5d099e1aa090391297c733f65a8c5d2120c67635316fab25b4d4847a45fc3f76f2e2426dbee4629975062fce14e2189dba27fb1ded2453f001debfaa899c11660612d2ce2ad2f762ea5dee7e71e58adcdcefa79e8e8b27fc4ccf89aabf176b5d34f82dd15d889f9f087dc9ae8a42a72f3b83583616e170637cd1adf38aa6551cbacca3602bdc7ae210c4a446b3af8db2720e549bbedb8bed215ae00f19da29d8fb0b642d27b2d88575f0ee84f3d129eb774d20f537a1c0fdcf717bdebcfe47f8331a341864346fa6a1c6bbfd178819e387a0d5499a68e81cc9f82ad39e31e4dfe71952d5ea5cc8052a3ceed1751f59dc7ecc9742fad144e18dda8d0582e74e39ca8c4:99d83f148a236ebbef1cad88cb3c7694f4986c9250e21c3603a0d941bff199cf77d6ce99efdb20533188d68ad133de033a1fb3468abb706d2b8b4fbac08dfe035c801a8e664e7660760a25a5e1431a62159fc3f3aa713780ae7cbce23b8564782799bf2be4817ee2921965bab7e1d44833824c1628d42dcee3e46ae42b2816d0a432a1ab0bd21fcf30adb63d8dd76569544343d0035c760522ca68bea72c404edda1e9095ec90f3325681c6de0f4c12d1afbcba2c7871a1b1e1f19c35b0bed9ec2a87c043d36d819396bd5d099e1aa090391297c733f65a8c5d2120c67635316fab25b4d4847a45fc3f76f2e2426dbee4629975062fce14e2189dba27fb1ded2453f001debfaa899c11660612d2ce2ad2f762ea5dee7e71e58adcdcefa79e8e8b27fc4ccf89aabf176b5d34f82dd15d889f9f087dc9ae8a42a72f3b83583616e170637cd1adf38aa6551cbacca3602bdc7ae210c4a446b3af8db2720e549bbedb8bed215ae00f19da29d8fb0b642d27b2d88575f0ee84f3d129eb774d20f537a1c0fdcf717bdebcfe47f8331a341864346fa6a1c6bbfd178819e387a0d5499a68e81cc9f82ad39e31e4dfe71952d5ea5cc8052a3ceed1751f59dc7ecc9742fad144e18dda8d0582e74e39ca8c4:
-617390857dc10cdf82b5c94261f58ce2d44aa2f57d298f08a2d6c74d28147daf89e0c3e0a0f130d1916e0e3849b7286fa2e3ac4c17bd1f716ee5a72f0257fb8d:89e0c3e0a0f130d1916e0e3849b7286fa2e3ac4c17bd1f716ee5a72f0257fb8d:1fd9e7453eaffd7c9b54055622dde170dd58b71cb945de75351d5fceb1f536bde25158f03786155f953dc207a1708f90d95b15aca0aee3097fdcaae85e4ab1c2cdb705c53e6c2ed21a994b304a75caf2ce4fc7d61f561e74e297397e2cde5cc69056940343aa81375d0af18d17d2f34c0a71dcf1de3c4fc488a14c5fa6b3337a3174b1da7958fb00bd5955148221427c60dba04117c80d2488656dbd5343de891287b50ef4df9825eda76b4977f3acd4ab6d3102fa56878306cd76561491bcfdaa1da567e677f7f03bae5dbf4426c3c4a6c3d082f9178b2efdd2bd49eee97ef4dcf3f0f51bbdeffe5ae6601e28019518f827f02e51f6679b8715978bec3e69d577156dd719959371baf034219fbbd17a2369a8541490f6a02013e33e74f4769be37aefa4defb6bfb3f351c2a261482c2fbec49f85f8445456e8f5a474030cd72d095ef6a622030e1e43a0c5debb034731d2f5e8e4ba3990f077d0c162649d1fa3ea4fe1e81d74aa849e21b059d966cbad4c493ca10bafe7a69243e3c0a6ebfd13d697906303392ba65d4fe06b6a5:63e90a6afbbbb0ee696bfb56efd679d68a9851a8947640a97f41f68edfeadd216ed8698e2e43c820c9044caa7adaab5b76762b681831a9f760476a8443c43c061fd9e7453eaffd7c9b54055622dde170dd58b71cb945de75351d5fceb1f536bde25158f03786155f953dc207a1708f90d95b15aca0aee3097fdcaae85e4ab1c2cdb705c53e6c2ed21a994b304a75caf2ce4fc7d61f561e74e297397e2cde5cc69056940343aa81375d0af18d17d2f34c0a71dcf1de3c4fc488a14c5fa6b3337a3174b1da7958fb00bd5955148221427c60dba04117c80d2488656dbd5343de891287b50ef4df9825eda76b4977f3acd4ab6d3102fa56878306cd76561491bcfdaa1da567e677f7f03bae5dbf4426c3c4a6c3d082f9178b2efdd2bd49eee97ef4dcf3f0f51bbdeffe5ae6601e28019518f827f02e51f6679b8715978bec3e69d577156dd719959371baf034219fbbd17a2369a8541490f6a02013e33e74f4769be37aefa4defb6bfb3f351c2a261482c2fbec49f85f8445456e8f5a474030cd72d095ef6a622030e1e43a0c5debb034731d2f5e8e4ba3990f077d0c162649d1fa3ea4fe1e81d74aa849e21b059d966cbad4c493ca10bafe7a69243e3c0a6ebfd13d697906303392ba65d4fe06b6a5:
-877d017436369ec2453fed46e977d6acc3a7be60d31395ad6e7ea9e07480e4c94e65422fed334a55e8b673893eba7c181dd724dda002817b0bae28acdc3f7fc0:4e65422fed334a55e8b673893eba7c181dd724dda002817b0bae28acdc3f7fc0:4ed3f5bdbd41d0e3b0a8a7fc3752eea496d6141678cbfe06757f61e1a168d761b6da83052f7994950d24626f004fbe9b8c9562e0c955fb3b5c08fd2d3d258393a349030c8e156205b40483038be1959f1c
+<?php
+
+/*
+ * This file is part of Composer.
+ *
+ * (c) Nils Adermann <naderman@naderman.de>
+ *     Jordi Boggiano <j.boggiano@seld.be>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Composer\Autoload;
+
+/**
+ * ClassLoader implements a PSR-0, PSR-4 and classmap class loader.
+ *
+ *     $loader = new \Composer\Autoload\ClassLoader();
+ *
+ *     // register classes with namespaces
+ *     $loader->add('Symfony\Component', __DIR__.'/component');
+ *     $loader->add('Symfony',           __DIR__.'/framework');
+ *
+ *     // activate the autoloader
+ *     $loader->register();
+ *
+ *     // to enable searching the include path (eg. for PEAR packages)
+ *     $loader->setUseIncludePath(true);
+ *
+ * In this example, if you try to use a class in the Symfony\Component
+ * namespace or one of its children (Symfony\Component\Console for instance),
+ * the autoloader will first look for the class under the component/
+ * directory, and it will then fallback to the framework/ directory if not
+ * found before giving up.
+ *
+ * This class is loosely based on the Symfony UniversalClassLoader.
+ *
+ * @author Fabien Potencier <fabien@symfony.com>
+ * @author Jordi Boggiano <j.boggiano@seld.be>
+ * @see    http://www.php-fig.org/psr/psr-0/
+ * @see    http://www.php-fig.org/psr/psr-4/
+ */
+class ClassLoader
+{
+    // PSR-4
+    private $prefixLengthsPsr4 = array();
+    private $prefixDirsPsr4 = array();
+    private $fallbackDirsPsr4 = array();
+
+    // PSR-0
+    private $prefixesPsr0 = array();
+    private $fallbackDirsPsr0 = array();
+
+    private $useIncludePath = false;
+    private $classMap = array();
+    private $classMapAuthoritative = false;
+    private $missingClasses = array();
+    private $apcuPrefix;
+
+    public function getPrefixes()
+    {
+        if (!empty($this->prefixesPsr0)) {
+            return call_user_func_array('array_merge', $this->prefixesPsr0);
+        }
+
+        return array();
+    }
+
+    public function getPrefixesPsr4()
+    {
+        return $this->prefixDirsPsr4;
+    }
+
+    public function getFallbackDirs()
+    {
+        return $this->fallbackDirsPsr0;
+    }
+
+    public function getFallbackDirsPsr4()
+    {
+        return $this->fallbackDirsPsr4;
+    }
+
+    public function getClassMap()
+    {
+        return $this->classMap;
+    }
+
+    /**
+     * @param array $classMap Class to filename map
+     */
+    public function addClassMap(array $classMap)
+    {
+        if ($this->classMap) {
+            $this->classMap = array_merge($this->classMap, $classMap);
+        } else {
+            $this->classMap = $classMap;
+        }
+    }
+
+    /**
+     * Registers a set of PSR-0 directories for a given prefix, either
+     * appending or prepending to the ones previously set for this prefix.
+     *
+     * @param string       $prefix  The prefix
+     * @param array|string $paths   The PSR-0 root directories
+     * @param bool         $prepend Whether to prepend the directories
+     */
+    public function add($prefix, $paths, $prepend = false)
+    {
+        if (!$prefix) {
+            if ($prepend) {
+                $this->fallbackDirsPsr0 = array_merge(
+                    (array) $paths,
+                    $this->fallbackDirsPsr0
+                );
+            } else {
+                $this->fallbackDirsPsr0 = array_merge(
+                    $this->fallbackDirsPsr0,
+                    (array) $paths
+                );
+            }
+
+            return;
+        }
+
+        $first = $prefix[0];
+        if (!isset($this->prefixesPsr0[$first][$prefix])) {
+            $this->prefixesPsr0[$first][$prefix] = (array) $paths;
+
+            return;
+        }
+        if ($prepend) {
+            $this->prefixesPsr0[$first][$prefix] = array_merge(
+                (array) $paths,
+                $this->prefixesPsr0[$first][$prefix]
+            );
+        } else {
+            $this->prefixesPsr0[$first][$prefix] = array_merge(
+                $this->prefixesPsr0[$first][$prefix],
+                (array) $paths
+            );
+        }
+    }
+
+    /**
+     * Registers a set of PSR-4 directories for a given namespace, either
+     * appending or prepending to the ones previously set for this namespace.
+     *
+     * @param string       $prefix  The prefix/namespace, with trailing '\\'
+     * @param array|string $paths   The PSR-4 base directories
+     * @param bool         $prepend Whether to prepend the directories
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function addPsr4($prefix, $paths, $prepend = false)
+    {
+        if (!$prefix) {
+            // Register directories for the root namespace.
+            if ($prepend) {
+                $this->fallbackDirsPsr4 = array_merge(
+                    (array) $paths,
+                    $this->fallbackDirsPsr4
+                );
+            } else {
+                $this->fallbackDirsPsr4 = array_merge(
+                    $this->fallbackDirsPsr4,
+                    (array) $paths
+                );
+            }
+        } elseif (!isset($this->prefixDirsPsr4[$prefix])) {
+            // Register directories for a new namespace.
+            $length = strlen($prefix);
+            if ('\\' !== $prefix[$length - 1]) {
+                throw new \InvalidArgumentException("A non-empty PSR-4 prefix must end with a namespace separator.");
+            }
+            $this->prefixLengthsPsr4[$prefix[0]][$prefix] = $length;
+            $this->prefixDirsPsr4[$prefix] = (array) $paths;
+        } elseif ($prepend) {
+            // Prepend directories for an already registered namespace.
+            $this->prefixDirsPsr4[$prefix] = array_merge(
+                (array) $paths,
+                $this->prefixDirsPsr4[$prefix]
+            );
+        } else {
+            // Append directories for an already registered namespace.
+            $this->prefixDirsPsr4[$prefix] = array_merge(
+                $this->prefixDirsPsr4[$prefix],
+                (array) $paths
+            );
+        }
+    }
+
+    /**
+     * Registers a set of PSR-0 directories for a given prefix,
+     * replacing any others previously set for this prefix.
+     *
+     * @param string       $prefix The prefix
+     * @param array|string $paths  The PSR-0 base directories
+     */
+    public function set($prefix, $paths)
+    {
+        if (!$prefix) {
+            $this->fallbackDirsPsr0 = (array) $paths;
+        } else {
+            $this->prefixesPsr0[$prefix[0]][$prefix] = (array) $paths;
+        }
+    }
+
+    /**
+     * Registers a set of PSR-4 directories for a given namespace,
+     * replacing any others previously set for this namespace.
+     *
+     * @param string       $prefix The prefix/namespace, with trailing '\\'
+     * @param array|string $paths  The PSR-4 base directories
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function setPsr4($prefix, $paths)
+    {
+        if (!$prefix) {
+            $this->fallbackDirsPsr4 = (array) $paths;
+        } else {
+            $length = strlen($prefix);
+            if ('\\' !== $prefix[$length - 1]) {
+                throw new \InvalidArgumentException("A non-empty PSR-4 prefix must end with a namespace separator.");
+            }
+            $this->prefixLengthsPsr4[$prefix[0]][$prefix] = $length;
+            $this->prefixDirsPsr4[$prefix] = (array) $paths;
+        }
+    }
+
+    /**
+     * Turns on searching the include path for class files.
+     *
+     * @param bool $useIncludePath
+     */
+    public function setUseIncludePath($useIncludePath)
+    {
+        $this->useIncludePath = $useIncludePath;
+    }
+
+    /**
+     * Can be used to check if the autoloader uses the include path to check
+     * for classes.
+     *
+     * @return bool
+     */
+    public function getUseIncludePath()
+    {
+        return $this->useIncludePath;
+    }
+
+    /**
+     * Turns off searching the prefix and fallback directories for classes
+     * that have not been registered with the class map.
+     *
+     * @param bool $classMapAuthoritative
+     */
+    public function setClassMapAuthoritative($classMapAuthoritative)
+    {
+        $this->classMapAuthoritative = $classMapAuthoritative;
+    }
+
+    /**
+     * Should class lookup fail if not found in the current class map?
+     *
+     * @return bool
+     */
+    public function isClassMapAuthoritative()
+    {
+        return $this->classMapAuthoritative;
+    }
+
+    /**
+     * APCu prefix to use to cache found/not-found classes, if the extension is enabled.
+     *
+     * @param string|null $apcuPrefix
+     */
+    public function setApcuPrefix($apcuPrefix)
+    {
+        $this->apcuPrefix = function_exists('apcu_fetch') && filter_var(ini_get('apc.enabled'), FILTER_VALIDATE_BOOLEAN) ? $apcuPrefix : null;
+    }
+
+    /**
+     * The APCu prefix in use, or null if APCu caching is not enabled.
+     *
+     * @return string|null
+     */
+    public function getApcuPrefix()
+    {
+        return $this->apcuPrefix;
+    }
+
+    /**
+     * Registers this instance as an autoloader.
+     *
+     * @param bool $prepend Whether to prepend the autoloader or not
+     */
+    public function register($prepend = false)
+    {
+        spl_autoload_register(array($this, 'loadClass'), true, $prepend);
+    }
+
+    /**
+     * Unregisters this instance as an autoloader.
+     */
+    public function unregister()
+    {
+        spl_autoload_unregister(array($this, 'loadClass'));
+    }
+
+    /**
+     * Loads the given class or interface.
+     *
+     * @param  string    $class The name of the class
+     * @return bool|null True if loaded, null otherwise
+     */
+    public function loadClass($class)
+    {
+        if ($file = $this->findFile($class)) {
+            includeFile($file);
+
+            return true;
+        }
+    }
+
+    /**
+     * Finds the path to the file where the class is defined.
+     *
+     * @param string $class The name of the class
+     *
+     * @return string|false The path if found, false otherwise
+     */
+    public function findFile($class)
+    {
+        // class map lookup
+        if (isset($this->classMap[$class])) {
+            return $this->classMap[$class];
+        }
+        if ($this->classMapAuthoritative || isset($this->missingClasses[$class])) {
+            return false;
+        }
+        if (null !== $this->apcuPrefix) {
+            $file = apcu_fetch($this->apcuPrefix.$class, $hit);
+            if ($hit) {
+                return $file;
+            }
+        }
+
+        $file = $this->findFileWithExtension($class, '.php');
+
+        // Search for Hack files if we are running on HHVM
+        if (false === $file && defined('HHVM_VERSION')) {
+            $file = $this->findFileWithExtension($class, '.hh');
+        }
+
+        if (null !== $this->apcuPrefix) {
+            apcu_add($this->apcuPrefix.$class, $file);
+        }
+
+        if (false === $file) {
+            // Remember that this class does not exist.
+            $this->missingClasses[$class] = true;
+        }
+
+        return $file;
+    }
+
+    private function findFileWithExtension($class, $ext)
+    {
+        // PSR-4 lookup
+        $logicalPathPsr4 = strtr($class, '\\', DIRECTORY_SEPARATOR) . $ext;
+
+        $first = $class[0];
+        if (isset($this->prefixLengthsPsr4[$first])) {
+            $subPath = $class;
+            while (false !== $lastPos = strrpos($subPath, '\\')) {
+                $subPath = substr($subPath, 0, $lastPos);
+                $search = $subPath . '\\';
+                if (isset($this->prefixDirsPsr4[$search])) {
+                    $pathEnd = DIRECTORY_SEPARATOR . substr($logicalPathPsr4, $lastPos + 1);
+                    foreach ($this->prefixDirsPsr4[$search] as $dir) {
+                        if (file_exists($file = $dir . $pathEnd)) {
+                            return $file;
+                        }
+                    }
+                }
+            }
+        }
+
+        // PSR-4 fallback dirs
+        foreach ($this->fallbackDirsPsr4 as $dir) {
+            if (file_exists($file = $dir . DIRECTORY_SEPARATOR . $logicalPathPsr4)) {
+                return $file;
+            }
+        }
+
+        // PSR-0 lookup
+        if (false !== $pos = strrpos($class, '\\')) {
+            // namespaced class name
+            $logicalPathPsr0 = substr($logicalPathPsr4, 0, $pos + 1)
+                . strtr(substr($logicalPathPsr4, $pos + 1), '_', DIRECTORY_SEPARATOR);
+        } else {
+            // PEAR-like class name
+            $logicalPathPsr0 = strtr($class, '_', DIRECTORY_SEPARATOR) . $ext;
+        }
+
+        if (isset($this->prefixesPsr0[$first])) {
+            foreach ($this->prefixesPsr0[$first] as $prefix => $dirs) {
+                if (0 === strpos($class, $prefix)) {
+                    foreach ($dirs as $dir) {
+                        if (file_exists($file = $dir . DIRECTORY_SEPARATOR . $logicalPathPsr0)) {
+                            return $file;
+                        }
+                    }
+                }
+            }
+        }
+
+        // PSR-0 fallback dirs
+        foreach ($this->fallbackDirsPsr0 as $dir) {
+            if (file_exists($file = $dir . DIRECTORY_SEPARATOR . $logicalPathPsr0)) {
+                return $file;
+            }
+        }
+
+        // PSR-0 include paths.
+        if ($this->useIncludePath && $file = stream_resolve_include_path($logicalPathPsr0)) {
+            return $file;
+        }
+
+        return false;
+    }
+}
+
+/**
+ * Scope isolated include.
+ *
+ * Prevents access to $this/self from included files.
+ */
+function includeFile($file)
+{
+    include $file;
+}

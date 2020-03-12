@@ -1,5041 +1,2446 @@
-unction setStdin($stdin)
-{
-$this->stdin = $stdin;
-
-return $this;
-}
-
-
-
-
-
-
-public function getOptions()
-{
-return $this->options;
-}
-
-
-
-
-
-
-
-
-public function setOptions(array $options)
-{
-$this->options = $options;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-public function getEnhanceWindowsCompatibility()
-{
-return $this->enhanceWindowsCompatibility;
-}
-
-
-
-
-
-
-
-
-public function setEnhanceWindowsCompatibility($enhance)
-{
-$this->enhanceWindowsCompatibility = (Boolean) $enhance;
-
-return $this;
-}
-
-
-
-
-
-
-public function getEnhanceSigchildCompatibility()
-{
-return $this->enhanceSigchildCompatibility;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function setEnhanceSigchildCompatibility($enhance)
-{
-$this->enhanceSigchildCompatibility = (Boolean) $enhance;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-
-public function checkTimeout()
-{
-if (0 < $this->timeout && $this->timeout < microtime(true) - $this->starttime) {
-$this->stop(0);
-
-throw new RuntimeException('The process timed-out.');
-}
-}
-
-
-
-
-
-
-private function getDescriptors()
-{
-
- 
- 
- if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-$this->fileHandles = array(
-self::STDOUT => tmpfile(),
-);
-if (false === $this->fileHandles[self::STDOUT]) {
-throw new RuntimeException('A temporary file could not be opened to write the process output to, verify that your TEMP environment variable is writable');
-}
-$this->readBytes = array(
-self::STDOUT => 0,
-);
-
-return array(array('pipe', 'r'), $this->fileHandles[self::STDOUT], array('pipe', 'w'));
-} 
-
-if ($this->tty) {
-$descriptors = array(
-array('file', '/dev/tty', 'r'),
-array('file', '/dev/tty', 'w'),
-array('file', '/dev/tty', 'w'),
-);
-} else {
-$descriptors = array(
-array('pipe', 'r'), 
- array('pipe', 'w'), 
- array('pipe', 'w'), 
- );
-}
-
-if ($this->enhanceSigchildCompatibility && $this->isSigchildEnabled()) {
-
- $descriptors = array_merge($descriptors, array(array('pipe', 'w')));
-
-$this->commandline = '('.$this->commandline.') 3>/dev/null; code=$?; echo $code >&3; exit $code';
-}
-
-return $descriptors;
-}
-
-
-
-
-
-
-
-
-
-
-
-protected function buildCallback($callback)
-{
-$that = $this;
-$out = self::OUT;
-$err = self::ERR;
-$callback = function ($type, $data) use ($that, $callback, $out, $err) {
-if ($out == $type) {
-$that->addOutput($data);
-} else {
-$that->addErrorOutput($data);
-}
-
-if (null !== $callback) {
-call_user_func($callback, $type, $data);
-}
-};
-
-return $callback;
-}
-
-
-
-
-protected function updateStatus()
-{
-if (self::STATUS_STARTED !== $this->status) {
-return;
-}
-
-$this->processInformation = proc_get_status($this->process);
-if (!$this->processInformation['running']) {
-$this->status = self::STATUS_TERMINATED;
-if (-1 !== $this->processInformation['exitcode']) {
-$this->exitcode = $this->processInformation['exitcode'];
-}
-}
-}
-
-
-
-
-protected function updateErrorOutput()
-{
-if (isset($this->pipes[self::STDERR]) && is_resource($this->pipes[self::STDERR])) {
-$this->addErrorOutput(stream_get_contents($this->pipes[self::STDERR]));
-}
-}
-
-
-
-
-protected function updateOutput()
-{
-if (defined('PHP_WINDOWS_VERSION_BUILD') && isset($this->fileHandles[self::STDOUT]) && is_resource($this->fileHandles[self::STDOUT])) {
-fseek($this->fileHandles[self::STDOUT], $this->readBytes[self::STDOUT]);
-$this->addOutput(stream_get_contents($this->fileHandles[self::STDOUT]));
-} elseif (isset($this->pipes[self::STDOUT]) && is_resource($this->pipes[self::STDOUT])) {
-$this->addOutput(stream_get_contents($this->pipes[self::STDOUT]));
-}
-}
-
-
-
-
-
-
-protected function isSigchildEnabled()
-{
-if (null !== self::$sigchild) {
-return self::$sigchild;
-}
-
-ob_start();
-phpinfo(INFO_GENERAL);
-
-return self::$sigchild = false !== strpos(ob_get_clean(), '--enable-sigchild');
-}
-
-
-
-
-
-
-
-private function processFileHandles($callback, $closeEmptyHandles = false)
-{
-$fh = $this->fileHandles;
-foreach ($fh as $type => $fileHandle) {
-fseek($fileHandle, $this->readBytes[$type]);
-$data = fread($fileHandle, 8192);
-if (strlen($data) > 0) {
-$this->readBytes[$type] += strlen($data);
-call_user_func($callback, $type == 1 ? self::OUT : self::ERR, $data);
-}
-if (false === $data || ($closeEmptyHandles && '' === $data && feof($fileHandle))) {
-fclose($fileHandle);
-unset($this->fileHandles[$type]);
-}
-}
-}
-}
 <?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process;
-
-use Symfony\Component\Process\Exception\InvalidArgumentException;
-use Symfony\Component\Process\Exception\LogicException;
-
-
-
-
-
-
-class ProcessBuilder
-{
-private $arguments;
-private $cwd;
-private $env;
-private $stdin;
-private $timeout;
-private $options;
-private $inheritEnv;
-private $prefix;
-
-public function __construct(array $arguments = array())
-{
-$this->arguments = $arguments;
-
-$this->timeout = 60;
-$this->options = array();
-$this->env = array();
-$this->inheritEnv = true;
-}
-
-public static function create(array $arguments = array())
-{
-return new static($arguments);
-}
-
-
-
-
-
-
-
-
-public function add($argument)
-{
-$this->arguments[] = $argument;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-
-
-public function setPrefix($prefix)
-{
-$this->prefix = $prefix;
-
-return $this;
-}
-
-
-
-
-
-
-public function setArguments(array $arguments)
-{
-$this->arguments = $arguments;
-
-return $this;
-}
-
-public function setWorkingDirectory($cwd)
-{
-$this->cwd = $cwd;
-
-return $this;
-}
-
-public function inheritEnvironmentVariables($inheritEnv = true)
-{
-$this->inheritEnv = $inheritEnv;
-
-return $this;
-}
-
-public function setEnv($name, $value)
-{
-$this->env[$name] = $value;
-
-return $this;
-}
-
-public function setInput($stdin)
-{
-$this->stdin = $stdin;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function setTimeout($timeout)
-{
-if (null === $timeout) {
-$this->timeout = null;
-
-return $this;
-}
-
-$timeout = (float) $timeout;
-
-if ($timeout < 0) {
-throw new InvalidArgumentException('The timeout value must be a valid positive integer or float number.');
-}
-
-$this->timeout = $timeout;
-
-return $this;
-}
-
-public function setOption($name, $value)
-{
-$this->options[$name] = $value;
-
-return $this;
-}
-
-public function getProcess()
-{
-if (!$this->prefix && !count($this->arguments)) {
-throw new LogicException('You must add() command arguments before calling getProcess().');
-}
-
-$options = $this->options;
-
-$arguments = $this->prefix ? array_merge(array($this->prefix), $this->arguments) : $this->arguments;
-$script = implode(' ', array_map(array(__NAMESPACE__.'\\ProcessUtils', 'escapeArgument'), $arguments));
-
-if ($this->inheritEnv) {
-$env = $this->env ? $this->env + $_ENV : null;
-} else {
-$env = $this->env;
-}
-
-return new Process($script, $this->cwd, $env, $this->stdin, $this->timeout, $options);
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process;
-
-
-
-
-
-
-
-
-class ProcessUtils
-{
-
-
-
-private function __construct()
-{
-}
-
-
-
-
-
-
-
-
-public static function escapeArgument($argument)
-{
-
- 
- 
- 
- if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-$escapedArgument = '';
-foreach(preg_split('/([%"])/i', $argument, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE) as $part) {
-if ('"' == $part) {
-$escapedArgument .= '\\"';
-} elseif ('%' == $part) {
-$escapedArgument .= '^%';
-} else {
-$escapedArgument .= escapeshellarg($part);
-}
-}
-
-return $escapedArgument;
-}
-
-return escapeshellarg($argument);
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process\Exception;
-
-
-
-
-
-
-interface ExceptionInterface
-{
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process\Exception;
-
-
-
-
-
-
-class RuntimeException extends \RuntimeException implements ExceptionInterface
-{
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process\Exception;
-
-
-
-
-
-
-class LogicException extends \LogicException implements ExceptionInterface
-{
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process\Exception;
-
-use Symfony\Component\Process\Process;
-
-
-
-
-
-
-class ProcessFailedException extends RuntimeException
-{
-private $process;
-
-public function __construct(Process $process)
-{
-if ($process->isSuccessful()) {
-throw new InvalidArgumentException('Expected a failed process, but the given process was successful.');
-}
-
-parent::__construct(
-sprintf(
-'The command "%s" failed.'."\nExit Code: %s(%s)\n\nOutput:\n================\n%s\n\nError Output:\n================\n%s",
-$process->getCommandLine(),
-$process->getExitCode(),
-$process->getExitCodeText(),
-$process->getOutput(),
-$process->getErrorOutput()
-)
-);
-
-$this->process = $process;
-}
-
-public function getProcess()
-{
-return $this->process;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process\Exception;
-
-
-
-
-
-
-class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
-{
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Process;
-
-
-
-
-
-
-
-class PhpExecutableFinder
-{
-private $executableFinder;
-
-public function __construct()
-{
-$this->executableFinder = new ExecutableFinder();
-}
-
-
-
-
-
-
-public function find()
-{
-
- if (defined('PHP_BINARY') && PHP_BINARY && ('cli' === PHP_SAPI)) {
-return PHP_BINARY;
-}
-
-if ($php = getenv('PHP_PATH')) {
-if (!is_executable($php)) {
-return false;
-}
-
-return $php;
-}
-
-if ($php = getenv('PHP_PEAR_PHP_BIN')) {
-if (is_executable($php)) {
-return $php;
-}
-}
-
-$dirs = array(PHP_BINDIR);
-if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-$dirs[] = 'C:\xampp\php\\';
-}
-
-return $this->executableFinder->find('php', false, $dirs);
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Command;
-
-use Symfony\Component\Console\Helper\DescriptorHelper;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-
-
-
-
-
-
-class HelpCommand extends Command
-{
-private $command;
-
-
-
-
-protected function configure()
-{
-$this->ignoreValidationErrors();
-
-$this
-->setName('help')
-->setDefinition(array(
-new InputArgument('command_name', InputArgument::OPTIONAL, 'The command name', 'help'),
-new InputOption('xml', null, InputOption::VALUE_NONE, 'To output help as XML'),
-new InputOption('format', null, InputOption::VALUE_REQUIRED, 'To output help in other formats'),
-new InputOption('raw', null, InputOption::VALUE_NONE, 'To output raw command help'),
-))
-->setDescription('Displays help for a command')
-->setHelp(<<<EOF
-The <info>%command.name%</info> command displays help for a given command:
-
-  <info>php %command.full_name% list</info>
-
-You can also output the help in other formats by using the <comment>--format</comment> option:
-
-  <info>php %command.full_name% --format=xml list</info>
-
-To display the list of available commands, please use the <info>list</info> command.
-EOF
-)
-;
-}
-
-
-
-
-
-
-public function setCommand(Command $command)
-{
-$this->command = $command;
-}
-
-
-
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-if (null === $this->command) {
-$this->command = $this->getApplication()->find($input->getArgument('command_name'));
-}
-
-if ($input->getOption('xml')) {
-$input->setOption('format', 'xml');
-}
-
-$helper = new DescriptorHelper();
-$helper->describe($output, $this->command, $input->getOption('format'), $input->getOption('raw'));
-$this->command = null;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Command;
-
-use Symfony\Component\Console\Descriptor\TextDescriptor;
-use Symfony\Component\Console\Descriptor\XmlDescriptor;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Helper\HelperSet;
-
-
-
-
-
-
-
-
-class Command
-{
-private $application;
-private $name;
-private $aliases;
-private $definition;
-private $help;
-private $description;
-private $ignoreValidationErrors;
-private $applicationDefinitionMerged;
-private $applicationDefinitionMergedWithArgs;
-private $code;
-private $synopsis;
-private $helperSet;
-
-
-
-
-
-
-
-
-
-
-public function __construct($name = null)
-{
-$this->definition = new InputDefinition();
-$this->ignoreValidationErrors = false;
-$this->applicationDefinitionMerged = false;
-$this->applicationDefinitionMergedWithArgs = false;
-$this->aliases = array();
-
-if (null !== $name) {
-$this->setName($name);
-}
-
-$this->configure();
-
-if (!$this->name) {
-throw new \LogicException('The command name cannot be empty.');
-}
-}
-
-
-
-
-
-
-public function ignoreValidationErrors()
-{
-$this->ignoreValidationErrors = true;
-}
-
-
-
-
-
-
-
-
-public function setApplication(Application $application = null)
-{
-$this->application = $application;
-if ($application) {
-$this->setHelperSet($application->getHelperSet());
-} else {
-$this->helperSet = null;
-}
-}
-
-
-
-
-
-
-public function setHelperSet(HelperSet $helperSet)
-{
-$this->helperSet = $helperSet;
-}
-
-
-
-
-
-
-public function getHelperSet()
-{
-return $this->helperSet;
-}
-
-
-
-
-
-
-
-
-public function getApplication()
-{
-return $this->application;
-}
-
-
-
-
-
-
-
-
-
-public function isEnabled()
-{
-return true;
-}
-
-
-
-
-protected function configure()
-{
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-throw new \LogicException('You must override the execute() method in the concrete command class.');
-}
-
-
-
-
-
-
-
-protected function interact(InputInterface $input, OutputInterface $output)
-{
-}
-
-
-
-
-
-
-
-
-
-
-protected function initialize(InputInterface $input, OutputInterface $output)
-{
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function run(InputInterface $input, OutputInterface $output)
-{
-
- $this->getSynopsis();
-
-
- $this->mergeApplicationDefinition();
-
-
- try {
-$input->bind($this->definition);
-} catch (\Exception $e) {
-if (!$this->ignoreValidationErrors) {
-throw $e;
-}
-}
-
-$this->initialize($input, $output);
-
-if ($input->isInteractive()) {
-$this->interact($input, $output);
-}
-
-$input->validate();
-
-if ($this->code) {
-$statusCode = call_user_func($this->code, $input, $output);
-} else {
-$statusCode = $this->execute($input, $output);
-}
-
-return is_numeric($statusCode) ? $statusCode : 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function setCode($code)
-{
-if (!is_callable($code)) {
-throw new \InvalidArgumentException('Invalid callable provided to Command::setCode.');
-}
-
-$this->code = $code;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-public function mergeApplicationDefinition($mergeArgs = true)
-{
-if (null === $this->application || (true === $this->applicationDefinitionMerged && ($this->applicationDefinitionMergedWithArgs || !$mergeArgs))) {
-return;
-}
-
-if ($mergeArgs) {
-$currentArguments = $this->definition->getArguments();
-$this->definition->setArguments($this->application->getDefinition()->getArguments());
-$this->definition->addArguments($currentArguments);
-}
-
-$this->definition->addOptions($this->application->getDefinition()->getOptions());
-
-$this->applicationDefinitionMerged = true;
-if ($mergeArgs) {
-$this->applicationDefinitionMergedWithArgs = true;
-}
-}
-
-
-
-
-
-
-
-
-
-
-public function setDefinition($definition)
-{
-if ($definition instanceof InputDefinition) {
-$this->definition = $definition;
-} else {
-$this->definition->setDefinition($definition);
-}
-
-$this->applicationDefinitionMerged = false;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-public function getDefinition()
-{
-return $this->definition;
-}
-
-
-
-
-
-
-
-
-
-
-
-public function getNativeDefinition()
-{
-return $this->getDefinition();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function addArgument($name, $mode = null, $description = '', $default = null)
-{
-$this->definition->addArgument(new InputArgument($name, $mode, $description, $default));
-
-return $this;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function addOption($name, $shortcut = null, $mode = null, $description = '', $default = null)
-{
-$this->definition->addOption(new InputOption($name, $shortcut, $mode, $description, $default));
-
-return $this;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function setName($name)
-{
-$this->validateName($name);
-
-$this->name = $name;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-public function getName()
-{
-return $this->name;
-}
-
-
-
-
-
-
-
-
-
-
-public function setDescription($description)
-{
-$this->description = $description;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-public function getDescription()
-{
-return $this->description;
-}
-
-
-
-
-
-
-
-
-
-
-public function setHelp($help)
-{
-$this->help = $help;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-public function getHelp()
-{
-return $this->help;
-}
-
-
-
-
-
-
-
-public function getProcessedHelp()
-{
-$name = $this->name;
-
-$placeholders = array(
-'%command.name%',
-'%command.full_name%'
-);
-$replacements = array(
-$name,
-$_SERVER['PHP_SELF'].' '.$name
-);
-
-return str_replace($placeholders, $replacements, $this->getHelp());
-}
-
-
-
-
-
-
-
-
-
-
-public function setAliases($aliases)
-{
-foreach ($aliases as $alias) {
-$this->validateName($alias);
-}
-
-$this->aliases = $aliases;
-
-return $this;
-}
-
-
-
-
-
-
-
-
-public function getAliases()
-{
-return $this->aliases;
-}
-
-
-
-
-
-
-public function getSynopsis()
-{
-if (null === $this->synopsis) {
-$this->synopsis = trim(sprintf('%s %s', $this->name, $this->definition->getSynopsis()));
-}
-
-return $this->synopsis;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function getHelper($name)
-{
-return $this->helperSet->get($name);
-}
-
-
-
-
-
-
-
-
-public function asText()
-{
-$descriptor = new TextDescriptor();
-
-return $descriptor->describe($this);
-}
-
-
-
-
-
-
-
-
-
-
-public function asXml($asDom = false)
-{
-$descriptor = new XmlDescriptor();
-
-return $descriptor->describe($this, array('as_dom' => $asDom));
-}
-
-private function validateName($name)
-{
-if (!preg_match('/^[^\:]+(\:[^\:]+)*$/', $name)) {
-throw new \InvalidArgumentException(sprintf('Command name "%s" is invalid.', $name));
-}
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Command;
-
-use Symfony\Component\Console\Helper\DescriptorHelper;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputDefinition;
-
-
-
-
-
-
-class ListCommand extends Command
-{
-
-
-
-protected function configure()
-{
-$this
-->setName('list')
-->setDefinition($this->createDefinition())
-->setDescription('Lists commands')
-->setHelp(<<<EOF
-The <info>%command.name%</info> command lists all commands:
-
-  <info>php %command.full_name%</info>
-
-You can also display the commands for a specific namespace:
-
-  <info>php %command.full_name% test</info>
-
-You can also output the information in other formats by using the <comment>--format</comment> option:
-
-  <info>php %command.full_name% --format=xml</info>
-
-It's also possible to get raw list of commands (useful for embedding command runner):
-
-  <info>php %command.full_name% --raw</info>
-EOF
-)
-;
-}
-
-
-
-
-public function getNativeDefinition()
-{
-return $this->createDefinition();
-}
-
-
-
-
-protected function execute(InputInterface $input, OutputInterface $output)
-{
-if ($input->getOption('xml')) {
-$input->setOption('format', 'xml');
-}
-
-$helper = new DescriptorHelper();
-$helper->describe($output, $this->getApplication(), $input->getOption('format'), $input->getOption('raw'));
-}
-
-
-
-
-private function createDefinition()
-{
-return new InputDefinition(array(
-new InputArgument('namespace', InputArgument::OPTIONAL, 'The namespace name'),
-new InputOption('xml', null, InputOption::VALUE_NONE, 'To output list as XML'),
-new InputOption('raw', null, InputOption::VALUE_NONE, 'To output raw command list'),
-new InputOption('format', null, InputOption::VALUE_REQUIRED, 'To output list in other formats'),
-));
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Tester;
-
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Output\StreamOutput;
-
-
-
-
-
-
-
-
-
-
-
-class ApplicationTester
-{
-private $application;
-private $input;
-private $output;
-
-
-
-
-
-
-public function __construct(Application $application)
-{
-$this->application = $application;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function run(array $input, $options = array())
-{
-$this->input = new ArrayInput($input);
-if (isset($options['interactive'])) {
-$this->input->setInteractive($options['interactive']);
-}
-
-$this->output = new StreamOutput(fopen('php://memory', 'w', false));
-if (isset($options['decorated'])) {
-$this->output->setDecorated($options['decorated']);
-}
-if (isset($options['verbosity'])) {
-$this->output->setVerbosity($options['verbosity']);
-}
-
-return $this->application->run($this->input, $this->output);
-}
-
-
-
-
-
-
-
-
-public function getDisplay($normalize = false)
-{
-rewind($this->output->getStream());
-
-$display = stream_get_contents($this->output->getStream());
-
-if ($normalize) {
-$display = str_replace(PHP_EOL, "\n", $display);
-}
-
-return $display;
-}
-
-
-
-
-
-
-public function getInput()
-{
-return $this->input;
-}
-
-
-
-
-
-
-public function getOutput()
-{
-return $this->output;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Tester;
-
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\StreamOutput;
-
-
-
-
-
-
-class CommandTester
-{
-private $command;
-private $input;
-private $output;
-
-
-
-
-
-
-public function __construct(Command $command)
-{
-$this->command = $command;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function execute(array $input, array $options = array())
-{
-$this->input = new ArrayInput($input);
-if (isset($options['interactive'])) {
-$this->input->setInteractive($options['interactive']);
-}
-
-$this->output = new StreamOutput(fopen('php://memory', 'w', false));
-if (isset($options['decorated'])) {
-$this->output->setDecorated($options['decorated']);
-}
-if (isset($options['verbosity'])) {
-$this->output->setVerbosity($options['verbosity']);
-}
-
-return $this->command->run($this->input, $this->output);
-}
-
-
-
-
-
-
-
-
-public function getDisplay($normalize = false)
-{
-rewind($this->output->getStream());
-
-$display = stream_get_contents($this->output->getStream());
-
-if ($normalize) {
-$display = str_replace(PHP_EOL, "\n", $display);
-}
-
-return $display;
-}
-
-
-
-
-
-
-public function getInput()
-{
-return $this->input;
-}
-
-
-
-
-
-
-public function getOutput()
-{
-return $this->output;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Formatter;
-
-
-
-
-class OutputFormatterStyleStack
-{
-
-
-
-private $styles;
-
-
-
-
-private $emptyStyle;
-
-
-
-
-
-
-public function __construct(OutputFormatterStyleInterface $emptyStyle = null)
-{
-$this->emptyStyle = $emptyStyle ?: new OutputFormatterStyle();
-$this->reset();
-}
-
-
-
-
-public function reset()
-{
-$this->styles = array();
-}
-
-
-
-
-
-
-public function push(OutputFormatterStyleInterface $style)
-{
-$this->styles[] = $style;
-}
-
-
-
-
-
-
-
-
-
-
-public function pop(OutputFormatterStyleInterface $style = null)
-{
-if (empty($this->styles)) {
-return $this->emptyStyle;
-}
-
-if (null === $style) {
-return array_pop($this->styles);
-}
-
-foreach (array_reverse($this->styles, true) as $index => $stackedStyle) {
-if ($style->apply('') === $stackedStyle->apply('')) {
-$this->styles = array_slice($this->styles, 0, $index);
-
-return $stackedStyle;
-}
-}
-
-throw new \InvalidArgumentException('Incorrectly nested style tag found.');
-}
-
-
-
-
-
-
-public function getCurrent()
-{
-if (empty($this->styles)) {
-return $this->emptyStyle;
-}
-
-return $this->styles[count($this->styles)-1];
-}
-
-
-
-
-
-
-public function setEmptyStyle(OutputFormatterStyleInterface $emptyStyle)
-{
-$this->emptyStyle = $emptyStyle;
-
-return $this;
-}
-
-
-
-
-public function getEmptyStyle()
-{
-return $this->emptyStyle;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Formatter;
-
-
-
-
-
-
-
-
-class OutputFormatterStyle implements OutputFormatterStyleInterface
-{
-private static $availableForegroundColors = array(
-'black' => 30,
-'red' => 31,
-'green' => 32,
-'yellow' => 33,
-'blue' => 34,
-'magenta' => 35,
-'cyan' => 36,
-'white' => 37
-);
-private static $availableBackgroundColors = array(
-'black' => 40,
-'red' => 41,
-'green' => 42,
-'yellow' => 43,
-'blue' => 44,
-'magenta' => 45,
-'cyan' => 46,
-'white' => 47
-);
-private static $availableOptions = array(
-'bold' => 1,
-'underscore' => 4,
-'blink' => 5,
-'reverse' => 7,
-'conceal' => 8
-);
-
-private $foreground;
-private $background;
-private $options = array();
-
-
-
-
-
-
-
-
-
-
-public function __construct($foreground = null, $background = null, array $options = array())
-{
-if (null !== $foreground) {
-$this->setForeground($foreground);
-}
-if (null !== $background) {
-$this->setBackground($background);
-}
-if (count($options)) {
-$this->setOptions($options);
-}
-}
-
-
-
-
-
-
-
-
-
-
-public function setForeground($color = null)
-{
-if (null === $color) {
-$this->foreground = null;
-
-return;
-}
-
-if (!isset(static::$availableForegroundColors[$color])) {
-throw new \InvalidArgumentException(sprintf(
-'Invalid foreground color specified: "%s". Expected one of (%s)',
-$color,
-implode(', ', array_keys(static::$availableForegroundColors))
-));
-}
-
-$this->foreground = static::$availableForegroundColors[$color];
-}
-
-
-
-
-
-
-
-
-
-
-public function setBackground($color = null)
-{
-if (null === $color) {
-$this->background = null;
-
-return;
-}
-
-if (!isset(static::$availableBackgroundColors[$color])) {
-throw new \InvalidArgumentException(sprintf(
-'Invalid background color specified: "%s". Expected one of (%s)',
-$color,
-implode(', ', array_keys(static::$availableBackgroundColors))
-));
-}
-
-$this->background = static::$availableBackgroundColors[$color];
-}
-
-
-
-
-
-
-
-
-
-
-public function setOption($option)
-{
-if (!isset(static::$availableOptions[$option])) {
-throw new \InvalidArgumentException(sprintf(
-'Invalid option specified: "%s". Expected one of (%s)',
-$option,
-implode(', ', array_keys(static::$availableOptions))
-));
-}
-
-if (false === array_search(static::$availableOptions[$option], $this->options)) {
-$this->options[] = static::$availableOptions[$option];
-}
-}
-
-
-
-
-
-
-
-
-
-public function unsetOption($option)
-{
-if (!isset(static::$availableOptions[$option])) {
-throw new \InvalidArgumentException(sprintf(
-'Invalid option specified: "%s". Expected one of (%s)',
-$option,
-implode(', ', array_keys(static::$availableOptions))
-));
-}
-
-$pos = array_search(static::$availableOptions[$option], $this->options);
-if (false !== $pos) {
-unset($this->options[$pos]);
-}
-}
-
-
-
-
-
-
-public function setOptions(array $options)
-{
-$this->options = array();
-
-foreach ($options as $option) {
-$this->setOption($option);
-}
-}
-
-
-
-
-
-
-
-
-public function apply($text)
-{
-$codes = array();
-
-if (null !== $this->foreground) {
-$codes[] = $this->foreground;
-}
-if (null !== $this->background) {
-$codes[] = $this->background;
-}
-if (count($this->options)) {
-$codes = array_merge($codes, $this->options);
-}
-
-if (0 === count($codes)) {
-return $text;
-}
-
-return sprintf("\033[%sm%s\033[0m", implode(';', $codes), $text);
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Formatter;
-
-
-
-
-
-
-
-
-interface OutputFormatterStyleInterface
-{
-
-
-
-
-
-
-
-public function setForeground($color = null);
-
-
-
-
-
-
-
-
-public function setBackground($color = null);
-
-
-
-
-
-
-
-
-public function setOption($option);
-
-
-
-
-
-
-public function unsetOption($option);
-
-
-
-
-
-
-public function setOptions(array $options);
-
-
-
-
-
-
-
-
-public function apply($text);
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Formatter;
-
-
-
-
-
-
-
-
-class OutputFormatter implements OutputFormatterInterface
-{
-
-
-
-const FORMAT_PATTERN = '#(\\\\?)<(/?)([a-z][a-z0-9_=;-]+)?>((?: [^<\\\\]+ | (?!<(?:/?[a-z]|/>)). | .(?<=\\\\<) )*)#isx';
-
-private $decorated;
-private $styles = array();
-private $styleStack;
-
-
-
-
-
-
-
-
-public static function escape($text)
-{
-return preg_replace('/([^\\\\]?)</is', '$1\\<', $text);
-}
-
-
-
-
-
-
-
-
-
-public function __construct($decorated = null, array $styles = array())
-{
-$this->decorated = (Boolean) $decorated;
-
-$this->setStyle('error', new OutputFormatterStyle('white', 'red'));
-$this->setStyle('info', new OutputFormatterStyle('green'));
-$this->setStyle('comment', new OutputFormatterStyle('yellow'));
-$this->setStyle('question', new OutputFormatterStyle('black', 'cyan'));
-
-foreach ($styles as $name => $style) {
-$this->setStyle($name, $style);
-}
-
-$this->styleStack = new OutputFormatterStyleStack();
-}
-
-
-
-
-
-
-
-
-public function setDecorated($decorated)
-{
-$this->decorated = (Boolean) $decorated;
-}
-
-
-
-
-
-
-
-
-public function isDecorated()
-{
-return $this->decorated;
-}
-
-
-
-
-
-
-
-
-
-public function setStyle($name, OutputFormatterStyleInterface $style)
-{
-$this->styles[strtolower($name)] = $style;
-}
-
-
-
-
-
-
-
-
-
-
-public function hasStyle($name)
-{
-return isset($this->styles[strtolower($name)]);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function getStyle($name)
-{
-if (!$this->hasStyle($name)) {
-throw new \InvalidArgumentException(sprintf('Undefined style: %s', $name));
-}
-
-return $this->styles[strtolower($name)];
-}
-
-
-
-
-
-
-
-
-
-
-public function format($message)
-{
-$message = preg_replace_callback(self::FORMAT_PATTERN, array($this, 'replaceStyle'), $message);
-
-return str_replace('\\<', '<', $message);
-}
-
-
-
-
-public function getStyleStack()
-{
-return $this->styleStack;
-}
-
-
-
-
-
-
-
-
-private function replaceStyle($match)
-{
-
- if ('\\' === $match[1]) {
-return $this->applyCurrentStyle($match[0]);
-}
-
-if ('' === $match[3]) {
-if ('/' === $match[2]) {
-
- $this->styleStack->pop();
-
-return $this->applyCurrentStyle($match[4]);
-}
-
-
- return '<>'.$this->applyCurrentStyle($match[4]);
-}
-
-if (isset($this->styles[strtolower($match[3])])) {
-$style = $this->styles[strtolower($match[3])];
-} else {
-$style = $this->createStyleFromString($match[3]);
-
-if (false === $style) {
-return $this->applyCurrentStyle($match[0]);
-}
-}
-
-if ('/' === $match[2]) {
-$this->styleStack->pop($style);
-} else {
-$this->styleStack->push($style);
-}
-
-return $this->applyCurrentStyle($match[4]);
-}
-
-
-
-
-
-
-
-
-private function createStyleFromString($string)
-{
-if (!preg_match_all('/([^=]+)=([^;]+)(;|$)/', strtolower($string), $matches, PREG_SET_ORDER)) {
-return false;
-}
-
-$style = new OutputFormatterStyle();
-foreach ($matches as $match) {
-array_shift($match);
-
-if ('fg' == $match[0]) {
-$style->setForeground($match[1]);
-} elseif ('bg' == $match[0]) {
-$style->setBackground($match[1]);
-} else {
-$style->setOption($match[1]);
-}
-}
-
-return $style;
-}
-
-
-
-
-
-
-
-
-private function applyCurrentStyle($text)
-{
-return $this->isDecorated() && strlen($text) > 0 ? $this->styleStack->getCurrent()->apply($text) : $text;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Formatter;
-
-
-
-
-
-
-
-
-interface OutputFormatterInterface
-{
-
-
-
-
-
-
-
-public function setDecorated($decorated);
-
-
-
-
-
-
-
-
-public function isDecorated();
-
-
-
-
-
-
-
-
-
-public function setStyle($name, OutputFormatterStyleInterface $style);
-
-
-
-
-
-
-
-
-
-
-public function hasStyle($name);
-
-
-
-
-
-
-
-
-
-
-public function getStyle($name);
-
-
-
-
-
-
-
-
-
-
-public function format($message);
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console;
-
-use Symfony\Component\Console\Descriptor\TextDescriptor;
-use Symfony\Component\Console\Descriptor\XmlDescriptor;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\ArgvInput;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Output\ConsoleOutput;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Command\HelpCommand;
-use Symfony\Component\Console\Command\ListCommand;
-use Symfony\Component\Console\Helper\HelperSet;
-use Symfony\Component\Console\Helper\FormatterHelper;
-use Symfony\Component\Console\Helper\DialogHelper;
-use Symfony\Component\Console\Helper\ProgressHelper;
-use Symfony\Component\Console\Helper\TableHelper;
-use Symfony\Component\Console\Event\ConsoleCommandEvent;
-use Symfony\Component\Console\Event\ConsoleForExceptionEvent;
-use Symfony\Component\Console\Event\ConsoleTerminateEvent;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Application
-{
-private $commands;
-private $wantHelps = false;
-private $runningCommand;
-private $name;
-private $version;
-private $catchExceptions;
-private $autoExit;
-private $definition;
-private $helperSet;
-private $dispatcher;
-
-
-
-
-
-
-
-
-
-public function __construct($name = 'UNKNOWN', $version = 'UNKNOWN')
-{
-$this->name = $name;
-$this->version = $version;
-$this->catchExceptions = true;
-$this->autoExit = true;
-$this->commands = array();
-$this->helperSet = $this->getDefaultHelperSet();
-$this->definition = $this->getDefaultInputDefinition();
-
-foreach ($this->getDefaultCommands() as $command) {
-$this->add($command);
-}
-}
-
-public function setDispatcher(EventDispatcher $dispatcher)
-{
-$this->dispatcher = $dispatcher;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function run(InputInterface $input = null, OutputInterface $output = null)
-{
-if (null === $input) {
-$input = new ArgvInput();
-}
-
-if (null === $output) {
-$output = new ConsoleOutput();
-}
-
-try {
-$exitCode = $this->doRun($input, $output);
-} catch (\Exception $e) {
-if (!$this->catchExceptions) {
-throw $e;
-}
-
-if ($output instanceof ConsoleOutputInterface) {
-$this->renderException($e, $output->getErrorOutput());
-} else {
-$this->renderException($e, $output);
-}
-$exitCode = $e->getCode();
-
-$exitCode = is_numeric($exitCode) && $exitCode ? $exitCode : 1;
-}
-
-if ($this->autoExit) {
-if ($exitCode > 255) {
-$exitCode = 255;
-}
-
- exit($exitCode);
-
- }
-
-return $exitCode;
-}
-
-
-
-
-
-
-
-
-
-public function doRun(InputInterface $input, OutputInterface $output)
-{
-$name = $this->getCommandName($input);
-
-if (true === $input->hasParameterOption(array('--ansi'))) {
-$output->setDecorated(true);
-} elseif (true === $input->hasParameterOption(array('--no-ansi'))) {
-$output->setDecorated(false);
-}
-
-if (true === $input->hasParameterOption(array('--help', '-h'))) {
-if (!$name) {
-$name = 'help';
-$input = new ArrayInput(array('command' => 'help'));
-} else {
-$this->wantHelps = true;
-}
-}
-
-if (true === $input->hasParameterOption(array('--no-interaction', '-n'))) {
-$input->setInteractive(false);
-}
-
-if (function_exists('posix_isatty') && $this->getHelperSet()->has('dialog')) {
-$inputStream = $this->getHelperSet()->get('dialog')->getInputStream();
-if (!posix_isatty($inputStream)) {
-$input->setInteractive(false);
-}
-}
-
-if (true === $input->hasParameterOption(array('--quiet', '-q'))) {
-$output->setVerbosity(OutputInterface::VERBOSITY_QUIET);
-} else {
-if ($input->hasParameterOption('-vvv') || $input->hasParameterOption('--verbose=3') || $input->getParameterOption('--verbose') === 3) {
-$output->setVerbosity(OutputInterface::VERBOSITY_DEBUG);
-} elseif ($input->hasParameterOption('-vv') || $input->hasParameterOption('--verbose=2') || $input->getParameterOption('--verbose') === 2) {
-$output->setVerbosity(OutputInterface::VERBOSITY_VERY_VERBOSE);
-} elseif ($input->hasParameterOption('-v') || $input->hasParameterOption('--verbose=1') || $input->hasParameterOption('--verbose') || $input->getParameterOption('--verbose')) {
-$output->setVerbosity(OutputInterface::VERBOSITY_VERBOSE);
-}
-}
-
-if (true === $input->hasParameterOption(array('--version', '-V'))) {
-$output->writeln($this->getLongVersion());
-
-return 0;
-}
-
-if (!$name) {
-$name = 'list';
-$input = new ArrayInput(array('command' => 'list'));
-}
-
-
- $command = $this->find($name);
-
-$this->runningCommand = $command;
-$exitCode = $this->doRunCommand($command, $input, $output);
-$this->runningCommand = null;
-
-return is_numeric($exitCode) ? $exitCode : 0;
-}
-
-
-
-
-
-
-
-
-public function setHelperSet(HelperSet $helperSet)
-{
-$this->helperSet = $helperSet;
-}
-
-
-
-
-
-
-
-
-public function getHelperSet()
-{
-return $this->helperSet;
-}
-
-
-
-
-
-
-
-
-public function setDefinition(InputDefinition $definition)
-{
-$this->definition = $definition;
-}
-
-
-
-
-
-
-public function getDefinition()
-{
-return $this->definition;
-}
-
-
-
-
-
-
-public function getHelp()
-{
-$messages = array(
-$this->getLongVersion(),
-'',
-'<comment>Usage:</comment>',
-'  [options] command [arguments]',
-'',
-'<comment>Options:</comment>',
-);
-
-foreach ($this->getDefinition()->getOptions() as $option) {
-$messages[] = sprintf('  %-29s %s %s',
-'<info>--'.$option->getName().'</info>',
-$option->getShortcut() ? '<info>-'.$option->getShortcut().'</info>' : '  ',
-$option->getDescription()
-);
-}
-
-return implode(PHP_EOL, $messages);
-}
-
-
-
-
-
-
-
-
-public function setCatchExceptions($boolean)
-{
-$this->catchExceptions = (Boolean) $boolean;
-}
-
-
-
-
-
-
-
-
-public function setAutoExit($boolean)
-{
-$this->autoExit = (Boolean) $boolean;
-}
-
-
-
-
-
-
-
-
-public function getName()
-{
-return $this->name;
-}
-
-
-
-
-
-
-
-
-public function setName($name)
-{
-$this->name = $name;
-}
-
-
-
-
-
-
-
-
-public function getVersion()
-{
-return $this->version;
-}
-
-
-
-
-
-
-
-
-public function setVersion($version)
-{
-$this->version = $version;
-}
-
-
-
-
-
-
-
-
-public function getLongVersion()
-{
-if ('UNKNOWN' !== $this->getName() && 'UNKNOWN' !== $this->getVersion()) {
-return sprintf('<info>%s</info> version <comment>%s</comment>', $this->getName(), $this->getVersion());
-}
-
-return '<info>Console Tool</info>';
-}
-
-
-
-
-
-
-
-
-
-
-public function register($name)
-{
-return $this->add(new Command($name));
-}
-
-
-
-
-
-
-
-
-public function addCommands(array $commands)
-{
-foreach ($commands as $command) {
-$this->add($command);
-}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function add(Command $command)
-{
-$command->setApplication($this);
-
-if (!$command->isEnabled()) {
-$command->setApplication(null);
-
-return;
-}
-
-$this->commands[$command->getName()] = $command;
-
-foreach ($command->getAliases() as $alias) {
-$this->commands[$alias] = $command;
-}
-
-return $command;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function get($name)
-{
-if (!isset($this->commands[$name])) {
-throw new \InvalidArgumentException(sprintf('The command "%s" does not exist.', $name));
-}
-
-$command = $this->commands[$name];
-
-if ($this->wantHelps) {
-$this->wantHelps = false;
-
-$helpCommand = $this->get('help');
-$helpCommand->setCommand($command);
-
-return $helpCommand;
-}
-
-return $command;
-}
-
-
-
-
-
-
-
-
-
-
-public function has($name)
-{
-return isset($this->commands[$name]);
-}
-
-
-
-
-
-
-
-
-public function getNamespaces()
-{
-$namespaces = array();
-foreach ($this->commands as $command) {
-$namespaces[] = $this->extractNamespace($command->getName());
-
-foreach ($command->getAliases() as $alias) {
-$namespaces[] = $this->extractNamespace($alias);
-}
-}
-
-return array_values(array_unique(array_filter($namespaces)));
-}
-
-
-
-
-
-
-
-
-
-
-public function findNamespace($namespace)
-{
-$allNamespaces = $this->getNamespaces();
-$found = '';
-foreach (explode(':', $namespace) as $i => $part) {
-
- $namespaces = array();
-foreach ($allNamespaces as $n) {
-if ('' === $found || 0 === strpos($n, $found)) {
-$namespaces[$n] = explode(':', $n);
-}
-}
-
-$abbrevs = static::getAbbreviations(array_unique(array_values(array_filter(array_map(function ($p) use ($i) { return isset($p[$i]) ? $p[$i] : ''; }, $namespaces)))));
-
-if (!isset($abbrevs[$part])) {
-$message = sprintf('There are no commands defined in the "%s" namespace.', $namespace);
-
-if (1 <= $i) {
-$part = $found.':'.$part;
-}
-
-if ($alternatives = $this->findAlternativeNamespace($part, $abbrevs)) {
-if (1 == count($alternatives)) {
-$message .= "\n\nDid you mean this?\n    ";
-} else {
-$message .= "\n\nDid you mean one of these?\n    ";
-}
-
-$message .= implode("\n    ", $alternatives);
-}
-
-throw new \InvalidArgumentException($message);
-}
-
-
- if (in_array($part, $abbrevs[$part])) {
-$abbrevs[$part] = array($part);
-}
-
-if (count($abbrevs[$part]) > 1) {
-throw new \InvalidArgumentException(sprintf('The namespace "%s" is ambiguous (%s).', $namespace, $this->getAbbreviationSuggestions($abbrevs[$part])));
-}
-
-$found .= $found ? ':' . $abbrevs[$part][0] : $abbrevs[$part][0];
-}
-
-return $found;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function find($name)
-{
-
- $namespace = '';
-$searchName = $name;
-if (false !== $pos = strrpos($name, ':')) {
-$namespace = $this->findNamespace(substr($name, 0, $pos));
-$searchName = $namespace.substr($name, $pos);
-}
-
-
- $commands = array();
-foreach ($this->commands as $command) {
-$extractedNamespace = $this->extractNamespace($command->getName());
-if ($extractedNamespace === $namespace
-|| !empty($namespace) && 0 === strpos($extractedNamespace, $namespace)
-) {
-$commands[] = $command->getName();
-}
-}
-
-$abbrevs = static::getAbbreviations(array_unique($commands));
-if (isset($abbrevs[$searchName]) && 1 == count($abbrevs[$searchName])) {
-return $this->get($abbrevs[$searchName][0]);
-}
-
-if (isset($abbrevs[$searchName]) && in_array($searchName, $abbrevs[$searchName])) {
-return $this->get($searchName);
-}
-
-if (isset($abbrevs[$searchName]) && count($abbrevs[$searchName]) > 1) {
-$suggestions = $this->getAbbreviationSuggestions($abbrevs[$searchName]);
-
-throw new \InvalidArgumentException(sprintf('Command "%s" is ambiguous (%s).', $name, $suggestions));
-}
-
-
- $aliases = array();
-foreach ($this->commands as $command) {
-foreach ($command->getAliases() as $alias) {
-$extractedNamespace = $this->extractNamespace($alias);
-if ($extractedNamespace === $namespace
-|| !empty($namespace) && 0 === strpos($extractedNamespace, $namespace)
-) {
-$aliases[] = $alias;
-}
-}
-}
-
-$aliases = static::getAbbreviations(array_unique($aliases));
-if (!isset($aliases[$searchName])) {
-$message = sprintf('Command "%s" is not defined.', $name);
-
-if ($alternatives = $this->findAlternativeCommands($searchName, $abbrevs)) {
-if (1 == count($alternatives)) {
-$message .= "\n\nDid you mean this?\n    ";
-} else {
-$message .= "\n\nDid you mean one of these?\n    ";
-}
-$message .= implode("\n    ", $alternatives);
-}
-
-throw new \InvalidArgumentException($message);
-}
-
-if (count($aliases[$searchName]) > 1) {
-throw new \InvalidArgumentException(sprintf('Command "%s" is ambiguous (%s).', $name, $this->getAbbreviationSuggestions($aliases[$searchName])));
-}
-
-return $this->get($aliases[$searchName][0]);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function all($namespace = null)
-{
-if (null === $namespace) {
-return $this->commands;
-}
-
-$commands = array();
-foreach ($this->commands as $name => $command) {
-if ($namespace === $this->extractNamespace($name, substr_count($namespace, ':') + 1)) {
-$commands[$name] = $command;
-}
-}
-
-return $commands;
-}
-
-
-
-
-
-
-
-
-public static function getAbbreviations($names)
-{
-$abbrevs = array();
-foreach ($names as $name) {
-for ($len = strlen($name); $len > 0; --$len) {
-$abbrev = substr($name, 0, $len);
-$abbrevs[$abbrev][] = $name;
-}
-}
-
-return $abbrevs;
-}
-
-
-
-
-
-
-
-
-
-
-
-public function asText($namespace = null, $raw = false)
-{
-$descriptor = new TextDescriptor();
-
-return $descriptor->describe($this, array('namespace' => $namespace, 'raw_text' => $raw));
-}
-
-
-
-
-
-
-
-
-
-
-
-public function asXml($namespace = null, $asDom = false)
-{
-$descriptor = new XmlDescriptor();
-
-return $descriptor->describe($this, array('namespace' => $namespace, 'as_dom' => $asDom));
-}
-
-
-
-
-
-
-
-public function renderException($e, $output)
-{
-$strlen = function ($string) {
-if (!function_exists('mb_strlen')) {
-return strlen($string);
-}
-
-if (false === $encoding = mb_detect_encoding($string)) {
-return strlen($string);
-}
-
-return mb_strlen($string, $encoding);
-};
-
-do {
-$title = sprintf('  [%s]  ', get_class($e));
-$len = $strlen($title);
-$width = $this->getTerminalWidth() ? $this->getTerminalWidth() - 1 : PHP_INT_MAX;
-$lines = array();
-foreach (preg_split('/\r?\n/', $e->getMessage()) as $line) {
-foreach (str_split($line, $width - 4) as $line) {
-$lines[] = sprintf('  %s  ', $line);
-$len = max($strlen($line) + 4, $len);
-}
-}
-
-$messages = array(str_repeat(' ', $len), $title.str_repeat(' ', max(0, $len - $strlen($title))));
-
-foreach ($lines as $line) {
-$messages[] = $line.str_repeat(' ', $len - $strlen($line));
-}
-
-$messages[] = str_repeat(' ', $len);
-
-$output->writeln("");
-$output->writeln("");
-foreach ($messages as $message) {
-$output->writeln('<error>'.$message.'</error>');
-}
-$output->writeln("");
-$output->writeln("");
-
-if (OutputInterface::VERBOSITY_VERBOSE <= $output->getVerbosity()) {
-$output->writeln('<comment>Exception trace:</comment>');
-
-
- $trace = $e->getTrace();
-array_unshift($trace, array(
-'function' => '',
-'file' => $e->getFile() != null ? $e->getFile() : 'n/a',
-'line' => $e->getLine() != null ? $e->getLine() : 'n/a',
-'args' => array(),
-));
-
-for ($i = 0, $count = count($trace); $i < $count; $i++) {
-$class = isset($trace[$i]['class']) ? $trace[$i]['class'] : '';
-$type = isset($trace[$i]['type']) ? $trace[$i]['type'] : '';
-$function = $trace[$i]['function'];
-$file = isset($trace[$i]['file']) ? $trace[$i]['file'] : 'n/a';
-$line = isset($trace[$i]['line']) ? $trace[$i]['line'] : 'n/a';
-
-$output->writeln(sprintf(' %s%s%s() at <info>%s:%s</info>', $class, $type, $function, $file, $line));
-}
-
-$output->writeln("");
-$output->writeln("");
-}
-} while ($e = $e->getPrevious());
-
-if (null !== $this->runningCommand) {
-$output->writeln(sprintf('<info>%s</info>', sprintf($this->runningCommand->getSynopsis(), $this->getName())));
-$output->writeln("");
-$output->writeln("");
-}
-}
-
-
-
-
-
-
-protected function getTerminalWidth()
-{
-$dimensions = $this->getTerminalDimensions();
-
-return $dimensions[0];
-}
-
-
-
-
-
-
-protected function getTerminalHeight()
-{
-$dimensions = $this->getTerminalDimensions();
-
-return $dimensions[1];
-}
-
-
-
-
-
-
-public function getTerminalDimensions()
-{
-if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-
- if (preg_match('/^(\d+)x\d+ \(\d+x(\d+)\)$/', trim(getenv('ANSICON')), $matches)) {
-return array((int) $matches[1], (int) $matches[2]);
-}
-
- if (preg_match('/^(\d+)x(\d+)$/', $this->getConsoleMode(), $matches)) {
-return array((int) $matches[1], (int) $matches[2]);
-}
-}
-
-if ($sttyString = $this->getSttyColumns()) {
-
- if (preg_match('/rows.(\d+);.columns.(\d+);/i', $sttyString, $matches)) {
-return array((int) $matches[2], (int) $matches[1]);
-}
-
- if (preg_match('/;.(\d+).rows;.(\d+).columns/i', $sttyString, $matches)) {
-return array((int) $matches[2], (int) $matches[1]);
-}
-}
-
-return array(null, null);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-protected function doRunCommand(Command $command, InputInterface $input, OutputInterface $output)
-{
-if (null === $this->dispatcher) {
-return $command->run($input, $output);
-}
-
-$event = new ConsoleCommandEvent($command, $input, $output);
-$this->dispatcher->dispatch(ConsoleEvents::COMMAND, $event);
-
-try {
-$exitCode = $command->run($input, $output);
-} catch (\Exception $e) {
-$event = new ConsoleTerminateEvent($command, $input, $output, $e->getCode());
-$this->dispatcher->dispatch(ConsoleEvents::TERMINATE, $event);
-
-$event = new ConsoleForExceptionEvent($command, $input, $output, $e, $event->getExitCode());
-$this->dispatcher->dispatch(ConsoleEvents::EXCEPTION, $event);
-
-throw $event->getException();
-}
-
-$event = new ConsoleTerminateEvent($command, $input, $output, $exitCode);
-$this->dispatcher->dispatch(ConsoleEvents::TERMINATE, $event);
-
-return $event->getExitCode();
-}
-
-
-
-
-
-
-
-
-protected function getCommandName(InputInterface $input)
-{
-return $input->getFirstArgument();
-}
-
-
-
-
-
-
-protected function getDefaultInputDefinition()
-{
-return new InputDefinition(array(
-new InputArgument('command', InputArgument::REQUIRED, 'The command to execute'),
-
-new InputOption('--help', '-h', InputOption::VALUE_NONE, 'Display this help message.'),
-new InputOption('--quiet', '-q', InputOption::VALUE_NONE, 'Do not output any message.'),
-new InputOption('--verbose', '-v|vv|vvv', InputOption::VALUE_NONE, 'Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug'),
-new InputOption('--version', '-V', InputOption::VALUE_NONE, 'Display this application version.'),
-new InputOption('--ansi', '', InputOption::VALUE_NONE, 'Force ANSI output.'),
-new InputOption('--no-ansi', '', InputOption::VALUE_NONE, 'Disable ANSI output.'),
-new InputOption('--no-interaction', '-n', InputOption::VALUE_NONE, 'Do not ask any interactive question.'),
-));
-}
-
-
-
-
-
-
-protected function getDefaultCommands()
-{
-return array(new HelpCommand(), new ListCommand());
-}
-
-
-
-
-
-
-protected function getDefaultHelperSet()
-{
-return new HelperSet(array(
-new FormatterHelper(),
-new DialogHelper(),
-new ProgressHelper(),
-new TableHelper(),
-));
-}
-
-
-
-
-
-
-private function getSttyColumns()
-{
-if (!function_exists('proc_open')) {
-return;
-}
-
-$descriptorspec = array(1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
-$process = proc_open('stty -a | grep columns', $descriptorspec, $pipes, null, null, array('suppress_errors' => true));
-if (is_resource($process)) {
-$info = stream_get_contents($pipes[1]);
-fclose($pipes[1]);
-fclose($pipes[2]);
-proc_close($process);
-
-return $info;
-}
-}
-
-
-
-
-
-
-private function getConsoleMode()
-{
-if (!function_exists('proc_open')) {
-return;
-}
-
-$descriptorspec = array(1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
-$process = proc_open('mode CON', $descriptorspec, $pipes, null, null, array('suppress_errors' => true));
-if (is_resource($process)) {
-$info = stream_get_contents($pipes[1]);
-fclose($pipes[1]);
-fclose($pipes[2]);
-proc_close($process);
-
-if (preg_match('/--------+\r?\n.+?(\d+)\r?\n.+?(\d+)\r?\n/', $info, $matches)) {
-return $matches[2].'x'.$matches[1];
-}
-}
-}
-
-
-
-
-
-
-
-
-private function getAbbreviationSuggestions($abbrevs)
-{
-return sprintf('%s, %s%s', $abbrevs[0], $abbrevs[1], count($abbrevs) > 2 ? sprintf(' and %d more', count($abbrevs) - 2) : '');
-}
-
-
-
-
-
-
-
-
-
-
-
-public function extractNamespace($name, $limit = null)
-{
-$parts = explode(':', $name);
-array_pop($parts);
-
-return implode(':', null === $limit ? $parts : array_slice($parts, 0, $limit));
-}
-
-
-
-
-
-
-
-
-
-private function findAlternativeCommands($name, $abbrevs)
-{
-$callback = function($item) {
-return $item->getName();
-};
-
-return $this->findAlternatives($name, $this->commands, $abbrevs, $callback);
-}
-
-
-
-
-
-
-
-
-
-private function findAlternativeNamespace($name, $abbrevs)
-{
-return $this->findAlternatives($name, $this->getNamespaces(), $abbrevs);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-private function findAlternatives($name, $collection, $abbrevs, $callback = null)
-{
-$alternatives = array();
-
-foreach ($collection as $item) {
-if (null !== $callback) {
-$item = call_user_func($callback, $item);
-}
-
-$lev = levenshtein($name, $item);
-if ($lev <= strlen($name) / 3 || false !== strpos($item, $name)) {
-$alternatives[$item] = $lev;
-}
-}
-
-if (!$alternatives) {
-foreach ($abbrevs as $key => $values) {
-$lev = levenshtein($name, $key);
-if ($lev <= strlen($name) / 3 || false !== strpos($key, $name)) {
-foreach ($values as $value) {
-$alternatives[$value] = $lev;
-}
-}
-}
-}
-
-asort($alternatives);
-
-return array_keys($alternatives);
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-
-
-
-
-
-
-
-class InputArgument
-{
-const REQUIRED = 1;
-const OPTIONAL = 2;
-const IS_ARRAY = 4;
-
-private $name;
-private $mode;
-private $default;
-private $description;
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function __construct($name, $mode = null, $description = '', $default = null)
-{
-if (null === $mode) {
-$mode = self::OPTIONAL;
-} elseif (!is_int($mode) || $mode > 7 || $mode < 1) {
-throw new \InvalidArgumentException(sprintf('Argument mode "%s" is not valid.', $mode));
-}
-
-$this->name = $name;
-$this->mode = $mode;
-$this->description = $description;
-
-$this->setDefault($default);
-}
-
-
-
-
-
-
-public function getName()
-{
-return $this->name;
-}
-
-
-
-
-
-
-public function isRequired()
-{
-return self::REQUIRED === (self::REQUIRED & $this->mode);
-}
-
-
-
-
-
-
-public function isArray()
-{
-return self::IS_ARRAY === (self::IS_ARRAY & $this->mode);
-}
-
-
-
-
-
-
-
-
-public function setDefault($default = null)
-{
-if (self::REQUIRED === $this->mode && null !== $default) {
-throw new \LogicException('Cannot set a default value except for InputArgument::OPTIONAL mode.');
-}
-
-if ($this->isArray()) {
-if (null === $default) {
-$default = array();
-} elseif (!is_array($default)) {
-throw new \LogicException('A default value for an array argument must be an array.');
-}
-}
-
-$this->default = $default;
-}
-
-
-
-
-
-
-public function getDefault()
-{
-return $this->default;
-}
-
-
-
-
-
-
-public function getDescription()
-{
-return $this->description;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-
-
-
-
-
-
-
-
-
-
-
-abstract class Input implements InputInterface
-{
-protected $definition;
-protected $options;
-protected $arguments;
-protected $interactive = true;
-
-
-
-
-
-
-public function __construct(InputDefinition $definition = null)
-{
-if (null === $definition) {
-$this->arguments = array();
-$this->options = array();
-$this->definition = new InputDefinition();
-} else {
-$this->bind($definition);
-$this->validate();
-}
-}
-
-
-
-
-
-
-public function bind(InputDefinition $definition)
-{
-$this->arguments = array();
-$this->options = array();
-$this->definition = $definition;
-
-$this->parse();
-}
-
-
-
-
-abstract protected function parse();
-
-
-
-
-
-
-public function validate()
-{
-if (count($this->arguments) < $this->definition->getArgumentRequiredCount()) {
-throw new \RuntimeException('Not enough arguments.');
-}
-}
-
-
-
-
-
-
-public function isInteractive()
-{
-return $this->interactive;
-}
-
-
-
-
-
-
-public function setInteractive($interactive)
-{
-$this->interactive = (Boolean) $interactive;
-}
-
-
-
-
-
-
-public function getArguments()
-{
-return array_merge($this->definition->getArgumentDefaults(), $this->arguments);
-}
-
-
-
-
-
-
-
-
-
-
-public function getArgument($name)
-{
-if (!$this->definition->hasArgument($name)) {
-throw new \InvalidArgumentException(sprintf('The "%s" argument does not exist.', $name));
-}
-
-return isset($this->arguments[$name]) ? $this->arguments[$name] : $this->definition->getArgument($name)->getDefault();
-}
-
-
-
-
-
-
-
-
-
-public function setArgument($name, $value)
-{
-if (!$this->definition->hasArgument($name)) {
-throw new \InvalidArgumentException(sprintf('The "%s" argument does not exist.', $name));
-}
-
-$this->arguments[$name] = $value;
-}
-
-
-
-
-
-
-
-
-public function hasArgument($name)
-{
-return $this->definition->hasArgument($name);
-}
-
-
-
-
-
-
-public function getOptions()
-{
-return array_merge($this->definition->getOptionDefaults(), $this->options);
-}
-
-
-
-
-
-
-
-
-
-
-public function getOption($name)
-{
-if (!$this->definition->hasOption($name)) {
-throw new \InvalidArgumentException(sprintf('The "%s" option does not exist.', $name));
-}
-
-return isset($this->options[$name]) ? $this->options[$name] : $this->definition->getOption($name)->getDefault();
-}
-
-
-
-
-
-
-
-
-
-public function setOption($name, $value)
-{
-if (!$this->definition->hasOption($name)) {
-throw new \InvalidArgumentException(sprintf('The "%s" option does not exist.', $name));
-}
-
-$this->options[$name] = $value;
-}
-
-
-
-
-
-
-
-
-public function hasOption($name)
-{
-return $this->definition->hasOption($name);
-}
-
-
-
-
-
-
-
-
-public function escapeToken($token)
-{
-return preg_match('{^[\w-]+$}', $token) ? $token : escapeshellarg($token);
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-
-
-
-
-
-
-
-
-
-
-
-class StringInput extends ArgvInput
-{
-const REGEX_STRING = '([^\s]+?)(?:\s|(?<!\\\\)"|(?<!\\\\)\'|$)';
-const REGEX_QUOTED_STRING = '(?:"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"|\'([^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)\')';
-
-
-
-
-
-
-
-
-
-
-
-public function __construct($input, InputDefinition $definition = null)
-{
-parent::__construct(array(), null);
-
-$this->setTokens($this->tokenize($input));
-
-if (null !== $definition) {
-$this->bind($definition);
-}
-}
-
-
-
-
-
-
-
-
-
-
-private function tokenize($input)
-{
-$tokens = array();
-$length = strlen($input);
-$cursor = 0;
-while ($cursor < $length) {
-if (preg_match('/\s+/A', $input, $match, null, $cursor)) {
-} elseif (preg_match('/([^="\'\s]+?)(=?)('.self::REGEX_QUOTED_STRING.'+)/A', $input, $match, null, $cursor)) {
-$tokens[] = $match[1].$match[2].stripcslashes(str_replace(array('"\'', '\'"', '\'\'', '""'), '', substr($match[3], 1, strlen($match[3]) - 2)));
-} elseif (preg_match('/'.self::REGEX_QUOTED_STRING.'/A', $input, $match, null, $cursor)) {
-$tokens[] = stripcslashes(substr($match[0], 1, strlen($match[0]) - 2));
-} elseif (preg_match('/'.self::REGEX_STRING.'/A', $input, $match, null, $cursor)) {
-$tokens[] = stripcslashes($match[1]);
-} else {
-
- 
- throw new \InvalidArgumentException(sprintf('Unable to parse input near "... %s ..."', substr($input, $cursor, 10)));
-
- }
-
-$cursor += strlen($match[0]);
-}
-
-return $tokens;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-
-
-
-
-
-
-
-class InputOption
-{
-const VALUE_NONE = 1;
-const VALUE_REQUIRED = 2;
-const VALUE_OPTIONAL = 4;
-const VALUE_IS_ARRAY = 8;
-
-private $name;
-private $shortcut;
-private $mode;
-private $default;
-private $description;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function __construct($name, $shortcut = null, $mode = null, $description = '', $default = null)
-{
-if (0 === strpos($name, '--')) {
-$name = substr($name, 2);
-}
-
-if (empty($name)) {
-throw new \InvalidArgumentException('An option name cannot be empty.');
-}
-
-if (empty($shortcut)) {
-$shortcut = null;
-}
-
-if (null !== $shortcut) {
-if (is_array($shortcut)) {
-$shortcut = implode('|', $shortcut);
-}
-$shortcuts = preg_split('{(\|)-?}', ltrim($shortcut, '-'));
-$shortcuts = array_filter($shortcuts);
-$shortcut = implode('|', $shortcuts);
-
-if (empty($shortcut)) {
-throw new \InvalidArgumentException('An option shortcut cannot be empty.');
-}
-}
-
-if (null === $mode) {
-$mode = self::VALUE_NONE;
-} elseif (!is_int($mode) || $mode > 15 || $mode < 1) {
-throw new \InvalidArgumentException(sprintf('Option mode "%s" is not valid.', $mode));
-}
-
-$this->name = $name;
-$this->shortcut = $shortcut;
-$this->mode = $mode;
-$this->description = $description;
-
-if ($this->isArray() && !$this->acceptValue()) {
-throw new \InvalidArgumentException('Impossible to have an option mode VALUE_IS_ARRAY if the option does not accept a value.');
-}
-
-$this->setDefault($default);
-}
-
-
-
-
-
-
-public function getShortcut()
-{
-return $this->shortcut;
-}
-
-
-
-
-
-
-public function getName()
-{
-return $this->name;
-}
-
-
-
-
-
-
-public function acceptValue()
-{
-return $this->isValueRequired() || $this->isValueOptional();
-}
-
-
-
-
-
-
-public function isValueRequired()
-{
-return self::VALUE_REQUIRED === (self::VALUE_REQUIRED & $this->mode);
-}
-
-
-
-
-
-
-public function isValueOptional()
-{
-return self::VALUE_OPTIONAL === (self::VALUE_OPTIONAL & $this->mode);
-}
-
-
-
-
-
-
-public function isArray()
-{
-return self::VALUE_IS_ARRAY === (self::VALUE_IS_ARRAY & $this->mode);
-}
-
-
-
-
-
-
-
-
-public function setDefault($default = null)
-{
-if (self::VALUE_NONE === (self::VALUE_NONE & $this->mode) && null !== $default) {
-throw new \LogicException('Cannot set a default value when using InputOption::VALUE_NONE mode.');
-}
-
-if ($this->isArray()) {
-if (null === $default) {
-$default = array();
-} elseif (!is_array($default)) {
-throw new \LogicException('A default value for an array option must be an array.');
-}
-}
-
-$this->default = $this->acceptValue() ? $default : false;
-}
-
-
-
-
-
-
-public function getDefault()
-{
-return $this->default;
-}
-
-
-
-
-
-
-public function getDescription()
-{
-return $this->description;
-}
-
-
-
-
-
-
-
-public function equals(InputOption $option)
-{
-return $option->getName() === $this->getName()
-&& $option->getShortcut() === $this->getShortcut()
-&& $option->getDefault() === $this->getDefault()
-&& $option->isArray() === $this->isArray()
-&& $option->isValueRequired() === $this->isValueRequired()
-&& $option->isValueOptional() === $this->isValueOptional()
-;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ArgvInput extends Input
-{
-private $tokens;
-private $parsed;
-
-
-
-
-
-
-
-
-
-public function __construct(array $argv = null, InputDefinition $definition = null)
-{
-if (null === $argv) {
-$argv = $_SERVER['argv'];
-}
-
-
- array_shift($argv);
-
-$this->tokens = $argv;
-
-parent::__construct($definition);
-}
-
-protected function setTokens(array $tokens)
-{
-$this->tokens = $tokens;
-}
-
-
-
-
-protected function parse()
-{
-$parseOptions = true;
-$this->parsed = $this->tokens;
-while (null !== $token = array_shift($this->parsed)) {
-if ($parseOptions && '' == $token) {
-$this->parseArgument($token);
-} elseif ($parseOptions && '--' == $token) {
-$parseOptions = false;
-} elseif ($parseOptions && 0 === strpos($token, '--')) {
-$this->parseLongOption($token);
-} elseif ($parseOptions && '-' === $token[0]) {
-$this->parseShortOption($token);
-} else {
-$this->parseArgument($token);
-}
-}
-}
-
-
-
-
-
-
-private function parseShortOption($token)
-{
-$name = substr($token, 1);
-
-if (strlen($name) > 1) {
-if ($this->definition->hasShortcut($name[0]) && $this->definition->getOptionForShortcut($name[0])->acceptValue()) {
-
- $this->addShortOption($name[0], substr($name, 1));
-} else {
-$this->parseShortOptionSet($name);
-}
-} else {
-$this->addShortOption($name, null);
-}
-}
-
-
-
-
-
-
-
-
-private function parseShortOptionSet($name)
-{
-$len = strlen($name);
-for ($i = 0; $i < $len; $i++) {
-if (!$this->definition->hasShortcut($name[$i])) {
-throw new \RuntimeException(sprintf('The "-%s" option does not exist.', $name[$i]));
-}
-
-$option = $this->definition->getOptionForShortcut($name[$i]);
-if ($option->acceptValue()) {
-$this->addLongOption($option->getName(), $i === $len - 1 ? null : substr($name, $i + 1));
-
-break;
-} else {
-$this->addLongOption($option->getName(), true);
-}
-}
-}
-
-
-
-
-
-
-private function parseLongOption($token)
-{
-$name = substr($token, 2);
-
-if (false !== $pos = strpos($name, '=')) {
-$this->addLongOption(substr($name, 0, $pos), substr($name, $pos + 1));
-} else {
-$this->addLongOption($name, null);
-}
-}
-
-
-
-
-
-
-
-
-private function parseArgument($token)
-{
-$c = count($this->arguments);
-
-
- if ($this->definition->hasArgument($c)) {
-$arg = $this->definition->getArgument($c);
-$this->arguments[$arg->getName()] = $arg->isArray()? array($token) : $token;
-
-
- } elseif ($this->definition->hasArgument($c - 1) && $this->definition->getArgument($c - 1)->isArray()) {
-$arg = $this->definition->getArgument($c - 1);
-$this->arguments[$arg->getName()][] = $token;
-
-
- } else {
-throw new \RuntimeException('Too many arguments.');
-}
-}
-
-
-
-
-
-
-
-
-
-private function addShortOption($shortcut, $value)
-{
-if (!$this->definition->hasShortcut($shortcut)) {
-throw new \RuntimeException(sprintf('The "-%s" option does not exist.', $shortcut));
-}
-
-$this->addLongOption($this->definition->getOptionForShortcut($shortcut)->getName(), $value);
-}
-
-
-
-
-
-
-
-
-
-private function addLongOption($name, $value)
-{
-if (!$this->definition->hasOption($name)) {
-throw new \RuntimeException(sprintf('The "--%s" option does not exist.', $name));
-}
-
-$option = $this->definition->getOption($name);
-
-
- if (false === $value) {
-$value = null;
-}
-
-if (null === $value && $option->acceptValue() && count($this->parsed)) {
-
- 
- $next = array_shift($this->parsed);
-if (isset($next[0]) && '-' !== $next[0]) {
-$value = $next;
-} elseif (empty($next)) {
-$value = '';
-} else {
-array_unshift($this->parsed, $next);
-}
-}
-
-if (null === $value) {
-if ($option->isValueRequired()) {
-throw new \RuntimeException(sprintf('The "--%s" option requires a value.', $name));
-}
-
-if (!$option->isArray()) {
-$value = $option->isValueOptional() ? $option->getDefault() : true;
-}
-}
-
-if ($option->isArray()) {
-$this->options[$name][] = $value;
-} else {
-$this->options[$name] = $value;
-}
-}
-
-
-
-
-
-
-public function getFirstArgument()
-{
-foreach ($this->tokens as $token) {
-if ($token && '-' === $token[0]) {
-continue;
-}
-
-return $token;
-}
-}
-
-
-
-
-
-
-
-
-
-
-
-public function hasParameterOption($values)
-{
-$values = (array) $values;
-
-foreach ($this->tokens as $v) {
-if (in_array($v, $values)) {
-return true;
-}
-}
-
-return false;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function getParameterOption($values, $default = false)
-{
-$values = (array) $values;
-
-$tokens = $this->tokens;
-while ($token = array_shift($tokens)) {
-foreach ($values as $value) {
-if (0 === strpos($token, $value)) {
-if (false !== $pos = strpos($token, '=')) {
-return substr($token, $pos + 1);
-}
-
-return array_shift($tokens);
-}
-}
-}
-
-return $default;
-}
-
-
-
-
-
-
-public function __toString()
-{
-$self = $this;
-$tokens = array_map(function ($token) use ($self) {
-if (preg_match('{^(-[^=]+=)(.+)}', $token, $match)) {
-return $match[1] . $self->escapeToken($match[2]);
-}
-
-if ($token && $token[0] !== '-') {
-return $self->escapeToken($token);
-}
-
-return $token;
-}, $this->tokens);
-
-return implode(' ', $tokens);
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-
-
-
-
-
-interface InputInterface
-{
-
-
-
-
-
-public function getFirstArgument();
-
-
-
-
-
-
-
-
-
-
-
-public function hasParameterOption($values);
-
-
-
-
-
-
-
-
-
-
-
-
-public function getParameterOption($values, $default = false);
-
-
-
-
-
-
-public function bind(InputDefinition $definition);
-
-
-
-
-
-
-
-
-public function validate();
-
-
-
-
-
-
-public function getArguments();
-
-
-
-
-
-
-
-
-public function getArgument($name);
-
-
-
-
-
-
-
-
-
-public function setArgument($name, $value);
-
-
-
-
-
-
-
-
-public function hasArgument($name);
-
-
-
-
-
-
-public function getOptions();
-
-
-
-
-
-
-
-
-public function getOption($name);
-
-
-
-
-
-
-
-
-
-public function setOption($name, $value);
-
-
-
-
-
-
-
-
-public function hasOption($name);
-
-
-
-
-
-
-public function isInteractive();
-
-
-
-
-
-
-public function setInteractive($interactive);
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-
-
-
-
-
-
-
-
-
-
-
-class ArrayInput extends Input
-{
-private $parameters;
-
-
-
-
-
-
-
-
-
-public function __construct(array $parameters, InputDefinition $definition = null)
-{
-$this->parameters = $parameters;
-
-parent::__construct($definition);
-}
-
-
-
-
-
-
-public function getFirstArgument()
-{
-foreach ($this->parameters as $key => $value) {
-if ($key && '-' === $key[0]) {
-continue;
-}
-
-return $value;
-}
-}
-
-
-
-
-
-
-
-
-
-
-
-public function hasParameterOption($values)
-{
-$values = (array) $values;
-
-foreach ($this->parameters as $k => $v) {
-if (!is_int($k)) {
-$v = $k;
-}
-
-if (in_array($v, $values)) {
-return true;
-}
-}
-
-return false;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-public function getParameterOption($values, $default = false)
-{
-$values = (array) $values;
-
-foreach ($this->parameters as $k => $v) {
-if (is_int($k) && in_array($v, $values)) {
-return true;
-} elseif (in_array($k, $values)) {
-return $v;
-}
-}
-
-return $default;
-}
-
-
-
-
-
-
-public function __toString()
-{
-$params = array();
-foreach ($this->parameters as $param => $val) {
-if ($param && '-' === $param[0]) {
-$params[] = $param . ('' != $val ? '='.$this->escapeToken($val) : '');
-} else {
-$params[] = $this->escapeToken($val);
-}
-}
-
-return implode(' ', $params);
-}
-
-
-
-
-protected function parse()
-{
-foreach ($this->parameters as $key => $value) {
-if (0 === strpos($key, '--')) {
-$this->addLongOption(substr($key, 2), $value);
-} elseif ('-' === $key[0]) {
-$this->addShortOption(substr($key, 1), $value);
-} else {
-$this->addArgument($key, $value);
-}
-}
-}
-
-
-
-
-
-
-
-
-
-private function addShortOption($shortcut, $value)
-{
-if (!$this->definition->hasShortcut($shortcut)) {
-throw new \InvalidArgumentException(sprintf('The "-%s" option does not exist.', $shortcut));
-}
-
-$this->addLongOption($this->definition->getOptionForShortcut($shortcut)->getName(), $value);
-}
-
-
-
-
-
-
-
-
-
-
-private function addLongOption($name, $value)
-{
-if (!$this->definition->hasOption($name)) {
-throw new \InvalidArgumentException(sprintf('The "--%s" option does not exist.', $name));
-}
-
-$option = $this->definition->getOption($name);
-
-if (null === $value) {
-if ($option->isValueRequired()) {
-throw new \InvalidArgumentException(sprintf('The "--%s" option requires a value.', $name));
-}
-
-$value = $option->isValueOptional() ? $option->getDefault() : true;
-}
-
-$this->options[$name] = $value;
-}
-
-
-
-
-
-
-
-
-
-private function addArgument($name, $value)
-{
-if (!$this->definition->hasArgument($name)) {
-throw new \InvalidArgumentException(sprintf('The "%s" argument does not exist.', $name));
-}
-
-$this->arguments[$name] = $value;
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-namespace Symfony\Component\Console\Input;
-
-use Symfony\Component\Console\Descriptor\TextDescriptor;
-use Symfony\Component\Console\Descriptor\XmlDescriptor;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class InputDefinition
-{
-private $arguments;
-private $requiredCount;
-private $hasAnArrayArgument = false;
-private $hasOptional;
-private $options;
-private $shortcuts;
-
-
-
-
-
-
-
-
-public function __construct(array $definition = array())
-{
-$this->setDefinition($definition);
-}
-
-
-
-
-
-
-
-
-public function setDefinition(array $definition)
-{
-$arguments = array();
-$options = array();
-foreach ($definition as $item) {
-if ($item instanceof InputOption) {
-$options[] = $item;
-} else {
-$arguments[] = $item;
-}
-}
-
-$this->setArguments($arguments);
-$this->setOptions($options);
-}
-
-
-
-
-
-
-
-
-public function setArguments($arguments = array())
-{
-$this->arguments = array();
-$this->requiredCount = 0;
-$this->hasOptional = false;
-$this->hasAnArrayArgument = false;
-$this->addArguments($arguments);
-}
-
-
-
-
-
-
-
-
-public function addArguments($arguments = array())
-{
-if (null !== $arguments) {
-foreach ($arguments as $argument) {
-$this->addArgument($argument);
-}
-}
-}
-
-
-
-
-
-
-
-
-
-
-public function addArgument(InputArgument $argument)
-{
-if (isset($this->arguments[$argument->getName()])) {
-throw new \LogicException(sprintf('An argument with name "%s" already exists.', $argument->getName()));
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PHPUnit\Framework;
+
+use PHPUnit\Framework\Constraint\Exception as ExceptionConstraint;
+use PHPUnit\Framework\Constraint\ExceptionCode;
+use PHPUnit\Framework\Constraint\ExceptionMessage;
+use PHPUnit\Framework\Constraint\ExceptionMessageRegularExpression;
+use PHPUnit_Framework_MockObject_Generator;
+use PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+use PHPUnit_Framework_MockObject_Matcher_InvokedAtIndex;
+use PHPUnit_Framework_MockObject_Matcher_InvokedAtLeastCount;
+use PHPUnit_Framework_MockObject_Matcher_InvokedAtLeastOnce;
+use PHPUnit_Framework_MockObject_Matcher_InvokedAtMostCount;
+use PHPUnit_Framework_MockObject_Matcher_InvokedCount;
+use PHPUnit_Framework_MockObject_MockBuilder;
+use PHPUnit_Framework_MockObject_MockObject;
+use PHPUnit_Framework_MockObject_Stub_ConsecutiveCalls;
+use PHPUnit_Framework_MockObject_Stub_Exception;
+use PHPUnit_Framework_MockObject_Stub_Return;
+use PHPUnit_Framework_MockObject_Stub_ReturnArgument;
+use PHPUnit_Framework_MockObject_Stub_ReturnCallback;
+use PHPUnit_Framework_MockObject_Stub_ReturnSelf;
+use PHPUnit_Framework_MockObject_Stub_ReturnValueMap;
+use PHPUnit\Runner\BaseTestRunner;
+use PHPUnit\Runner\PhptTestCase;
+use PHPUnit\Util\GlobalState;
+use PHPUnit\Util\InvalidArgumentHelper;
+use PHPUnit\Util\PHP\AbstractPhpProcess;
+use Prophecy;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionObject;
+use SebastianBergmann;
+use SebastianBergmann\GlobalState\Snapshot;
+use SebastianBergmann\GlobalState\Restorer;
+use SebastianBergmann\GlobalState\Blacklist;
+use SebastianBergmann\Diff\Differ;
+use SebastianBergmann\Exporter\Exporter;
+use SebastianBergmann\ObjectEnumerator\Enumerator;
+use Prophecy\Exception\Prediction\PredictionException;
+use Prophecy\Prophet;
+use DeepCopy\DeepCopy;
+use Text_Template;
+use Throwable;
+
+/**
+ * A TestCase defines the fixture to run multiple tests.
+ *
+ * To define a TestCase
+ *
+ *   1) Implement a subclass of PHPUnit\Framework\TestCase.
+ *   2) Define instance variables that store the state of the fixture.
+ *   3) Initialize the fixture state by overriding setUp().
+ *   4) Clean-up after a test by overriding tearDown().
+ *
+ * Each test runs in its own fixture so there can be no side effects
+ * among test runs.
+ *
+ * Here is an example:
+ *
+ * <code>
+ * <?php
+ * class MathTest extends PHPUnit\Framework\TestCase
+ * {
+ *     public $value1;
+ *     public $value2;
+ *
+ *     protected function setUp()
+ *     {
+ *         $this->value1 = 2;
+ *         $this->value2 = 3;
+ *     }
+ * }
+ * ?>
+ * </code>
+ *
+ * For each test implement a method which interacts with the fixture.
+ * Verify the expected results with assertions specified by calling
+ * assert with a boolean.
+ *
+ * <code>
+ * <?php
+ * public function testPass()
+ * {
+ *     $this->assertTrue($this->value1 + $this->value2 == 5);
+ * }
+ * ?>
+ * </code>
+ */
+abstract class TestCase extends Assert implements Test, SelfDescribing
+{
+    /**
+     * Enable or disable the backup and restoration of the $GLOBALS array.
+     * Overwrite this attribute in a child class of TestCase.
+     * Setting this attribute in setUp() has no effect!
+     *
+     * @var bool
+     */
+    protected $backupGlobals;
+
+    /**
+     * @var array
+     */
+    protected $backupGlobalsBlacklist = [];
+
+    /**
+     * Enable or disable the backup and restoration of static attributes.
+     * Overwrite this attribute in a child class of TestCase.
+     * Setting this attribute in setUp() has no effect!
+     *
+     * @var bool
+     */
+    protected $backupStaticAttributes;
+
+    /**
+     * @var array
+     */
+    protected $backupStaticAttributesBlacklist = [];
+
+    /**
+     * Whether or not this test is to be run in a separate PHP process.
+     *
+     * @var bool
+     */
+    protected $runTestInSeparateProcess;
+
+    /**
+     * Whether or not this class is to be run in a separate PHP process.
+     *
+     * @var bool
+     */
+    private $runClassInSeparateProcess;
+
+    /**
+     * Whether or not this test should preserve the global state when
+     * running in a separate PHP process.
+     *
+     * @var bool
+     */
+    protected $preserveGlobalState = true;
+
+    /**
+     * Whether or not this test is running in a separate PHP process.
+     *
+     * @var bool
+     */
+    private $inIsolation = false;
+
+    /**
+     * @var array
+     */
+    private $data;
+
+    /**
+     * @var string
+     */
+    private $dataName;
+
+    /**
+     * @var bool
+     */
+    private $useErrorHandler;
+
+    /**
+     * The name of the expected Exception.
+     *
+     * @var null|string
+     */
+    private $expectedException;
+
+    /**
+     * The message of the expected Exception.
+     *
+     * @var string
+     */
+    private $expectedExceptionMessage = '';
+
+    /**
+     * The regex pattern to validate the expected Exception message.
+     *
+     * @var string
+     */
+    private $expectedExceptionMessageRegExp = '';
+
+    /**
+     * The code of the expected Exception.
+     *
+     * @var null|int|string
+     */
+    private $expectedExceptionCode;
+
+    /**
+     * The name of the test case.
+     *
+     * @var string
+     */
+    private $name;
+
+    /**
+     * @var array
+     */
+    private $dependencies = [];
+
+    /**
+     * @var array
+     */
+    private $dependencyInput = [];
+
+    /**
+     * @var array
+     */
+    private $iniSettings = [];
+
+    /**
+     * @var array
+     */
+    private $locale = [];
+
+    /**
+     * @var array
+     */
+    private $mockObjects = [];
+
+    /**
+     * @var array
+     */
+    private $mockObjectGenerator;
+
+    /**
+     * @var int
+     */
+    private $status;
+
+    /**
+     * @var string
+     */
+    private $statusMessage = '';
+
+    /**
+     * @var int
+     */
+    private $numAssertions = 0;
+
+    /**
+     * @var TestResult
+     */
+    private $result;
+
+    /**
+     * @var mixed
+     */
+    private $testResult;
+
+    /**
+     * @var string
+     */
+    private $output = '';
+
+    /**
+     * @var string
+     */
+    private $outputExpectedRegex;
+
+    /**
+     * @var string
+     */
+    private $outputExpectedString;
+
+    /**
+     * @var mixed
+     */
+    private $outputCallback = false;
+
+    /**
+     * @var bool
+     */
+    private $outputBufferingActive = false;
+
+    /**
+     * @var int
+     */
+    private $outputBufferingLevel;
+
+    /**
+     * @var SebastianBergmann\GlobalState\Snapshot
+     */
+    private $snapshot;
+
+    /**
+     * @var Prophecy\Prophet
+     */
+    private $prophet;
+
+    /**
+     * @var bool
+     */
+    private $beStrictAboutChangesToGlobalState = false;
+
+    /**
+     * @var bool
+     */
+    private $registerMockObjectsFromTestArgumentsRecursively = false;
+
+    /**
+     * @var string[]
+     */
+    private $warnings = [];
+
+    /**
+     * @var array
+     */
+    private $groups = [];
+
+    /**
+     * @var bool
+     */
+    private $doesNotPerformAssertions = false;
+
+    /**
+     * Constructs a test case with the given name.
+     *
+     * @param string $name
+     * @param array  $data
+     * @param string $dataName
+     */
+    public function __construct($name = null, array $data = [], $dataName = '')
+    {
+        if ($name !== null) {
+            $this->setName($name);
+        }
+
+        $this->data     = $data;
+        $this->dataName = $dataName;
+    }
+
+    /**
+     * Returns a string representation of the test case.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        $class = new ReflectionClass($this);
+
+        $buffer = \sprintf(
+            '%s::%s',
+            $class->name,
+            $this->getName(false)
+        );
+
+        return $buffer . $this->getDataSetAsString();
+    }
+
+    /**
+     * Counts the number of test cases executed by run(TestResult result).
+     *
+     * @return int
+     */
+    public function count()
+    {
+        return 1;
+    }
+
+    public function getGroups()
+    {
+        return $this->groups;
+    }
+
+    /**
+     * @param array $groups
+     */
+    public function setGroups(array $groups)
+    {
+        $this->groups = $groups;
+    }
+
+    /**
+     * Returns the annotations for this test.
+     *
+     * @return array
+     */
+    public function getAnnotations()
+    {
+        return \PHPUnit\Util\Test::parseTestMethodAnnotations(
+            \get_class($this),
+            $this->name
+        );
+    }
+
+    /**
+     * Gets the name of a TestCase.
+     *
+     * @param bool $withDataSet
+     *
+     * @return string
+     */
+    public function getName($withDataSet = true)
+    {
+        if ($withDataSet) {
+            return $this->name . $this->getDataSetAsString(false);
+        }
+
+        return $this->name;
+    }
+
+    /**
+     * Returns the size of the test.
+     *
+     * @return int
+     */
+    public function getSize()
+    {
+        return \PHPUnit\Util\Test::getSize(
+            \get_class($this),
+            $this->getName(false)
+        );
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasSize()
+    {
+        return $this->getSize() !== \PHPUnit\Util\Test::UNKNOWN;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSmall()
+    {
+        return $this->getSize() === \PHPUnit\Util\Test::SMALL;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isMedium()
+    {
+        return $this->getSize() === \PHPUnit\Util\Test::MEDIUM;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isLarge()
+    {
+        return $this->getSize() === \PHPUnit\Util\Test::LARGE;
+    }
+
+    /**
+     * @return string
+     */
+    public function getActualOutput()
+    {
+        if (!$this->outputBufferingActive) {
+            return $this->output;
+        }
+
+        return \ob_get_contents();
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasOutput()
+    {
+        if (\strlen($this->output) === 0) {
+            return false;
+        }
+
+        if ($this->hasExpectationOnOutput()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return bool
+     */
+    public function doesNotPerformAssertions()
+    {
+        return $this->doesNotPerformAssertions;
+    }
+
+    /**
+     * @param string $expectedRegex
+     *
+     * @throws Exception
+     */
+    public function expectOutputRegex($expectedRegex)
+    {
+        if ($this->outputExpectedString !== null) {
+            throw new Exception;
+        }
+
+        if (\is_string($expectedRegex) || \is_null($expectedRegex)) {
+            $this->outputExpectedRegex = $expectedRegex;
+        }
+    }
+
+    /**
+     * @param string $expectedString
+     */
+    public function expectOutputString($expectedString)
+    {
+        if ($this->outputExpectedRegex !== null) {
+            throw new Exception;
+        }
+
+        if (\is_string($expectedString) || \is_null($expectedString)) {
+            $this->outputExpectedString = $expectedString;
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasExpectationOnOutput()
+    {
+        return \is_string($this->outputExpectedString) || \is_string($this->outputExpectedRegex);
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getExpectedException()
+    {
+        return $this->expectedException;
+    }
+
+    /**
+     * @return null|int|string
+     */
+    public function getExpectedExceptionCode()
+    {
+        return $this->expectedExceptionCode;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExpectedExceptionMessage()
+    {
+        return $this->expectedExceptionMessage;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExpectedExceptionMessageRegExp()
+    {
+        return $this->expectedExceptionMessageRegExp;
+    }
+
+    /**
+     * @param string $exception
+     */
+    public function expectException($exception)
+    {
+        if (!\is_string($exception)) {
+            throw InvalidArgumentHelper::factory(1, 'string');
+        }
+
+        $this->expectedException = $exception;
+    }
+
+    /**
+     * @param int|string $code
+     *
+     * @throws Exception
+     */
+    public function expectExceptionCode($code)
+    {
+        if (!$this->expectedException) {
+            $this->expectedException = \Exception::class;
+        }
+
+        if (!\is_int($code) && !\is_string($code)) {
+            throw InvalidArgumentHelper::factory(1, 'integer or string');
+        }
+
+        $this->expectedExceptionCode = $code;
+    }
+
+    /**
+     * @param string $message
+     *
+     * @throws Exception
+     */
+    public function expectExceptionMessage($message)
+    {
+        if (!$this->expectedException) {
+            $this->expectedException = \Exception::class;
+        }
+
+        if (!\is_string($message)) {
+            throw InvalidArgumentHelper::factory(1, 'string');
+        }
+
+        $this->expectedExceptionMessage = $message;
+    }
+
+    /**
+     * @param string $messageRegExp
+     *
+     * @throws Exception
+     */
+    public function expectExceptionMessageRegExp($messageRegExp)
+    {
+        if (!\is_string($messageRegExp)) {
+            throw InvalidArgumentHelper::factory(1, 'string');
+        }
+
+        $this->expectedExceptionMessageRegExp = $messageRegExp;
+    }
+
+    /**
+     * @param bool $flag
+     */
+    public function setRegisterMockObjectsFromTestArgumentsRecursively($flag)
+    {
+        if (!\is_bool($flag)) {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+
+        $this->registerMockObjectsFromTestArgumentsRecursively = $flag;
+    }
+
+    protected function setExpectedExceptionFromAnnotation()
+    {
+        try {
+            $expectedException = \PHPUnit\Util\Test::getExpectedException(
+                \get_class($this),
+                $this->name
+            );
+
+            if ($expectedException !== false) {
+                $this->expectException($expectedException['class']);
+
+                if ($expectedException['code'] !== null) {
+                    $this->expectExceptionCode($expectedException['code']);
+                }
+
+                if ($expectedException['message'] !== '') {
+                    $this->expectExceptionMessage($expectedException['message']);
+                } elseif ($expectedException['message_regex'] !== '') {
+                    $this->expectExceptionMessageRegExp($expectedException['message_regex']);
+                }
+            }
+        } catch (ReflectionException $e) {
+        }
+    }
+
+    /**
+     * @param bool $useErrorHandler
+     */
+    public function setUseErrorHandler($useErrorHandler)
+    {
+        $this->useErrorHandler = $useErrorHandler;
+    }
+
+    protected function setUseErrorHandlerFromAnnotation()
+    {
+        try {
+            $useErrorHandler = \PHPUnit\Util\Test::getErrorHandlerSettings(
+                \get_class($this),
+                $this->name
+            );
+
+            if ($useErrorHandler !== null) {
+                $this->setUseErrorHandler($useErrorHandler);
+            }
+        } catch (ReflectionException $e) {
+        }
+    }
+
+    protected function checkRequirements()
+    {
+        if (!$this->name || !\method_exists($this, $this->name)) {
+            return;
+        }
+
+        $missingRequirements = \PHPUnit\Util\Test::getMissingRequirements(
+            \get_class($this),
+            $this->name
+        );
+
+        if (!empty($missingRequirements)) {
+            $this->markTestSkipped(\implode(PHP_EOL, $missingRequirements));
+        }
+    }
+
+    /**
+     * Returns the status of this test.
+     *
+     * @return int
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    public function markAsRisky()
+    {
+        $this->status = BaseTestRunner::STATUS_RISKY;
+    }
+
+    /**
+     * Returns the status message of this test.
+     *
+     * @return string
+     */
+    public function getStatusMessage()
+    {
+        return $this->statusMessage;
+    }
+
+    /**
+     * Returns whether or not this test has failed.
+     *
+     * @return bool
+     */
+    public function hasFailed()
+    {
+        $status = $this->getStatus();
+
+        return $status == BaseTestRunner::STATUS_FAILURE ||
+            $status == BaseTestRunner::STATUS_ERROR;
+    }
+
+    /**
+     * Runs the test case and collects the results in a TestResult object.
+     * If no TestResult object is passed a new one will be created.
+     *
+     * @param TestResult $result
+     *
+     * @return TestResult
+     *
+     * @throws Exception
+     */
+    public function run(TestResult $result = null)
+    {
+        if ($result === null) {
+            $result = $this->createResult();
+        }
+
+        if (!$this instanceof WarningTestCase) {
+            $this->setTestResultObject($result);
+            $this->setUseErrorHandlerFromAnnotation();
+        }
+
+        if ($this->useErrorHandler !== null) {
+            $oldErrorHandlerSetting = $result->getConvertErrorsToExceptions();
+            $result->convertErrorsToExceptions($this->useErrorHandler);
+        }
+
+        if (!$this instanceof WarningTestCase &&
+            !$this instanceof SkippedTestCase &&
+            !$this->handleDependencies()) {
+            return;
+        }
+
+        $runEntireClass =  $this->runClassInSeparateProcess && !$this->runTestInSeparateProcess;
+
+        if (($this->runTestInSeparateProcess === true || $this->runClassInSeparateProcess === true) &&
+            $this->inIsolation !== true &&
+            !$this instanceof PhptTestCase) {
+            $class = new ReflectionClass($this);
+
+            if ($runEntireClass) {
+                $template = new Text_Template(
+                    __DIR__ . '/../Util/PHP/Template/TestCaseClass.tpl'
+                );
+            } else {
+                $template = new Text_Template(
+                    __DIR__ . '/../Util/PHP/Template/TestCaseMethod.tpl'
+                );
+            }
+
+            if ($this->preserveGlobalState) {
+                $constants     = GlobalState::getConstantsAsString();
+                $globals       = GlobalState::getGlobalsAsString();
+                $includedFiles = GlobalState::getIncludedFilesAsString();
+                $iniSettings   = GlobalState::getIniSettingsAsString();
+            } else {
+                $constants = '';
+                if (!empty($GLOBALS['__PHPUNIT_BOOTSTRAP'])) {
+                    $globals = '$GLOBALS[\'__PHPUNIT_BOOTSTRAP\'] = ' . \var_export($GLOBALS['__PHPUNIT_BOOTSTRAP'], true) . ";\n";
+                } else {
+                    $globals = '';
+                }
+                $includedFiles = '';
+                $iniSettings   = '';
+            }
+
+            $coverage                                   = $result->getCollectCodeCoverageInformation() ? 'true' : 'false';
+            $isStrictAboutTestsThatDoNotTestAnything    = $result->isStrictAboutTestsThatDoNotTestAnything() ? 'true' : 'false';
+            $isStrictAboutOutputDuringTests             = $result->isStrictAboutOutputDuringTests() ? 'true' : 'false';
+            $enforcesTimeLimit                          = $result->enforcesTimeLimit() ? 'true' : 'false';
+            $isStrictAboutTodoAnnotatedTests            = $result->isStrictAboutTodoAnnotatedTests() ? 'true' : 'false';
+            $isStrictAboutResourceUsageDuringSmallTests = $result->isStrictAboutResourceUsageDuringSmallTests() ? 'true' : 'false';
+
+            if (\defined('PHPUNIT_COMPOSER_INSTALL')) {
+                $composerAutoload = \var_export(PHPUNIT_COMPOSER_INSTALL, true);
+            } else {
+                $composerAutoload = '\'\'';
+            }
+
+            if (\defined('__PHPUNIT_PHAR__')) {
+                $phar = \var_export(__PHPUNIT_PHAR__, true);
+            } else {
+                $phar = '\'\'';
+            }
+
+            if ($result->getCodeCoverage()) {
+                $codeCoverageFilter = $result->getCodeCoverage()->filter();
+            } else {
+                $codeCoverageFilter = null;
+            }
+
+            $data               = \var_export(\serialize($this->data), true);
+            $dataName           = \var_export($this->dataName, true);
+            $dependencyInput    = \var_export(\serialize($this->dependencyInput), true);
+            $includePath        = \var_export(\get_include_path(), true);
+            $codeCoverageFilter = \var_export(\serialize($codeCoverageFilter), true);
+            // must do these fixes because TestCaseMethod.tpl has unserialize('{data}') in it, and we can't break BC
+            // the lines above used to use addcslashes() rather than var_export(), which breaks null byte escape sequences
+            $data               = "'." . $data . ".'";
+            $dataName           = "'.(" . $dataName . ").'";
+            $dependencyInput    = "'." . $dependencyInput . ".'";
+            $includePath        = "'." . $includePath . ".'";
+            $codeCoverageFilter = "'." . $codeCoverageFilter . ".'";
+
+            $configurationFilePath = $GLOBALS['__PHPUNIT_CONFIGURATION_FILE'] ?? '';
+
+            $var = [
+                'composerAutoload'                           => $composerAutoload,
+                'phar'                                       => $phar,
+                'filename'                                   => $class->getFileName(),
+                'className'                                  => $class->getName(),
+                'collectCodeCoverageInformation'             => $coverage,
+                'data'                                       => $data,
+                'dataName'                                   => $dataName,
+                'dependencyInput'                            => $dependencyInput,
+                'constants'                                  => $constants,
+                'globals'                                    => $globals,
+                'include_path'                               => $includePath,
+                'included_files'                             => $includedFiles,
+                'iniSettings'                                => $iniSettings,
+                'isStrictAboutTestsThatDoNotTestAnything'    => $isStrictAboutTestsThatDoNotTestAnything,
+                'isStrictAboutOutputDuringTests'             => $isStrictAboutOutputDuringTests,
+                'enforcesTimeLimit'                          => $enforcesTimeLimit,
+                'isStrictAboutTodoAnnotatedTests'            => $isStrictAboutTodoAnnotatedTests,
+                'isStrictAboutResourceUsageDuringSmallTests' => $isStrictAboutResourceUsageDuringSmallTests,
+                'codeCoverageFilter'                         => $codeCoverageFilter,
+                'configurationFilePath'                      => $configurationFilePath
+            ];
+
+            if (!$runEntireClass) {
+                $var['methodName'] = $this->name;
+            }
+
+            $template->setVar(
+                $var
+            );
+
+            $this->prepareTemplate($template);
+
+            $php = AbstractPhpProcess::factory();
+            $php->runTestJob($template->render(), $this, $result);
+        } else {
+            $result->run($this);
+        }
+
+        if ($this->useErrorHandler !== null) {
+            $result->convertErrorsToExceptions($oldErrorHandlerSetting);
+        }
+
+        $this->result = null;
+
+        return $result;
+    }
+
+    /**
+     * Runs the bare test sequence.
+     */
+    public function runBare()
+    {
+        $this->numAssertions = 0;
+
+        $this->snapshotGlobalState();
+        $this->startOutputBuffering();
+        \clearstatcache();
+        $currentWorkingDirectory = \getcwd();
+
+        $hookMethods = \PHPUnit\Util\Test::getHookMethods(\get_class($this));
+
+        try {
+            $hasMetRequirements = false;
+            $this->checkRequirements();
+            $hasMetRequirements = true;
+
+            if ($this->inIsolation) {
+                foreach ($hookMethods['beforeClass'] as $method) {
+                    $this->$method();
+                }
+            }
+
+            $this->setExpectedExceptionFromAnnotation();
+            $this->setDoesNotPerformAssertionsFromAnnotation();
+
+            foreach ($hookMethods['before'] as $method) {
+                $this->$method();
+            }
+
+            $this->assertPreConditions();
+            $this->testResult = $this->runTest();
+            $this->verifyMockObjects();
+            $this->assertPostConditions();
+
+            if (!empty($this->warnings)) {
+                throw new Warning(
+                    \implode(
+                        "\n",
+                        \array_unique($this->warnings)
+                    )
+                );
+            }
+
+            $this->status = BaseTestRunner::STATUS_PASSED;
+        } catch (IncompleteTest $e) {
+            $this->status        = BaseTestRunner::STATUS_INCOMPLETE;
+            $this->statusMessage = $e->getMessage();
+        } catch (SkippedTest $e) {
+            $this->status        = BaseTestRunner::STATUS_SKIPPED;
+            $this->statusMessage = $e->getMessage();
+        } catch (Warning $e) {
+            $this->status        = BaseTestRunner::STATUS_WARNING;
+            $this->statusMessage = $e->getMessage();
+        } catch (AssertionFailedError $e) {
+            $this->status        = BaseTestRunner::STATUS_FAILURE;
+            $this->statusMessage = $e->getMessage();
+        } catch (PredictionException $e) {
+            $this->status        = BaseTestRunner::STATUS_FAILURE;
+            $this->statusMessage = $e->getMessage();
+        } catch (Throwable $_e) {
+            $e = $_e;
+        }
+
+        if (isset($_e)) {
+            $this->status        = BaseTestRunner::STATUS_ERROR;
+            $this->statusMessage = $_e->getMessage();
+        }
+
+        // Clean up the mock objects.
+        $this->mockObjects = [];
+        $this->prophet     = null;
+
+        // Tear down the fixture. An exception raised in tearDown() will be
+        // caught and passed on when no exception was raised before.
+        try {
+            if ($hasMetRequirements) {
+                foreach ($hookMethods['after'] as $method) {
+                    $this->$method();
+                }
+
+                if ($this->inIsolation) {
+                    foreach ($hookMethods['afterClass'] as $method) {
+                        $this->$method();
+                    }
+                }
+            }
+        } catch (Throwable $_e) {
+            if (!isset($e)) {
+                $e = $_e;
+            }
+        }
+
+        try {
+            $this->stopOutputBuffering();
+        } catch (RiskyTestError $_e) {
+            if (!isset($e)) {
+                $e = $_e;
+            }
+        }
+
+        \clearstatcache();
+
+        if ($currentWorkingDirectory != \getcwd()) {
+            \chdir($currentWorkingDirectory);
+        }
+
+        $this->restoreGlobalState();
+
+        // Clean up INI settings.
+        foreach ($this->iniSettings as $varName => $oldValue) {
+            \ini_set($varName, $oldValue);
+        }
+
+        $this->iniSettings = [];
+
+        // Clean up locale settings.
+        foreach ($this->locale as $category => $locale) {
+            \setlocale($category, $locale);
+        }
+
+        // Perform assertion on output.
+        if (!isset($e)) {
+            try {
+                if ($this->outputExpectedRegex !== null) {
+                    $this->assertRegExp($this->outputExpectedRegex, $this->output);
+                } elseif ($this->outputExpectedString !== null) {
+                    $this->assertEquals($this->outputExpectedString, $this->output);
+                }
+            } catch (Throwable $_e) {
+                $e = $_e;
+            }
+        }
+
+        // Workaround for missing "finally".
+        if (isset($e)) {
+            if ($e instanceof PredictionException) {
+                $e = new AssertionFailedError($e->getMessage());
+            }
+
+            $this->onNotSuccessfulTest($e);
+        }
+    }
+
+    /**
+     * Override to run the test and assert its state.
+     *
+     * @return mixed
+     *
+     * @throws Exception|Exception
+     * @throws Exception
+     */
+    protected function runTest()
+    {
+        if ($this->name === null) {
+            throw new Exception(
+                'PHPUnit\Framework\TestCase::$name must not be null.'
+            );
+        }
+
+        try {
+            $class  = new ReflectionClass($this);
+            $method = $class->getMethod($this->name);
+        } catch (ReflectionException $e) {
+            $this->fail($e->getMessage());
+        }
+
+        $testArguments = \array_merge($this->data, $this->dependencyInput);
+
+        $this->registerMockObjectsFromTestArguments($testArguments);
+
+        try {
+            $testResult = $method->invokeArgs($this, $testArguments);
+        } catch (Throwable $_e) {
+            $e = $_e;
+        }
+
+        if (isset($e)) {
+            $checkException = false;
+
+            if (!($e instanceof SkippedTestError) && \is_string($this->expectedException)) {
+                $checkException = true;
+
+                if ($e instanceof Exception) {
+                    $checkException = false;
+                }
+
+                $reflector = new ReflectionClass($this->expectedException);
+
+                if ($this->expectedException === 'PHPUnit\Framework\Exception' ||
+                    $this->expectedException === '\PHPUnit\Framework\Exception' ||
+                    $reflector->isSubclassOf('PHPUnit\Framework\Exception')) {
+                    $checkException = true;
+                }
+            }
+
+            if ($checkException) {
+                $this->assertThat(
+                    $e,
+                    new ExceptionConstraint(
+                        $this->expectedException
+                    )
+                );
+
+                if (!empty($this->expectedExceptionMessage)) {
+                    $this->assertThat(
+                        $e,
+                        new ExceptionMessage(
+                            $this->expectedExceptionMessage
+                        )
+                    );
+                }
+
+                if (!empty($this->expectedExceptionMessageRegExp)) {
+                    $this->assertThat(
+                        $e,
+                        new ExceptionMessageRegularExpression(
+                            $this->expectedExceptionMessageRegExp
+                        )
+                    );
+                }
+
+                if ($this->expectedExceptionCode !== null) {
+                    $this->assertThat(
+                        $e,
+                        new ExceptionCode(
+                            $this->expectedExceptionCode
+                        )
+                    );
+                }
+
+                return;
+            }
+
+            throw $e;
+        }
+
+        if ($this->expectedException !== null) {
+            $this->assertThat(
+                null,
+                new ExceptionConstraint(
+                    $this->expectedException
+                )
+            );
+        }
+
+        return $testResult;
+    }
+
+    /**
+     * Verifies the mock object expectations.
+     */
+    protected function verifyMockObjects()
+    {
+        foreach ($this->mockObjects as $mockObject) {
+            if ($mockObject->__phpunit_hasMatchers()) {
+                $this->numAssertions++;
+            }
+
+            $mockObject->__phpunit_verify(
+                $this->shouldInvocationMockerBeReset($mockObject)
+            );
+        }
+
+        if ($this->prophet !== null) {
+            try {
+                $this->prophet->checkPredictions();
+            } catch (Throwable $t) {
+                /* Intentionally left empty */
+            }
+
+            foreach ($this->prophet->getProphecies() as $objectProphecy) {
+                foreach ($objectProphecy->getMethodProphecies() as $methodProphecies) {
+                    foreach ($methodProphecies as $methodProphecy) {
+                        $this->numAssertions += \count($methodProphecy->getCheckedPredictions());
+                    }
+                }
+            }
+
+            if (isset($t)) {
+                throw $t;
+            }
+        }
+    }
+
+    /**
+     * Sets the name of a TestCase.
+     *
+     * @param  string
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+    }
+
+    /**
+     * Sets the dependencies of a TestCase.
+     *
+     * @param array $dependencies
+     */
+    public function setDependencies(array $dependencies)
+    {
+        $this->dependencies = $dependencies;
+    }
+
+    /**
+     * Returns true if the tests has dependencies
+     *
+     * @return bool
+     */
+    public function hasDependencies()
+    {
+        return \count($this->dependencies) > 0;
+    }
+
+    /**
+     * Sets
+     *
+     * @param array $dependencyInput
+     */
+    public function setDependencyInput(array $dependencyInput)
+    {
+        $this->dependencyInput = $dependencyInput;
+    }
+
+    /**
+     * @param bool $beStrictAboutChangesToGlobalState
+     */
+    public function setBeStrictAboutChangesToGlobalState($beStrictAboutChangesToGlobalState)
+    {
+        $this->beStrictAboutChangesToGlobalState = $beStrictAboutChangesToGlobalState;
+    }
+
+    /**
+     * Calling this method in setUp() has no effect!
+     *
+     * @param bool $backupGlobals
+     */
+    public function setBackupGlobals($backupGlobals)
+    {
+        if (\is_null($this->backupGlobals) && \is_bool($backupGlobals)) {
+            $this->backupGlobals = $backupGlobals;
+        }
+    }
+
+    /**
+     * Calling this method in setUp() has no effect!
+     *
+     * @param bool $backupStaticAttributes
+     */
+    public function setBackupStaticAttributes($backupStaticAttributes)
+    {
+        if (\is_null($this->backupStaticAttributes) &&
+            \is_bool($backupStaticAttributes)) {
+            $this->backupStaticAttributes = $backupStaticAttributes;
+        }
+    }
+
+    /**
+     * @param bool $runTestInSeparateProcess
+     *
+     * @throws Exception
+     */
+    public function setRunTestInSeparateProcess($runTestInSeparateProcess)
+    {
+        if (\is_bool($runTestInSeparateProcess)) {
+            if ($this->runTestInSeparateProcess === null) {
+                $this->runTestInSeparateProcess = $runTestInSeparateProcess;
+            }
+        } else {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+    }
+
+    /**
+     * @param bool $runClassInSeparateProcess
+     *
+     * @throws Exception
+     */
+    public function setRunClassInSeparateProcess($runClassInSeparateProcess)
+    {
+        if (\is_bool($runClassInSeparateProcess)) {
+            if ($this->runClassInSeparateProcess === null) {
+                $this->runClassInSeparateProcess = $runClassInSeparateProcess;
+            }
+        } else {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+    }
+
+    /**
+     * @param bool $preserveGlobalState
+     *
+     * @throws Exception
+     */
+    public function setPreserveGlobalState($preserveGlobalState)
+    {
+        if (\is_bool($preserveGlobalState)) {
+            $this->preserveGlobalState = $preserveGlobalState;
+        } else {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+    }
+
+    /**
+     * @param bool $inIsolation
+     *
+     * @throws Exception
+     */
+    public function setInIsolation($inIsolation)
+    {
+        if (\is_bool($inIsolation)) {
+            $this->inIsolation = $inIsolation;
+        } else {
+            throw InvalidArgumentHelper::factory(1, 'boolean');
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    public function isInIsolation()
+    {
+        return $this->inIsolation;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getResult()
+    {
+        return $this->testResult;
+    }
+
+    /**
+     * @param mixed $result
+     */
+    public function setResult($result)
+    {
+        $this->testResult = $result;
+    }
+
+    /**
+     * @param callable $callback
+     *
+     * @throws Exception
+     */
+    public function setOutputCallback($callback)
+    {
+        if (!\is_callable($callback)) {
+            throw InvalidArgumentHelper::factory(1, 'callback');
+        }
+
+        $this->outputCallback = $callback;
+    }
+
+    /**
+     * @return TestResult
+     */
+    public function getTestResultObject()
+    {
+        return $this->result;
+    }
+
+    /**
+     * @param TestResult $result
+     */
+    public function setTestResultObject(TestResult $result)
+    {
+        $this->result = $result;
+    }
+
+    /**
+     * @param PHPUnit_Framework_MockObject_MockObject $mockObject
+     */
+    public function registerMockObject(PHPUnit_Framework_MockObject_MockObject $mockObject)
+    {
+        $this->mockObjects[] = $mockObject;
+    }
+
+    /**
+     * This method is a wrapper for the ini_set() function that automatically
+     * resets the modified php.ini setting to its original value after the
+     * test is run.
+     *
+     * @param string $varName
+     * @param string $newValue
+     *
+     * @throws Exception
+     */
+    protected function iniSet($varName, $newValue)
+    {
+        if (!\is_string($varName)) {
+            throw InvalidArgumentHelper::factory(1, 'string');
+        }
+
+        $currentValue = \ini_set($varName, $newValue);
+
+        if ($currentValue !== false) {
+            $this->iniSettings[$varName] = $currentValue;
+        } else {
+            throw new Exception(
+                \sprintf(
+                    'INI setting "%s" could not be set to "%s".',
+                    $varName,
+                    $newValue
+                )
+            );
+        }
+    }
+
+    /**
+     * This method is a wrapper for the setlocale() function that automatically
+     * resets the locale to its original value after the test is run.
+     *
+     * @param int    $category
+     * @param string $locale
+     *
+     * @throws Exception
+     */
+    protected function setLocale()
+    {
+        $args = \func_get_args();
+
+        if (\count($args) < 2) {
+            throw new Exception;
+        }
+
+        $category = $args[0];
+        $locale   = $args[1];
+
+        $categories = [
+            LC_ALL, LC_COLLATE, LC_CTYPE, LC_MONETARY, LC_NUMERIC, LC_TIME
+        ];
+
+        if (\defined('LC_MESSAGES')) {
+            $categories[] = LC_MESSAGES;
+        }
+
+        if (!\in_array($category, $categories)) {
+            throw new Exception;
+        }
+
+        if (!\is_array($locale) && !\is_string($locale)) {
+            throw new Exception;
+        }
+
+        $this->locale[$category] = \setlocale($category, 0);
+
+        $result = \call_user_func_array('setlocale', $args);
+
+        if ($result === false) {
+            throw new Exception(
+                'The locale functionality is not implemented on your platform, ' .
+                'the specified locale does not exist or the category name is ' .
+                'invalid.'
+            );
+        }
+    }
+
+    /**
+     * Returns a builder object to create mock objects using a fluent interface.
+     *
+     * @param string $className
+     *
+     * @return PHPUnit_Framework_MockObject_MockBuilder
+     */
+    public function getMockBuilder($className)
+    {
+        return new PHPUnit_Framework_MockObject_MockBuilder($this, $className);
+    }
+
+    /**
+     * Returns a test double for the specified class.
+     *
+     * @param string $originalClassName
+     *
+     * @return PHPUnit_Framework_MockObject_MockObject
+     *
+     * @throws Exception
+     */
+    protected function createMock($originalClassName)
+    {
+        return $this->getMockBuilder($originalClassName)
+            ->disableOriginalConstructor()
+            ->disableOriginalClone()
+            ->disableArgumentCloning()
+            ->disallowMockingUnknownTypes()
+            ->getMock();
+    }
+
+    /**
+     * Returns a configured test double for the specified class.
+     *
+     * @param string $originalClassName
+     * @param array  $configuration
+     *
+     * @return PHPUnit_Framework_MockObject_MockObject
+     *
+     * @throws Exception
+     */
+    protected function createConfiguredMock($originalClassName, array $configuration)
+    {
+        $o = $this->createMock($originalClassName);
+
+        foreach ($configuration as $method => $return) {
+            $o->method($method)->willReturn($return);
+        }
+
+        return $o;
+    }
+
+    /**
+     * Returns a partial test double for the specified class.
+     *
+     * @param string $originalClassName
+     * @param array  $methods
+     *
+     * @return PHPUnit_Framework_MockObject_MockObject
+     *
+     * @throws Exception
+     */
+    protected function createPartialMock($originalClassName, array $methods)
+    {
+        return $this->getMockBuilder($originalClassName)
+            ->disableOriginalConstructor()
+            ->disableOriginalClone()
+            ->disableArgumentCloning()
+            ->disallowMockingUnknownTypes()
+            ->setMethods(empty($methods) ? null : $methods)
+            ->getMock();
+    }
+
+    /**
+     * Returns a test proxy for the specified class.
+     *
+     * @param string $originalClassName
+     * @param array  $constructorArguments
+     *
+     * @return PHPUnit_Framework_MockObject_MockObject
+     *
+     * @throws Exception
+     */
+    protected function createTestProxy($originalClassName, array $constructorArguments = [])
+    {
+        return $this->getMockBuilder($originalClassName)
+            ->setConstructorArgs($constructorArguments)
+            ->enableProxyingToOriginalMethods()
+            ->getMock();
+    }
+
+    /**
+     * Mocks the specified class and returns the name of the mocked class.
+     *
+     * @param string $originalClassName
+     * @param array  $methods
+     * @param array  $arguments
+     * @param string $mockClassName
+     * @param bool   $callOriginalConstructor
+     * @param bool   $callOriginalClone
+     * @param bool   $callAutoload
+     * @param bool   $cloneArguments
+     *
+     * @return string
+     *
+     * @throws Exception
+     */
+    protected function getMockClass($originalClassName, $methods = [], array $arguments = [], $mockClassName = '', $callOriginalConstructor = false, $callOriginalClone = true, $callAutoload = true, $cloneArguments = false)
+    {
+        $mock = $this->getMockObjectGenerator()->getMock(
+            $originalClassName,
+            $methods,
+            $arguments,
+            $mockClassName,
+            $callOriginalConstructor,
+            $callOriginalClone,
+            $callAutoload,
+            $cloneArguments
+        );
+
+        return \get_class($mock);
+    }
+
+    /**
+     * Returns a mock object for the specified abstract class with all abstract
+     * methods of the class mocked. Concrete methods are not mocked by default.
+     * To mock concrete methods, use the 7th parameter ($mockedMethods).
+     *
+     * @param string $originalClassName
+     * @param array  $arguments
+     * @param string $mockClassName
+     * @param bool   $callOriginalConstructor
+     * @param bool   $callOriginalClone
+     * @param bool   $callAutoload
+     * @param array  $mockedMethods
+     * @param bool   $cloneArguments
+     *
+     * @return PHPUnit_Framework_MockObject_MockObject
+     *
+     * @throws Exception
+     */
+    protected function getMockForAbstractClass($originalClassName, array $arguments = [], $mockClassName = '', $callOriginalConstructor = true, $callOriginalClone = true, $callAutoload = true, $mockedMethods = [], $cloneArguments = false)
+    {
+        $mockObject = $this->getMockObjectGenerator()->getMockForAbstractClass(
+            $originalClassName,
+            $arguments,
+            $mockClassName,
+            $callOriginalConstructor,
+            $callOriginalClone,
+            $callAutoload,
+            $mockedMethods,
+            $cloneArguments
+        );
+
+        $this->registerMockObject($mockObject);
+
+        return $mockObject;
+    }
+
+    /**
+     * Returns a mock object based on the given WSDL file.
+     *
+     * @param string $wsdlFile
+     * @param string $originalClassName
+     * @param string $mockClassName
+     * @param array  $methods
+     * @param bool   $callOriginalConstructor
+     * @param array  $options                 An array of options passed to SOAPClient::_construct
+     *
+     * @return PHPUnit_Framework_MockObject_MockObject
+     */
+    protected function getMockFromWsdl($wsdlFile, $originalClassName = '', $mockClassName = '', array $methods = [], $callOriginalConstructor = true, array $options = [])
+    {
+        if ($originalClassName === '') {
+            $originalClassName = \pathinfo(\basename(\parse_url($wsdlFile)['path']), PATHINFO_FILENAME);
+        }
+
+        if (!\class_exists($originalClassName)) {
+            eval(
+                $this->getMockObjectGenerator()->generateClassFromWsdl(
+                    $wsdlFile,
+                    $originalClassName,
+                    $methods,
+                    $options
+                )
+            );
+        }
+
+        $mockObject = $this->getMockObjectGenerator()->getMock(
+            $originalClassName,
+            $methods,
+            ['', $options],
+            $mockClassName,
+            $callOriginalConstructor,
+            false,
+            false
+        );
+
+        $this->registerMockObject($mockObject);
+
+        return $mockObject;
+    }
+
+    /**
+     * Returns a mock object for the specified trait with all abstract methods
+     * of the trait mocked. Concrete methods to mock can be specified with the
+     * `$mockedMethods` parameter.
+     *
+     * @param string $traitName
+     * @param array  $arguments
+     * @param string $mockClassName
+     * @param bool   $callOriginalConstructor
+     * @param bool   $callOriginalClone
+     * @param bool   $callAutoload
+     * @param array  $mockedMethods
+     * @param bool   $cloneArguments
+     *
+     * @return PHPUnit_Framework_MockObject_MockObject
+     *
+     * @throws Exception
+     */
+    protected function getMockForTrait($traitName, array $arguments = [], $mockClassName = '', $callOriginalConstructor = true, $callOriginalClone = true, $callAutoload = true, $mockedMethods = [], $cloneArguments = false)
+    {
+        $mockObject = $this->getMockObjectGenerator()->getMockForTrait(
+            $traitName,
+            $arguments,
+            $mockClassName,
+            $callOriginalConstructor,
+            $callOriginalClone,
+            $callAutoload,
+            $mockedMethods,
+            $cloneArguments
+        );
+
+        $this->registerMockObject($mockObject);
+
+        return $mockObject;
+    }
+
+    /**
+     * Returns an object for the specified trait.
+     *
+     * @param string $traitName
+     * @param array  $arguments
+     * @param string $traitClassName
+     * @param bool   $callOriginalConstructor
+     * @param bool   $callOriginalClone
+     * @param bool   $callAutoload
+     *
+     * @return object
+     *
+     * @throws Exception
+     */
+    protected function getObjectForTrait($traitName, array $arguments = [], $traitClassName = '', $callOriginalConstructor = true, $callOriginalClone = true, $callAutoload = true)
+    {
+        return $this->getMockObjectGenerator()->getObjectForTrait(
+            $traitName,
+            $arguments,
+            $traitClassName,
+            $callOriginalConstructor,
+            $callOriginalClone,
+            $callAutoload
+        );
+    }
+
+    /**
+     * @param string|null $classOrInterface
+     *
+     * @return \Prophecy\Prophecy\ObjectProphecy
+     *
+     * @throws \LogicException
+     */
+    protected function prophesize($classOrInterface = null)
+    {
+        return $this->getProphet()->prophesize($classOrInterface);
+    }
+
+    /**
+     * Adds a value to the assertion counter.
+     *
+     * @param int $count
+     */
+    public function addToAssertionCount($count)
+    {
+        $this->numAssertions += $count;
+    }
+
+    /**
+     * Returns the number of assertions performed by this test.
+     *
+     * @return int
+     */
+    public function getNumAssertions()
+    {
+        return $this->numAssertions;
+    }
+
+    /**
+     * Returns a matcher that matches when the method is executed
+     * zero or more times.
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount
+     */
+    public static function any()
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+    }
+
+    /**
+     * Returns a matcher that matches when the method is never executed.
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_InvokedCount
+     */
+    public static function never()
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_InvokedCount(0);
+    }
+
+    /**
+     * Returns a matcher that matches when the method is executed
+     * at least N times.
+     *
+     * @param int $requiredInvocations
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_InvokedAtLeastCount
+     */
+    public static function atLeast($requiredInvocations)
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_InvokedAtLeastCount(
+            $requiredInvocations
+        );
+    }
+
+    /**
+     * Returns a matcher that matches when the method is executed at least once.
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_InvokedAtLeastOnce
+     */
+    public static function atLeastOnce()
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_InvokedAtLeastOnce;
+    }
+
+    /**
+     * Returns a matcher that matches when the method is executed exactly once.
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_InvokedCount
+     */
+    public static function once()
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_InvokedCount(1);
+    }
+
+    /**
+     * Returns a matcher that matches when the method is executed
+     * exactly $count times.
+     *
+     * @param int $count
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_InvokedCount
+     */
+    public static function exactly($count)
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_InvokedCount($count);
+    }
+
+    /**
+     * Returns a matcher that matches when the method is executed
+     * at most N times.
+     *
+     * @param int $allowedInvocations
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_InvokedAtMostCount
+     */
+    public static function atMost($allowedInvocations)
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_InvokedAtMostCount(
+            $allowedInvocations
+        );
+    }
+
+    /**
+     * Returns a matcher that matches when the method is executed
+     * at the given index.
+     *
+     * @param int $index
+     *
+     * @return PHPUnit_Framework_MockObject_Matcher_InvokedAtIndex
+     */
+    public static function at($index)
+    {
+        return new PHPUnit_Framework_MockObject_Matcher_InvokedAtIndex($index);
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return PHPUnit_Framework_MockObject_Stub_Return
+     */
+    public static function returnValue($value)
+    {
+        return new PHPUnit_Framework_MockObject_Stub_Return($value);
+    }
+
+    /**
+     * @param array $valueMap
+     *
+     * @return PHPUnit_Framework_MockObject_Stub_ReturnValueMap
+     */
+    public static function returnValueMap(array $valueMap)
+    {
+        return new PHPUnit_Framework_MockObject_Stub_ReturnValueMap($valueMap);
+    }
+
+    /**
+     * @param int $argumentIndex
+     *
+     * @return PHPUnit_Framework_MockObject_Stub_ReturnArgument
+     */
+    public static function returnArgument($argumentIndex)
+    {
+        return new PHPUnit_Framework_MockObject_Stub_ReturnArgument(
+            $argumentIndex
+        );
+    }
+
+    /**
+     * @param mixed $callback
+     *
+     * @return PHPUnit_Framework_MockObject_Stub_ReturnCallback
+     */
+    public static function returnCallback($callback)
+    {
+        return new PHPUnit_Framework_MockObject_Stub_ReturnCallback($callback);
+    }
+
+    /**
+     * Returns the current object.
+     *
+     * This method is useful when mocking a fluent interface.
+     *
+     * @return PHPUnit_Framework_MockObject_Stub_ReturnSelf
+     */
+    public static function returnSelf()
+    {
+        return new PHPUnit_Framework_MockObject_Stub_ReturnSelf();
+    }
+
+    /**
+     * @param Throwable $exception
+     *
+     * @return PHPUnit_Framework_MockObject_Stub_Exception
+     */
+    public static function throwException(Throwable $exception)
+    {
+        return new PHPUnit_Framework_MockObject_Stub_Exception($exception);
+    }
+
+    /**
+     * @param mixed $value , ...
+     *
+     * @return PHPUnit_Framework_MockObject_Stub_ConsecutiveCalls
+     */
+    public static function onConsecutiveCalls()
+    {
+        $args = \func_get_args();
+
+        return new PHPUnit_Framework_MockObject_Stub_ConsecutiveCalls($args);
+    }
+
+    /**
+     * @return bool
+     */
+    public function usesDataProvider()
+    {
+        return !empty($this->data);
+    }
+
+    /**
+     * @return string
+     */
+    public function dataDescription()
+    {
+        return \is_string($this->dataName) ? $this->dataName : '';
+    }
+
+    /**
+     * Gets the data set description of a TestCase.
+     *
+     * @param bool $includeData
+     *
+     * @return string
+     */
+    protected function getDataSetAsString($includeData = true)
+    {
+        $buffer = '';
+
+        if (!empty($this->data)) {
+            if (\is_int($this->dataName)) {
+                $buffer .= \sprintf(' with data set #%d', $this->dataName);
+            } else {
+                $buffer .= \sprintf(' with data set "%s"', $this->dataName);
+            }
+
+            $exporter = new Exporter;
+
+            if ($includeData) {
+                $buffer .= \sprintf(' (%s)', $exporter->shortenedRecursiveExport($this->data));
+            }
+        }
+
+        return $buffer;
+    }
+
+    /**
+     * Gets the data set of a TestCase.
+     *
+     * @return array
+     */
+    protected function getProvidedData()
+    {
+        return $this->data;
+    }
+
+    /**
+     * Creates a default TestResult object.
+     *
+     * @return TestResult
+     */
+    protected function createResult()
+    {
+        return new TestResult;
+    }
+
+    protected function handleDependencies()
+    {
+        if (!empty($this->dependencies) && !$this->inIsolation) {
+            $className  = \get_class($this);
+            $passed     = $this->result->passed();
+            $passedKeys = \array_keys($passed);
+            $numKeys    = \count($passedKeys);
+
+            for ($i = 0; $i < $numKeys; $i++) {
+                $pos = \strpos($passedKeys[$i], ' with data set');
+
+                if ($pos !== false) {
+                    $passedKeys[$i] = \substr($passedKeys[$i], 0, $pos);
+                }
+            }
+
+            $passedKeys = \array_flip(\array_unique($passedKeys));
+
+            foreach ($this->dependencies as $dependency) {
+                $clone = false;
+
+                if (\strpos($dependency, 'clone ') === 0) {
+                    $clone      = true;
+                    $dependency = \substr($dependency, \strlen('clone '));
+                } elseif (\strpos($dependency, '!clone ') === 0) {
+                    $clone      = false;
+                    $dependency = \substr($dependency, \strlen('!clone '));
+                }
+
+                if (\strpos($dependency, '::') === false) {
+                    $dependency = $className . '::' . $dependency;
+                }
+
+                if (!isset($passedKeys[$dependency])) {
+                    $this->result->startTest($this);
+                    $this->result->addError(
+                        $this,
+                        new SkippedTestError(
+                            \sprintf(
+                                'This test depends on "%s" to pass.',
+                                $dependency
+                            )
+                        ),
+                        0
+                    );
+                    $this->result->endTest($this, 0);
+
+                    return false;
+                }
+
+                if (isset($passed[$dependency])) {
+                    if ($passed[$dependency]['size'] != \PHPUnit\Util\Test::UNKNOWN &&
+                        $this->getSize() != \PHPUnit\Util\Test::UNKNOWN &&
+                        $passed[$dependency]['size'] > $this->getSize()) {
+                        $this->result->addError(
+                            $this,
+                            new SkippedTestError(
+                                'This test depends on a test that is larger than itself.'
+                            ),
+                            0
+                        );
+
+                        return false;
+                    }
+
+                    if ($clone) {
+                        $deepCopy = new DeepCopy;
+                        $deepCopy->skipUncloneable(false);
+
+                        $this->dependencyInput[$dependency] = $deepCopy->copy($passed[$dependency]['result']);
+                    } else {
+                        $this->dependencyInput[$dependency] = $passed[$dependency]['result'];
+                    }
+                } else {
+                    $this->dependencyInput[$dependency] = null;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * This method is called before the first test of this test class is run.
+     */
+    public static function setUpBeforeClass()
+    {
+    }
+
+    /**
+     * Sets up the fixture, for example, open a network connection.
+     * This method is called before a test is executed.
+     */
+    protected function setUp()
+    {
+    }
+
+    /**
+     * Performs assertions shared by all tests of a test case.
+     *
+     * This method is called before the execution of a test starts
+     * and after setUp() is called.
+     */
+    protected function assertPreConditions()
+    {
+    }
+
+    /**
+     * Performs assertions shared by all tests of a test case.
+     *
+     * This method is called before the execution of a test ends
+     * and before tearDown() is called.
+     */
+    protected function assertPostConditions()
+    {
+    }
+
+    /**
+     * Tears down the fixture, for example, close a network connection.
+     * This method is called after a test is executed.
+     */
+    protected function tearDown()
+    {
+    }
+
+    /**
+     * This method is called after the last test of this test class is run.
+     */
+    public static function tearDownAfterClass()
+    {
+    }
+
+    /**
+     * This method is called when a test method did not execute successfully.
+     *
+     * @param Throwable $t
+     *
+     * @throws Throwable
+     */
+    protected function onNotSuccessfulTest(Throwable $t)
+    {
+        throw $t;
+    }
+
+    /**
+     * Performs custom preparations on the process isolation template.
+     *
+     * @param Text_Template $template
+     */
+    protected function prepareTemplate(Text_Template $template)
+    {
+    }
+
+    /**
+     * Get the mock object generator, creating it if it doesn't exist.
+     *
+     * @return PHPUnit_Framework_MockObject_Generator
+     */
+    private function getMockObjectGenerator()
+    {
+        if (null === $this->mockObjectGenerator) {
+            $this->mockObjectGenerator = new PHPUnit_Framework_MockObject_Generator;
+        }
+
+        return $this->mockObjectGenerator;
+    }
+
+    private function startOutputBuffering()
+    {
+        \ob_start();
+
+        $this->outputBufferingActive = true;
+        $this->outputBufferingLevel  = \ob_get_level();
+    }
+
+    private function stopOutputBuffering()
+    {
+        if (\ob_get_level() != $this->outputBufferingLevel) {
+            while (\ob_get_level() >= $this->outputBufferingLevel) {
+                \ob_end_clean();
+            }
+
+            throw new RiskyTestError(
+                'Test code or tested code did not (only) close its own output buffers'
+            );
+        }
+
+        $output = \ob_get_contents();
+
+        if ($this->outputCallback === false) {
+            $this->output = $output;
+        } else {
+            $this->output = \call_user_func_array(
+                $this->outputCallback,
+                [$output]
+            );
+        }
+
+        \ob_end_clean();
+
+        $this->outputBufferingActive = false;
+        $this->outputBufferingLevel  = \ob_get_level();
+    }
+
+    private function snapshotGlobalState()
+    {
+        if ($this->runTestInSeparateProcess ||
+            $this->inIsolation ||
+            (!$this->backupGlobals === true && !$this->backupStaticAttributes)) {
+            return;
+        }
+
+        $this->snapshot = $this->createGlobalStateSnapshot($this->backupGlobals === true);
+    }
+
+    private function restoreGlobalState()
+    {
+        if (!$this->snapshot instanceof Snapshot) {
+            return;
+        }
+
+        if ($this->beStrictAboutChangesToGlobalState) {
+            try {
+                $this->compareGlobalStateSnapshots(
+                    $this->snapshot,
+                    $this->createGlobalStateSnapshot($this->backupGlobals === true)
+                );
+            } catch (RiskyTestError $rte) {
+                // Intentionally left empty
+            }
+        }
+
+        $restorer = new Restorer;
+
+        if ($this->backupGlobals === true) {
+            $restorer->restoreGlobalVariables($this->snapshot);
+        }
+
+        if ($this->backupStaticAttributes) {
+            $restorer->restoreStaticAttributes($this->snapshot);
+        }
+
+        $this->snapshot = null;
+
+        if (isset($rte)) {
+            throw $rte;
+        }
+    }
+
+    /**
+     * @param bool $backupGlobals
+     *
+     * @return Snapshot
+     */
+    private function createGlobalStateSnapshot($backupGlobals)
+    {
+        $blacklist = new Blacklist;
+
+        foreach ($this->backupGlobalsBlacklist as $globalVariable) {
+            $blacklist->addGlobalVariable($globalVariable);
+        }
+
+        if (!\defined('PHPUNIT_TESTSUITE')) {
+            $blacklist->addClassNamePrefix('PHPUnit');
+            $blacklist->addClassNamePrefix('File_Iterator');
+            $blacklist->addClassNamePrefix('SebastianBergmann\CodeCoverage');
+            $blacklist->addClassNamePrefix('PHP_Invoker');
+            $blacklist->addClassNamePrefix('PHP_Timer');
+            $blacklist->addClassNamePrefix('PHP_Token');
+            $blacklist->addClassNamePrefix('Symfony');
+            $blacklist->addClassNamePrefix('Text_Template');
+            $blacklist->addClassNamePrefix('Doctrine\Instantiator');
+            $blacklist->addClassNamePrefix('Prophecy');
+
+            foreach ($this->backupStaticAttributesBlacklist as $class => $attributes) {
+                foreach ($attributes as $attribute) {
+                    $blacklist->addStaticAttribute($class, $attribute);
+                }
+            }
+        }
+
+        return new Snapshot(
+            $blacklist,
+            $backupGlobals,
+            (bool) $this->backupStaticAttributes,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+        );
+    }
+
+    /**
+     * @param Snapshot $before
+     * @param Snapshot $after
+     *
+     * @throws RiskyTestError
+     */
+    private function compareGlobalStateSnapshots(Snapshot $before, Snapshot $after)
+    {
+        $backupGlobals = $this->backupGlobals === null || $this->backupGlobals === true;
+
+        if ($backupGlobals) {
+            $this->compareGlobalStateSnapshotPart(
+                $before->globalVariables(),
+                $after->globalVariables(),
+                "--- Global variables before the test\n+++ Global variables after the test\n"
+            );
+
+            $this->compareGlobalStateSnapshotPart(
+                $before->superGlobalVariables(),
+                $after->superGlobalVariables(),
+                "--- Super-global variables before the test\n+++ Super-global variables after the test\n"
+            );
+        }
+
+        if ($this->backupStaticAttributes) {
+            $this->compareGlobalStateSnapshotPart(
+                $before->staticAttributes(),
+                $after->staticAttributes(),
+                "--- Static attributes before the test\n+++ Static attributes after the test\n"
+            );
+        }
+    }
+
+    /**
+     * @param array  $before
+     * @param array  $after
+     * @param string $header
+     *
+     * @throws RiskyTestError
+     */
+    private function compareGlobalStateSnapshotPart(array $before, array $after, $header)
+    {
+        if ($before != $after) {
+            $differ   = new Differ($header);
+            $exporter = new Exporter;
+
+            $diff = $differ->diff(
+                $exporter->export($before),
+                $exporter->export($after)
+            );
+
+            throw new RiskyTestError(
+                $diff
+            );
+        }
+    }
+
+    /**
+     * @return Prophecy\Prophet
+     */
+    private function getProphet()
+    {
+        if ($this->prophet === null) {
+            $this->prophet = new Prophet;
+        }
+
+        return $this->prophet;
+    }
+
+    /**
+     * @param PHPUnit_Framework_MockObject_MockObject $mock
+     *
+     * @return bool
+     */
+    private function shouldInvocationMockerBeReset(PHPUnit_Framework_MockObject_MockObject $mock)
+    {
+        $enumerator = new Enumerator;
+
+        foreach ($enumerator->enumerate($this->dependencyInput) as $object) {
+            if ($mock === $object) {
+                return false;
+            }
+        }
+
+        if (!\is_array($this->testResult) && !\is_object($this->testResult)) {
+            return true;
+        }
+
+        foreach ($enumerator->enumerate($this->testResult) as $object) {
+            if ($mock === $object) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array $testArguments
+     * @param array $originalTestArguments
+     */
+    private function registerMockObjectsFromTestArguments(array $testArguments, array &$visited = [])
+    {
+        if ($this->registerMockObjectsFromTestArgumentsRecursively) {
+            $enumerator = new Enumerator;
+
+            foreach ($enumerator->enumerate($testArguments) as $object) {
+                if ($object instanceof PHPUnit_Framework_MockObject_MockObject) {
+                    $this->registerMockObject($object);
+                }
+            }
+        } else {
+            foreach ($testArguments as $testArgument) {
+                if ($testArgument instanceof PHPUnit_Framework_MockObject_MockObject) {
+                    if ($this->isCloneable($testArgument)) {
+                        $testArgument = clone $testArgument;
+                    }
+
+                    $this->registerMockObject($testArgument);
+                } elseif (\is_array($testArgument) && !\in_array($testArgument, $visited, true)) {
+                    $visited[] = $testArgument;
+
+                    $this->registerMockObjectsFromTestArguments(
+                        $testArgument,
+                        $visited
+                    );
+                }
+            }
+        }
+    }
+
+    private function setDoesNotPerformAssertionsFromAnnotation()
+    {
+        $annotations = $this->getAnnotations();
+
+        if (isset($annotations['method']['doesNotPerformAssertions'])) {
+            $this->doesNotPerformAssertions = true;
+        }
+    }
+
+    /**
+     * @param PHPUnit_Framework_MockObject_MockObject $testArgument
+     *
+     * @return bool
+     */
+    private function isCloneable(PHPUnit_Framework_MockObject_MockObject $testArgument)
+    {
+        $reflector = new ReflectionObject($testArgument);
+
+        if (!$reflector->isCloneable()) {
+            return false;
+        }
+
+        if ($reflector->hasMethod('__clone') &&
+            $reflector->getMethod('__clone')->isPublic()) {
+            return true;
+        }
+
+        return false;
+    }
 }
-
-if ($this->hasAnArrayArgument) {
-throw new \LogicException('Cannot add an argumen

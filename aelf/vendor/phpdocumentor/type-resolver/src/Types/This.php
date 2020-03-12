@@ -1,19 +1,33 @@
 <?php
 
-// Protocol Buffers - Google's data interchange format
-// Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// th
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\Types;
+
+use phpDocumentor\Reflection\Type;
+
+/**
+ * Value Object representing the '$this' pseudo-type.
+ *
+ * $this, as a Type, represents the instance of the class associated with the element as it was called. $this is
+ * commonly used when documenting fluent interfaces since it represents that the same object is returned.
+ */
+final class This implements Type
+{
+    /**
+     * Returns a rendered output of the Type as it would be used in a DocBlock.
+     */
+    public function __toString() : string
+    {
+        return '$this';
+    }
+}

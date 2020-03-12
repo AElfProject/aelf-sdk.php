@@ -1,48 +1,73 @@
-#!/bin/sh
-#
-# An example hook script to verify what is about to be committed.
-# Called by "git commit" with no arguments.  The hook should
-# exit with non-zero status after issuing an appropriate message if
-# it wants to stop the commit.
-#
-# To enable this hook, rename this file to "pre-commit".
+<?php
 
-if git rev-parse --verify HEAD >/dev/null 2>&1
-then
-	against=HEAD
-else
-	# Initial commit: diff against an empty tree object
-	against=$(git hash-object -t tree /dev/null)
-fi
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-# If you want to allow non-ASCII filenames set this variable to true.
-allownonascii=$(git config --bool hooks.allownonascii)
+namespace Prophecy\Argument\Token;
 
-# Redirect output to stderr.
-exec 1>&2
+/**
+ * Logical NOT token.
+ *
+ * @author Boris Mikhaylov <kaguxmail@gmail.com>
+ */
+class LogicalNotToken implements TokenInterface
+{
+    /** @var \Prophecy\Argument\Token\TokenInterface  */
+    private $token;
 
-# Cross platform projects tend to avoid non-ASCII filenames; prevent
-# them from being added to the repository. We exploit the fact that the
-# printable range starts at the space character and ends with tilde.
-if [ "$allownonascii" != "true" ] &&
-	# Note that the use of brackets around a tr range is ok here, (it's
-	# even required, for portability to Solaris 10's /usr/bin/tr), since
-	# the square bracket bytes happen to fall in the designated range.
-	test $(git diff --cached --name-only --diff-filter=A -z $against |
-	  LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
-then
-	cat <<\EOF
-Error: Attempt to add a non-ASCII file name.
+    /**
+     * @param mixed $value exact value or token
+     */
+    public function __construct($value)
+    {
+        $this->token = $value instanceof TokenInterface? $value : new ExactValueToken($value);
+    }
 
-This can cause problems if you want to work with people on other platforms.
+    /**
+     * Scores 4 when preset token does not match the argument.
+     *
+     * @param $argument
+     *
+     * @return bool|int
+     */
+    public function scoreArgument($argument)
+    {
+        return false === $this->token->scoreArgument($argument) ? 4 : false;
+    }
 
-To be portable it is advisable to rename the file.
+    /**
+     * Returns true if preset token is last.
+     *
+     * @return bool|int
+     */
+    public function isLast()
+    {
+        return $this->token->isLast();
+    }
 
-If you know what you are doing you can disable this check using:
+    /**
+     * Returns originating token.
+     *
+     * @return TokenInterface
+     */
+    public function getOriginatingToken()
+    {
+        return $this->token;
+    }
 
-  git config hooks.allownonascii true
-EOF
-	exit 1
-fi
-
-# If there are whitespace errors, pri
+    /**
+     * Returns string representation for token.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return sprintf('not(%s)', $this->token);
+    }
+}

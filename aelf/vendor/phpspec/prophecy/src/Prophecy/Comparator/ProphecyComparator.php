@@ -1,16 +1,28 @@
-"use strict";
+<?php
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+namespace Prophecy\Comparator;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+use Prophecy\Prophecy\ProphecyInterface;
+use SebastianBergmann\Comparator\ObjectComparator;
 
-var flexSpec = require('./flex-spec');
+class ProphecyComparator extends ObjectComparator
+{
+    public function accepts($expected, $actual)
+    {
+        return is_object($expected) && is_object($actual) && $actual instanceof ProphecyInterface;
+    }
 
-var Declaration = require('../declaration');
-
-var FlexFlow =
-/*#__PURE__*/
-function (_Declaration) {
-  _inhe
+    public function assertEquals($expected, $actual, $delta = 0.0, $canonicalize = false, $ignoreCase = false, array &$processed = array())
+    {
+        parent::assertEquals($expected, $actual->reveal(), $delta, $canonicalize, $ignoreCase, $processed);
+    }
+}

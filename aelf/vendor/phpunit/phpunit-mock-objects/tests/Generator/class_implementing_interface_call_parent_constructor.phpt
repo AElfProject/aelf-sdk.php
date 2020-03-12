@@ -1,78 +1,81 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('Foo', array(), 'MockFoo', true)
+--FILE--
 <?php
-
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Transaction\Factory;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PublicKeySerializerInterface;
-use BitWasp\Bitcoin\Script\ScriptInfo\Multisig;
-use BitWasp\Bitcoin\Script\ScriptInfo\PayToPubkey;
-use BitWasp\Bitcoin\Script\ScriptInfo\PayToPubkeyHash;
-use BitWasp\Bitcoin\Script\ScriptType;
-use BitWasp\Bitcoin\Serializer\Signature\TransactionSignatureSerializer;
-use BitWasp\Bitcoin\Signature\TransactionSignatureInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class Checksig
+interface IFoo
 {
-    /**
-     * @var string
-     */
-    private $scriptType;
+    public function __construct($bar);
+}
 
-    /**
-     * @var bool
-     */
-    private $required = true;
-
-    /**
-     * @var PayToPubkeyHash|PayToPubkey|Multisig
-     */
-    private $info;
-
-    /**
-     * @var int
-     */
-    protected $requiredSigs;
-
-    /**
-     * @var int
-     */
-    protected $keyCount;
-
-    /**
-     * @var TransactionSignatureInterface[]
-     */
-    protected $signatures = [];
-
-    /**
-     * @var PublicKeyInterface[]|null[]
-     */
-    protected $publicKeys = [];
-
-    /**
-     * Checksig constructor.
-     * @param Multisig|PayToPubkeyHash|PayToPubkey $info
-     */
-    public function __construct($info)
+class Foo implements IFoo
+{
+    public function __construct($bar)
     {
-        if (!is_object($info)) {
-            throw new \RuntimeException("First value to checksig must be an object");
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'Foo',
+    array(),
+    'MockFoo',
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = [];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
+    }
+
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
         }
 
-        $infoClass = get_class($info);
-        switch ($infoClass) {
-            case PayToPubkey::class:
-                /** @var PayToPubkey $info */
-                $this->scriptType = $info->getType();
-                $this->requiredSigs = $info->getRequiredSigCount();
-                $this->keyCount = 1;
-                break;
-            case PayToPubkeyHash::class:
-                /** @var PayToPubkeyHash $info */
-                $this->scriptType = ScriptType::P2PKH;
-                $this->requiredSigs = $info->getRequiredSigCount();
-                $this->keyCount = 1;
-                break
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

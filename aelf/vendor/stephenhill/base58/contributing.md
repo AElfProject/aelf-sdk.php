@@ -1,26 +1,24 @@
-<?php
-/*
- * This file is part of the PHPASN1 library.
- *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+# Contributing
 
-namespace FG\ASN1\Universal;
+I welcome anyone to contribute to this project. All bug reports, feature requests, and pull requests are greatly appriciated.
 
-use Exception;
-use FG\ASN1\Exception\ParserException;
-use FG\ASN1\Parsable;
-use FG\ASN1\Identifier;
+To contribute some code, please do the following:
 
-class BitString extends OctetString implements Parsable
-{
-    private $nrOfUnusedBits;
+1. Fork this repository.
+2. Create a new branch
+3. Commit your changes to this branch.
+4. Make sure your code follows the coding guidelines below.
+5. When your happy with you changes, push this branch to Github.
+6. Create a Pull Request into the master branch.
 
-    /**
-     * Creates a new ASN.1 BitString object.
-     *
-     * @param string|int $value Either the hexadecimal value as a string (spaces are allowed - leading 0x is optional) or a numeric value
-     * @param int $nrOfUnusedBits the number of unused bits in 
+## Coding Guidelines
+
+Please ensure your pull request adheres to the following:
+
+* New code should be properly tested, and all tests must pass
+* PSR-1: Basic coding standard
+* PSR-2: Coding style guide
+* PSR-4: Autoloader
+* Semantic Versioning 2.0.0
+
+Thank you for your support!

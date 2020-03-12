@@ -1,35 +1,21 @@
+--TEST--
+phpunit --process-isolation --exclude-group balanceIsInitiallyZero BankAccountTest ../_files/BankAccountTest.php
+--FILE--
 <?php
-namespace Yurun\Util\YurunHttp\Http\Psr7;
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--process-isolation';
+$_SERVER['argv'][3] = '--exclude-group';
+$_SERVER['argv'][4] = 'balanceIsInitiallyZero';
+$_SERVER['argv'][5] = 'BankAccountTest';
+$_SERVER['argv'][6] = __DIR__ . '/../_files/BankAccountTest.php';
 
-use Psr\Http\Message\StreamInterface;
-use Psr\Http\Message\MessageInterface;
-use Yurun\Util\YurunHttp\Stream\MemoryStream;
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
 
-abstract class AbstractMessage implements MessageInterface
-{
-    /**
-     * Http协议版本
-     * @var string
-     */
-    protected $protocolVersion = '1.1';
+..                                                                  2 / 2 (100%)
 
-    /**
-     * 头
-     * @var array
-     */
-    protected $headers = [];
+Time: %s, Memory: %s
 
-    /**
-     * 头名称数组
-     * 小写的头 => 第一次使用的头名称
-     * @var array
-     */
-    protected $headerNames = [];
-
-    /**
-     * 消息主体
-     * @var \Psr\Http\Message\StreamInterface
-     */
-    protected $body;
-
-    public function __construct($b
+OK (2 tests, 2 assertions)

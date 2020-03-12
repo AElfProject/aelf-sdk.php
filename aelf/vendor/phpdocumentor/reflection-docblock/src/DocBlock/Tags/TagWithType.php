@@ -1,40 +1,65 @@
-SD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Mock Object library for PHPUnit",
-            "homepage": "https://github.com/sebastianbergmann/phpunit-mock-objects/",
-            "keywords": [
-                "mock",
-                "xunit"
-            ],
-            "time": "2017-06-30T09:13:00+00:00"
-        },
-        {
-            "name": "sebastian/code-unit-reverse-lookup",
-            "version": "1.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/code-unit-reverse-lookup.git",
-                "reference": "4419fcdb5eabb9caa61a27c7a1db532a6b55dd18"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/code-unit-reverse-lookup/zipball/4419fcdb5eabb9caa61a27c7a1db532a6b55dd18",
-                "reference": "4419fcdb5eabb9caa61a27c7a1db532a6b55dd18",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^5.6 || ^7.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^5.7 || ^6.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias"
+<?php
+
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\DocBlock\Tags;
+
+use phpDocumentor\Reflection\Type;
+use function in_array;
+use function strlen;
+use function substr;
+use function trim;
+
+abstract class TagWithType extends BaseTag
+{
+    /** @var ?Type */
+    protected $type;
+
+    /**
+     * Returns the type section of the variable.
+     */
+    public function getType() : ?Type
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return string[]
+     */
+    protected static function extractTypeFromBody(string $body) : array
+    {
+        $type         = '';
+        $nestingLevel = 0;
+        for ($i = 0, $iMax = strlen($body); $i < $iMax; $i++) {
+            $character = $body[$i];
+
+            if ($nestingLevel === 0 && trim($character) === '') {
+                break;
+            }
+
+            $type .= $character;
+            if (in_array($character, ['<', '(', '[', '{'])) {
+                $nestingLevel++;
+                continue;
+            }
+
+            if (in_array($character, ['>', ')', ']', '}'])) {
+                $nestingLevel--;
+                continue;
+            }
+        }
+
+        $description = trim(substr($body, strlen($type)));
+
+        return [$type, $description];
+    }
+}

@@ -1,139 +1,117 @@
-": {
-                    "PHPStan\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "PHPStan - PHP Static Analysis Tool",
-            "time": "2017-02-20T20:45:32+00:00"
-        },
-        {
-            "name": "phpunit/php-code-coverage",
-            "version": "4.0.8",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "ef7b2f56815df854e66ceaee8ebe9393ae36a40d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/ef7b2f56815df854e66ceaee8ebe9393ae36a40d",
-                "reference": "ef7b2f56815df854e66ceaee8ebe9393ae36a40d",
-                "shasum": ""
-            },
-            "require": {
-                "ext-dom": "*",
-                "ext-xmlwriter": "*",
-                "php": "^5.6 || ^7.0",
-                "phpunit/php-file-iterator": "^1.3",
-                "phpunit/php-text-template": "^1.2",
-                "phpunit/php-token-stream": "^1.4.2 || ^2.0",
-                "sebastian/code-unit-reverse-lookup": "^1.0",
-                "sebastian/environment": "^1.3.2 || ^2.0",
-                "sebastian/version": "^1.0 || ^2.0"
-            },
-            "require-dev": {
-                "ext-xdebug": "^2.1.4",
-                "phpunit/phpunit": "^5.7"
-            },
-            "suggest": {
-                "ext-xdebug": "^2.5.1"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Library that provides collection, processing, and rendering functionality for PHP code coverage information.",
-            "homepage": "https://github.com/sebastianbergmann/php-code-coverage",
-            "keywords": [
-                "coverage",
-                "testing",
-                "xunit"
-            ],
-            "time": "2017-04-02T07:44:40+00:00"
-        },
-        {
-            "name": "phpunit/php-file-iterator",
-            "version": "1.4.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-file-iterator.git",
-                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
-                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.4.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "FilterIterator implementation that filters files based on a list of suffixes.",
-            "homepage": "https://github.com/sebastianbergmann/php-file-iterator/",
-            "keywords": [
-                "filesystem",
-                "iterator"
-            ],
-            "time": "2016-10-03T07:40:28+00:00"
-        },
-        {
-            "name": "phpunit/php-text-template",
-            "version": "1.2.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-text-template.git",
-                "reference": "31f8b717e51d9a2afca6c9f046f5d69fc27c8686"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/31f8b717e51d9a2afca6c9f046f5d69fc27c8686",
-                "reference": "31f8b717e51d9a2afca6c9f046f5d69fc27c8686",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "
+# Changes in PHPUnit 5.2
+
+All notable changes of the PHPUnit 5.2 release series are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
+
+## [5.2.12] - 2016-03-15
+
+### Fixed
+
+* Fixed [#2112](https://github.com/sebastianbergmann/phpunit/issues/2112): Output is html entity encoded when ran through `phpdbg`
+* Fixed [#2118](https://github.com/sebastianbergmann/phpunit/issues/2118): Prophecy integration does not work on PHP 7
+
+## [5.2.11] - 2016-03-14
+
+### Fixed
+
+* Fixed [#2094](https://github.com/sebastianbergmann/phpunit/issues/2094): Missing argument for `PHPUnit_TextUI_TestRunner::run()`
+* Fixed [#2109](https://github.com/sebastianbergmann/phpunit/issues/2109): Process isolation leaks global variable
+
+## [5.2.10] - 2016-03-03
+
+### Fixed
+
+* Fixed [#2039](https://github.com/sebastianbergmann/phpunit/issues/2039): TestDox does not handle snake_case test methods properly
+* Fixed a bug that caused no code coverage to be generated for tests that execute custom comparators
+
+## [5.2.9] - 2016-02-19
+
+### Changed
+
+* Improved the TestDox HTML report
+
+### Fixed
+
+* Fixed [#2083](https://github.com/sebastianbergmann/phpunit/issues/2083): Restored backwards compatibility in deprecated `setExpectedException()` method
+
+## [5.2.8] - 2016-02-18
+
+### Changed
+
+* Updated dependency information in `composer.json`
+
+## [5.2.7] - 2016-02-18
+
+### Changed
+
+* Improved the typography of the TestDox HTML report
+
+## [5.2.6] - 2016-02-16
+
+### Fixed
+
+* `PHPUnit_Framework_InvalidCoversTargetException` is now properly handled and results in a warning 
+
+## [5.2.5] - 2016-02-13
+
+### Fixed
+
+* Fixed [#2076](https://github.com/sebastianbergmann/phpunit/issues/2076): Code of custom comparators should not result in a test being marked as risky when PHPUnit is strict about @covers annotation usage
+
+## [5.2.4] - 2016-02-11
+
+### Fixed
+
+* Fixed [#2072](https://github.com/sebastianbergmann/phpunit/issues/2072): Paths in XML configuration file were not handled correctly when they have whitespace around them
+
+## [5.2.3] - 2016-02-08
+
+### Removed
+
+* Removed the implementation of [#1899](https://github.com/sebastianbergmann/phpunit/issues/1899) due to a [bug](https://github.com/sebastianbergmann/php-code-coverage/issues/420) in PHP_CodeCoverage
+
+## [5.2.2] - 2016-02-07
+
+### Removed
+
+* Removed the implementation of [#1902](https://github.com/sebastianbergmann/phpunit/issues/1902) due to [#2042](https://github.com/sebastianbergmann/phpunit/issues/2042)
+
+## [5.2.1] - 2016-02-05
+
+### Fixed
+
+* Fixed [#2060](https://github.com/sebastianbergmann/phpunit/issues/2060): Allow usage of `sebastian/version` in version 1
+
+## [5.2.0] - 2016-02-05
+
+### Added
+
+* Implemented [#1899](https://github.com/sebastianbergmann/phpunit/issues/1899): Mark a test as risky that does not execute the code it wants to test
+* Implemented [#1902](https://github.com/sebastianbergmann/phpunit/issues/1902): Mark a test as risky when it performs an assertion on a test double
+* Implemented [#1905](https://github.com/sebastianbergmann/phpunit/issues/1905): Add `--fail-on-risky` and `--fail-on-warning` commandline options as well as `failOnRisky` and `failOnWarning` configuration options
+* Implemented [#1912](https://github.com/sebastianbergmann/phpunit/issues/1912): Add support for specifying the extension version with the `@requires` annotation
+* Implemented [#1977](https://github.com/sebastianbergmann/phpunit/issues/1977): Add support for disabling annotations that control the ignoring of code coverage
+* Added `PHPUnit_Framework_TestCase::expectException()`, `PHPUnit_Framework_TestCase::expectExceptionCode()`, `PHPUnit_Framework_TestCase::expectExceptionMessage()`, and `PHPUnit_Framework_TestCase::expectExceptionMessageRegExp()` for programmatically setting expectations for exceptions
+
+### Changed
+
+* Deprecated `PHPUnit_Framework_TestCase::setExpectedException()`
+* Deprecated the `checkForUnintentionallyCoveredCode` configuration setting (use `beStrictAboutCoversAnnotation` instead)
+
+### Removed
+
+* The `mapTestClassNameToCoveredClassName` configuration setting has been removed
+
+[5.2.12]: https://github.com/sebastianbergmann/phpunit/compare/5.2.11...5.2.12
+[5.2.11]: https://github.com/sebastianbergmann/phpunit/compare/5.2.10...5.2.11
+[5.2.10]: https://github.com/sebastianbergmann/phpunit/compare/5.2.9...5.2.10
+[5.2.9]: https://github.com/sebastianbergmann/phpunit/compare/5.2.8...5.2.9
+[5.2.8]: https://github.com/sebastianbergmann/phpunit/compare/5.2.7...5.2.8
+[5.2.7]: https://github.com/sebastianbergmann/phpunit/compare/5.2.6...5.2.7
+[5.2.6]: https://github.com/sebastianbergmann/phpunit/compare/5.2.5...5.2.6
+[5.2.5]: https://github.com/sebastianbergmann/phpunit/compare/5.2.4...5.2.5
+[5.2.4]: https://github.com/sebastianbergmann/phpunit/compare/5.2.3...5.2.4
+[5.2.3]: https://github.com/sebastianbergmann/phpunit/compare/5.2.2...5.2.3
+[5.2.2]: https://github.com/sebastianbergmann/phpunit/compare/5.2.1...5.2.2
+[5.2.1]: https://github.com/sebastianbergmann/phpunit/compare/5.2.0...5.2.1
+[5.2.0]: https://github.com/sebastianbergmann/phpunit/compare/5.1...5.2.0
+

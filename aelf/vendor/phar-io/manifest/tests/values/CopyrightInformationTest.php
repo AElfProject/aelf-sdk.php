@@ -1,62 +1,62 @@
 <?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-namespace BitWasp\Buffertools\Tests;
-
-use \BitWasp\Buffertools\Buffer;
-use \BitWasp\Buffertools\Parser;
 use PHPUnit\Framework\TestCase;
 
-class ParserTest extends TestCase
-{
-    public function testParserEmpty()
-    {
-        $parser = new Parser();
-        $this->assertInstanceOf(Parser::class, $parser);
+/**
+ * @covers PharIo\Manifest\CopyrightInformation
+ *
+ * @uses PharIo\Manifest\AuthorCollection
+ * @uses PharIo\Manifest\AuthorCollectionIterator
+ * @uses PharIo\Manifest\Author
+ * @uses PharIo\Manifest\Email
+ * @uses PharIo\Manifest\License
+ * @uses PharIo\Manifest\Url
+ */
+class CopyrightInformationTest extends TestCase {
+    /**
+     * @var CopyrightInformation
+     */
+    private $copyrightInformation;
 
-        $this->assertSame(0, $parser->getPosition());
-        $this->assertInstanceOf(Buffer::class, $parser->getBuffer());
-        $this->assertEmpty($parser->getBuffer()->getHex());
+    /**
+     * @var Author
+     */
+    private $author;
+
+    /**
+     * @var License
+     */
+    private $license;
+
+    protected function setUp() {
+        $this->author  = new Author('Joe Developer', new Email('user@example.com'));
+        $this->license = new License('BSD-3-Clause', new Url('https://github.com/sebastianbergmann/phpunit/blob/master/LICENSE'));
+
+        $authors = new AuthorCollection;
+        $authors->add($this->author);
+
+        $this->copyrightInformation = new CopyrightInformation($authors, $this->license);
     }
 
-    public function testGetBuffer()
-    {
-        $buffer = Buffer::hex('41414141');
-
-        $parser = new Parser($buffer);
-        $this->assertSame($parser->getBuffer()->getBinary(), $buffer->getBinary());
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(CopyrightInformation::class, $this->copyrightInformation);
     }
 
-    public function testGetBufferEmptyNull()
-    {
-        $buffer = new Buffer();
-        $parser = new Parser($buffer);
-        $parserData = $parser->getBuffer()->getBinary();
-        $bufferData = $buffer->getBinary();
-        $this->assertSame($parserData, $bufferData);
+    public function testAuthorsCanBeRetrieved() {
+        $this->assertContains($this->author, $this->copyrightInformation->getAuthors());
     }
 
-    public function testWriteBytes()
-    {
-        $bytes = '41424344';
-        $parser = new Parser();
-        $parser->writeBytes(4, Buffer::hex($bytes));
-        $returned = $parser->getBuffer()->getHex();
-        $this->assertSame($returned, '41424344');
+    public function testLicenseCanBeRetrieved() {
+        $this->assertEquals($this->license, $this->copyrightInformation->getLicense());
     }
-
-    public function testWriteBytesFlip()
-    {
-        $bytes = '41424344';
-        $parser = new Parser();
-        $parser->writeBytes(4, Buffer::hex($bytes), true);
-        $returned = $parser->getBuffer()->getHex();
-        $this->assertSame($returned, '44434241');
-    }
-
-    public function testWriteBytesPadded()
-    {
-        $parser = new Parser();
-        $parser->writeBytes(4, Buffer::hex('34'));
-        $this->assertEquals("00000034", $parser->getBuff
+}

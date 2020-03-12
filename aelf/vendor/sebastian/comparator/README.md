@@ -1,75 +1,37 @@
+[![Build Status](https://travis-ci.org/sebastianbergmann/comparator.svg?branch=master)](https://travis-ci.org/sebastianbergmann/comparator)
+
+# Comparator
+
+This component provides the functionality to compare PHP values for equality.
+
+## Installation
+
+You can add this library as a local, per-project dependency to your project using [Composer](https://getcomposer.org/):
+
+    composer require sebastian/comparator
+
+If you only need this library during development, for instance to run your project's test suite, then you should add it as a development-time dependency:
+
+    composer require --dev sebastian/comparator
+
+## Usage
+
+```php
 <?php
-declare(strict_types=1);
+use SebastianBergmann\Comparator\Factory;
+use SebastianBergmann\Comparator\ComparisonFailure;
 
-namespace Mdanter\Ecc\Primitives;
+$date1 = new DateTime('2013-03-29 04:13:35', new DateTimeZone('America/New_York'));
+$date2 = new DateTime('2013-03-29 03:13:35', new DateTimeZone('America/Chicago'));
 
-class CurveParameters
-{
-    /**
-     * Elliptic curve over the field of integers modulo a prime.
-     *
-     * @var \GMP
-     */
-    protected $a;
+$factory = new Factory;
+$comparator = $factory->getComparatorFor($date1, $date2);
 
-    /**
-     *
-     * @var \GMP
-     */
-    protected $b;
+try {
+    $comparator->assertEquals($date1, $date2);
+    print "Dates match";
+} catch (ComparisonFailure $failure) {
+    print "Dates don't match";
+}
+```
 
-    /**
-     *
-     * @var \GMP
-     */
-    protected $prime;
-
-    /**
-     * Binary length of keys associated with these curve parameters
-     *
-     * @var int
-     */
-    protected $size;
-
-    /**
-     * @param int $size
-     * @param \GMP $prime
-     * @param \GMP $a
-     * @param \GMP $b
-     */
-    public function __construct(int $size, \GMP $prime, \GMP $a, \GMP $b)
-    {
-        $this->size = $size;
-        $this->prime = $prime;
-        $this->a = $a;
-        $this->b = $b;
-    }
-
-    /**
-     * @return \GMP
-     */
-    public function getA(): \GMP
-    {
-        return $this->a;
-    }
-
-    /**
-     * @return \GMP
-     */
-    public function getB(): \GMP
-    {
-        return $this->b;
-    }
-
-    /**
-     * @return \GMP
-     */
-    public function getPrime(): \GMP
-    {
-        return $this->prime;
-    }
-
-    /**
-     * @return int
-     */
-    public

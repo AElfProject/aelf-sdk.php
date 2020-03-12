@@ -1,30 +1,25 @@
 <?php
-
-declare(strict_types=1);
-
-/**
- * This file is part of phpDocumentor.
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * @link http://phpdoc.org
  */
 
-namespace phpDocumentor\Reflection\DocBlock\Tags;
+namespace PharIo\Version;
 
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\Fqsen;
-use phpDocumentor\Reflection\FqsenResolver;
-use phpDocumentor\Reflection\Types\Context as TypeContext;
-use Webmozart\Assert\Assert;
-use function preg_split;
+use PHPUnit\Framework\TestCase;
 
 /**
- * Reflection class for a {@}uses tag in a Docblock.
+ * @covers \PharIo\Version\AbstractVersionConstraint
  */
-final class Uses extends BaseTag implements Factory\StaticMethod
-{
-    /** @var string */
-    protected $
+class AbstractVersionConstraintTest extends TestCase {
+    public function testAsString() {
+        /** @var AbstractVersionConstraint|\PHPUnit_Framework_MockObject_MockObject $constraint */
+        $constraint = $this->getMockForAbstractClass(AbstractVersionConstraint::class, ['foo']);
+
+        $this->assertSame('foo', $constraint->asString());
+    }
+}

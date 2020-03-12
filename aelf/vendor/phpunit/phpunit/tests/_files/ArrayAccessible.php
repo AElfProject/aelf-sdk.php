@@ -1,37 +1,40 @@
 <?php
-namespace BN;
 
-use \JsonSerializable;
-use \Exception;
-use \BI\BigInteger;
-
-class BN implements JsonSerializable
+class ArrayAccessible implements ArrayAccess, IteratorAggregate
 {
-    public $bi;
-    public $red;
+    private $array;
 
-    function __construct($number, $base = 10, $endian = null)
+    public function __construct(array $array = [])
     {
-        if( $number instanceof BN ) {
-            $this->bi = $number->bi;
-            $this->red = $number->red;
-            return;
+        $this->array = $array;
+    }
+
+    public function offsetExists($offset)
+    {
+        return array_key_exists($offset, $this->array);
+    }
+
+    public function offsetGet($offset)
+    {
+        return $this->array[$offset];
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        if (null === $offset) {
+            $this->array[] = $value;
+        } else {
+            $this->array[$offset] = $value;
         }
+    }
 
-        // Reduction context
-        $this->red = null;
+    public function offsetUnset($offset)
+    {
+        unset($this->array[$offset]);
+    }
 
-        if ( $number instanceof BigInteger ) {
-            $this->bi = $number;
-            return;
-        }
-
-        if( is_array($number) )
-        {
-            $number = call_user_func_array("pack", array_merge(array("C*"), $number));
-            $number = bin2hex($number);
-            $base = 16;
-        }
-
-        if( $base == "hex" )
-          
+    public function getIterator()
+    {
+        return new ArrayIterator($this->array);
+    }
+}

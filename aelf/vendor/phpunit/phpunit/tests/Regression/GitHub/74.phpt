@@ -1,1 +1,28 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"1":"2 C d J M H I"},C:{"1":"0 1 2 3 4 6 7 8 9 DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB ZB YB","16":"fB"},D:{"1":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB"},E:{"1":"5 F N K D G E A B C RB IB TB UB VB WB XB p aB"},F:{"1":"0 1 5 6 B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z bB cB dB eB p AB gB","16":"E"},G:{"1":"G IB hB EB jB KB lB mB nB oB pB qB rB sB tB uB"},H:{"1":"vB"},I:{"
+--TEST--
+GH-74: catchable fatal error in 3.5
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--process-isolation';
+$_SERVER['argv'][3] = 'Issue74Test';
+$_SERVER['argv'][4] = __DIR__ . '/74/Issue74Test.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+?>
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+E                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 error:
+
+1) Issue74Test::testCreateAndThrowNewExceptionInProcessIsolation
+NewException: Testing GH-74
+
+%sIssue74Test.php:%d
+
+ERRORS!
+Tests: 1, Assertions: 0, Errors: 1.

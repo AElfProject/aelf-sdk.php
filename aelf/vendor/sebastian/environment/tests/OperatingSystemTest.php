@@ -1,36 +1,39 @@
 <?php
+/*
+ * This file is part of sebastian/environment.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 declare(strict_types=1);
 
-namespace BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Signature;
+namespace SebastianBergmann\Environment;
 
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Adapter\EcAdapter;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Serializer\Signature\CompactSignatureSerializer;
-use BitWasp\Buffertools\BufferInterface;
+use PHPUnit\Framework\TestCase;
 
-class CompactSignature extends Signature implements CompactSignatureInterface
+/**
+ * @covers \SebastianBergmann\Environment\OperatingSystem
+ */
+final class OperatingSystemTest extends TestCase
 {
     /**
-     * @var EcAdapter
+     * @var \SebastianBergmann\Environment\OperatingSystem
      */
-    private $ecAdapter;
+    private $os;
 
-    /**
-     * @var int|string
-     */
-    private $recid;
-
-    /**
-     * @var bool
-     */
-    private $compressed;
-
-    /**
-     * @param EcAdapter $adapter
-     * @param \GMP $r
-     * @param \GMP $s
-     * @param int $recid
-     * @param bool $compressed
-     */
-    public function __construct(EcAdapter $adapter, \GMP $r, \GMP $s, int $recid, bool $compressed)
+    protected function setUp()/*: void*/
     {
+        $this->os = new OperatingSystem;
+    }
+
+    /**
+     * @requires OS Linux
+     */
+    public function testFamilyCanBeRetrieved()/*: void*/
+    {
+        $this->assertEquals('Linux', $this->os->getFamily());
+    }
+}

@@ -1,32 +1,43 @@
-#!/usr/bin/perl
+<?php
 
-use strict;
-use warnings;
-use IPC::Open2;
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-# An example hook script to integrate Watchman
-# (https://facebook.github.io/watchman/) with git to speed up detecting
-# new and modified files.
-#
-# The hook is passed a version (currently 1) and a time in nanoseconds
-# formatted as a string and outputs to stdout all files that have been
-# modified since the given time. Paths must be relative to the root of
-# the working tree and separated by a single NUL.
-#
-# To enable this hook, rename this file to "query-watchman" and set
-# 'git config core.fsmonitor .git/hooks/query-watchman'
-#
-my ($version, $time) = @ARGV;
+namespace Prophecy\Argument\Token;
 
-# Check the hook interface version
+/**
+ * Argument token interface.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+interface TokenInterface
+{
+    /**
+     * Calculates token match score for provided argument.
+     *
+     * @param $argument
+     *
+     * @return bool|int
+     */
+    public function scoreArgument($argument);
 
-if ($version == 1) {
-	# convert nanoseconds to seconds
-	$time = int $time / 1000000000;
-} else {
-	die "Unsupported query-fsmonitor hook version '$version'.\n" .
-	    "Falling back to scanning...\n";
+    /**
+     * Returns true if this token prevents check of other tokens (is last one).
+     *
+     * @return bool|int
+     */
+    public function isLast();
+
+    /**
+     * Returns string representation for token.
+     *
+     * @return string
+     */
+    public function __toString();
 }
-
-my $git_work_tree;
-if ($^O =~ 'msys' || $^O =

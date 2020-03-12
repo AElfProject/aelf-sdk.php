@@ -1,225 +1,323 @@
-                } elseif ($opCode === Opcodes::OP_GREATERTHAN) {
-                                $num = (int) ($this->math->cmp($num1, $num2) > 0);
-                            } elseif ($opCode === Opcodes::OP_LESSTHANOREQUAL) {
-                                $num = (int) ($this->math->cmp($num1, $num2) <= 0);
-                            } elseif ($opCode === Opcodes::OP_GREATERTHANOREQUAL) {
-                                $num = (int) ($this->math->cmp($num1, $num2) >= 0);
-                            } elseif ($opCode === Opcodes::OP_MIN) {
-                                $num = ($this->math->cmp($num1, $num2) <= 0) ? $num1 : $num2;
-                            } else {
-                                $num = ($this->math->cmp($num1, $num2) >= 0) ? $num1 : $num2;
-                            }
+<?php
+namespace Psr\Http\Message;
 
-                            $mainStack->pop();
-                            $mainStack->pop();
-                            $buffer = Number::int(gmp_strval($num, 10))->getBuffer();
-                            $mainStack->push($buffer);
+/**
+ * Value object representing a URI.
+ *
+ * This interface is meant to represent URIs according to RFC 3986 and to
+ * provide methods for most common operations. Additional functionality for
+ * working with URIs can be provided on top of the interface or externally.
+ * Its primary use is for HTTP requests, but may also be used in other
+ * contexts.
+ *
+ * Instances of this interface are considered immutable; all methods that
+ * might change state MUST be implemented such that they retain the internal
+ * state of the current instance and return an instance that contains the
+ * changed state.
+ *
+ * Typically the Host header will be also be present in the request message.
+ * For server-side requests, the scheme will typically be discoverable in the
+ * server parameters.
+ *
+ * @link http://tools.ietf.org/html/rfc3986 (the URI specification)
+ */
+interface UriInterface
+{
+    /**
+     * Retrieve the scheme component of the URI.
+     *
+     * If no scheme is present, this method MUST return an empty string.
+     *
+     * The value returned MUST be normalized to lowercase, per RFC 3986
+     * Section 3.1.
+     *
+     * The trailing ":" character is not part of the scheme and MUST NOT be
+     * added.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.1
+     * @return string The URI scheme.
+     */
+    public function getScheme();
 
-                            if ($opCode === Opcodes::OP_NUMEQUALVERIFY) {
-                                if ($this->castToBool($mainStack[-1])) {
-                                    $mainStack->pop();
-                                } else {
-                                    throw new \RuntimeException('NUM EQUAL VERIFY error');
-                                }
-                            }
-                            break;
+    /**
+     * Retrieve the authority component of the URI.
+     *
+     * If no authority information is present, this method MUST return an empty
+     * string.
+     *
+     * The authority syntax of the URI is:
+     *
+     * <pre>
+     * [user-info@]host[:port]
+     * </pre>
+     *
+     * If the port component is not set or is the standard port for the current
+     * scheme, it SHOULD NOT be included.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-3.2
+     * @return string The URI authority, in "[user-info@]host[:port]" format.
+     */
+    public function getAuthority();
 
-                        case Opcodes::OP_WITHIN:
-                            if (count($mainStack) < 3) {
-                                throw new \RuntimeException('Invalid stack operation');
-                            }
+    /**
+     * Retrieve the user information component of the URI.
+     *
+     * If no user information is present, this method MUST return an empty
+     * string.
+     *
+     * If a user is present in the URI, this will return that value;
+     * additionally, if the password is also present, it will be appended to the
+     * user value, with a colon (":") separating the values.
+     *
+     * The trailing "@" character is not part of the user information and MUST
+     * NOT be added.
+     *
+     * @return string The URI user information, in "username[:password]" format.
+     */
+    public function getUserInfo();
 
-                            $num1 = Number::buffer($mainStack[-3], $minimal)->getGmp();
-                            $num2 = Number::buffer($mainStack[-2], $minimal)->getGmp();
-                            $num3 = Number::buffer($mainStack[-1], $minimal)->getGmp();
+    /**
+     * Retrieve the host component of the URI.
+     *
+     * If no host is present, this method MUST return an empty string.
+     *
+     * The value returned MUST be normalized to lowercase, per RFC 3986
+     * Section 3.2.2.
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-3.2.2
+     * @return string The URI host.
+     */
+    public function getHost();
 
-                            $value = $this->math->cmp($num2, $num1) <= 0 && $this->math->cmp($num1, $num3) < 0;
-                            $mainStack->pop();
-                            $mainStack->pop();
-                            $mainStack->pop();
-                            $mainStack->push($value ? $this->vchTrue : $this->vchFalse);
-                            break;
+    /**
+     * Retrieve the port component of the URI.
+     *
+     * If a port is present, and it is non-standard for the current scheme,
+     * this method MUST return it as an integer. If the port is the standard port
+     * used with the current scheme, this method SHOULD return null.
+     *
+     * If no port is present, and no scheme is present, this method MUST return
+     * a null value.
+     *
+     * If no port is present, but a scheme is present, this method MAY return
+     * the standard port for that scheme, but SHOULD return null.
+     *
+     * @return null|int The URI port.
+     */
+    public function getPort();
 
-                        // Hash operation
-                        case Opcodes::OP_RIPEMD160:
-                        case Opcodes::OP_SHA1:
-                        case Opcodes::OP_SHA256:
-                        case Opcodes::OP_HASH160:
-                        case Opcodes::OP_HASH256:
-                            if ($mainStack->isEmpty()) {
-                                throw new \RuntimeException('Invalid stack operation');
-                            }
+    /**
+     * Retrieve the path component of the URI.
+     *
+     * The path can either be empty or absolute (starting with a slash) or
+     * rootless (not starting with a slash). Implementations MUST support all
+     * three syntaxes.
+     *
+     * Normally, the empty path "" and absolute path "/" are considered equal as
+     * defined in RFC 7230 Section 2.7.3. But this method MUST NOT automatically
+     * do this normalization because in contexts with a trimmed base path, e.g.
+     * the front controller, this difference becomes significant. It's the task
+     * of the user to handle both "" and "/".
+     *
+     * The value returned MUST be percent-encoded, but MUST NOT double-encode
+     * any characters. To determine what characters to encode, please refer to
+     * RFC 3986, Sections 2 and 3.3.
+     *
+     * As an example, if the value should include a slash ("/") not intended as
+     * delimiter between path segments, that value MUST be passed in encoded
+     * form (e.g., "%2F") to the instance.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.3
+     * @return string The URI path.
+     */
+    public function getPath();
 
-                            $buffer = $mainStack[-1];
-                            if ($opCode === Opcodes::OP_RIPEMD160) {
-                                $hash = Hash::ripemd160($buffer);
-                            } elseif ($opCode === Opcodes::OP_SHA1) {
-                                $hash = Hash::sha1($buffer);
-                            } elseif ($opCode === Opcodes::OP_SHA256) {
-                                $hash = Hash::sha256($buffer);
-                            } elseif ($opCode === Opcodes::OP_HASH160) {
-                                $hash = Hash::sha256ripe160($buffer);
-                            } else {
-                                $hash = Hash::sha256d($buffer);
-                            }
+    /**
+     * Retrieve the query string of the URI.
+     *
+     * If no query string is present, this method MUST return an empty string.
+     *
+     * The leading "?" character is not part of the query and MUST NOT be
+     * added.
+     *
+     * The value returned MUST be percent-encoded, but MUST NOT double-encode
+     * any characters. To determine what characters to encode, please refer to
+     * RFC 3986, Sections 2 and 3.4.
+     *
+     * As an example, if a value in a key/value pair of the query string should
+     * include an ampersand ("&") not intended as a delimiter between values,
+     * that value MUST be passed in encoded form (e.g., "%26") to the instance.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.4
+     * @return string The URI query string.
+     */
+    public function getQuery();
 
-                            $mainStack->pop();
-                            $mainStack->push($hash);
-                            break;
+    /**
+     * Retrieve the fragment component of the URI.
+     *
+     * If no fragment is present, this method MUST return an empty string.
+     *
+     * The leading "#" character is not part of the fragment and MUST NOT be
+     * added.
+     *
+     * The value returned MUST be percent-encoded, but MUST NOT double-encode
+     * any characters. To determine what characters to encode, please refer to
+     * RFC 3986, Sections 2 and 3.5.
+     *
+     * @see https://tools.ietf.org/html/rfc3986#section-2
+     * @see https://tools.ietf.org/html/rfc3986#section-3.5
+     * @return string The URI fragment.
+     */
+    public function getFragment();
 
-                        case Opcodes::OP_CODESEPARATOR:
-                            $hashStartPos = $parser->getPosition();
-                            break;
+    /**
+     * Return an instance with the specified scheme.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified scheme.
+     *
+     * Implementations MUST support the schemes "http" and "https" case
+     * insensitively, and MAY accommodate other schemes if required.
+     *
+     * An empty scheme is equivalent to removing the scheme.
+     *
+     * @param string $scheme The scheme to use with the new instance.
+     * @return static A new instance with the specified scheme.
+     * @throws \InvalidArgumentException for invalid or unsupported schemes.
+     */
+    public function withScheme($scheme);
 
-                        case Opcodes::OP_CHECKSIG:
-                        case Opcodes::OP_CHECKSIGVERIFY:
-                            if (count($mainStack) < 2) {
-                                throw new \RuntimeException('Invalid stack operation');
-                            }
+    /**
+     * Return an instance with the specified user information.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified user information.
+     *
+     * Password is optional, but the user information MUST include the
+     * user; an empty string for the user is equivalent to removing user
+     * information.
+     *
+     * @param string $user The user name to use for authority.
+     * @param null|string $password The password associated with $user.
+     * @return static A new instance with the specified user information.
+     */
+    public function withUserInfo($user, $password = null);
 
-                            $vchPubKey = $mainStack[-1];
-                            $vchSig = $mainStack[-2];
+    /**
+     * Return an instance with the specified host.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified host.
+     *
+     * An empty host value is equivalent to removing the host.
+     *
+     * @param string $host The hostname to use with the new instance.
+     * @return static A new instance with the specified host.
+     * @throws \InvalidArgumentException for invalid hostnames.
+     */
+    public function withHost($host);
 
-                            $scriptCode = new Script($script->getBuffer()->slice($hashStartPos));
+    /**
+     * Return an instance with the specified port.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified port.
+     *
+     * Implementations MUST raise an exception for ports outside the
+     * established TCP and UDP port ranges.
+     *
+     * A null value provided for the port is equivalent to removing the port
+     * information.
+     *
+     * @param null|int $port The port to use with the new instance; a null value
+     *     removes the port information.
+     * @return static A new instance with the specified port.
+     * @throws \InvalidArgumentException for invalid ports.
+     */
+    public function withPort($port);
 
-                            $success = $checker->checkSig($scriptCode, $vchSig, $vchPubKey, $sigVersion, $flags);
+    /**
+     * Return an instance with the specified path.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified path.
+     *
+     * The path can either be empty or absolute (starting with a slash) or
+     * rootless (not starting with a slash). Implementations MUST support all
+     * three syntaxes.
+     *
+     * If the path is intended to be domain-relative rather than path relative then
+     * it must begin with a slash ("/"). Paths not starting with a slash ("/")
+     * are assumed to be relative to some base path known to the application or
+     * consumer.
+     *
+     * Users can provide both encoded and decoded path characters.
+     * Implementations ensure the correct encoding as outlined in getPath().
+     *
+     * @param string $path The path to use with the new instance.
+     * @return static A new instance with the specified path.
+     * @throws \InvalidArgumentException for invalid paths.
+     */
+    public function withPath($path);
 
-                            $mainStack->pop();
-                            $mainStack->pop();
-                            $mainStack->push($success ? $this->vchTrue : $this->vchFalse);
+    /**
+     * Return an instance with the specified query string.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified query string.
+     *
+     * Users can provide both encoded and decoded query characters.
+     * Implementations ensure the correct encoding as outlined in getQuery().
+     *
+     * An empty query string value is equivalent to removing the query string.
+     *
+     * @param string $query The query string to use with the new instance.
+     * @return static A new instance with the specified query string.
+     * @throws \InvalidArgumentException for invalid query strings.
+     */
+    public function withQuery($query);
 
-                            if (!$success && ($flags & self::VERIFY_NULLFAIL) && $vchSig->getSize() > 0) {
-                                throw new ScriptRuntimeException(self::VERIFY_NULLFAIL, 'Signature must be zero for failed OP_CHECK(MULTIS)SIG operation');
-                            }
+    /**
+     * Return an instance with the specified URI fragment.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified URI fragment.
+     *
+     * Users can provide both encoded and decoded fragment characters.
+     * Implementations ensure the correct encoding as outlined in getFragment().
+     *
+     * An empty fragment value is equivalent to removing the fragment.
+     *
+     * @param string $fragment The fragment to use with the new instance.
+     * @return static A new instance with the specified fragment.
+     */
+    public function withFragment($fragment);
 
-                            if ($opCode === Opcodes::OP_CHECKSIGVERIFY) {
-                                if ($success) {
-                                    $mainStack->pop();
-                                } else {
-                                    throw new \RuntimeException('Checksig verify');
-                                }
-                            }
-                            break;
-
-                        case Opcodes::OP_CHECKMULTISIG:
-                        case Opcodes::OP_CHECKMULTISIGVERIFY:
-                            $i = 1;
-                            if (count($mainStack) < $i) {
-                                throw new \RuntimeException('Invalid stack operation');
-                            }
-
-                            $keyCount = Number::buffer($mainStack[-$i], $minimal)->getInt();
-                            if ($keyCount < 0 || $keyCount > 20) {
-                                throw new \RuntimeException('OP_CHECKMULTISIG: Public key count exceeds 20');
-                            }
-
-                            $opCount += $keyCount;
-                            $this->checkOpcodeCount($opCount);
-
-                            // Extract positions of the keys, and signatures, from the stack.
-                            $ikey = ++$i;
-                            $ikey2 = $keyCount + 2;
-                            $i += $keyCount;
-                            if (count($mainStack) < $i) {
-                                throw new \RuntimeException('Invalid stack operation');
-                            }
-
-                            $sigCount = Number::buffer($mainStack[-$i], $minimal)->getInt();
-                            if ($sigCount < 0 || $sigCount > $keyCount) {
-                                throw new \RuntimeException('Invalid Signature count');
-                            }
-
-                            $isig = ++$i;
-                            $i += $sigCount;
-
-                            // Extract the script since the last OP_CODESEPARATOR
-                            $scriptCode = new Script($script->getBuffer()->slice($hashStartPos));
-
-                            $fSuccess = true;
-                            while ($fSuccess && $sigCount > 0) {
-                                // Fetch the signature and public key
-                                $sig = $mainStack[-$isig];
-                                $pubkey = $mainStack[-$ikey];
-
-                                if ($checker->checkSig($scriptCode, $sig, $pubkey, $sigVersion, $flags)) {
-                                    $isig++;
-                                    $sigCount--;
-                                }
-
-                                $ikey++;
-                                $keyCount--;
-
-                                // If there are more signatures left than keys left,
-                                // then too many signatures have failed. Exit early,
-                                // without checking any further signatures.
-                                if ($sigCount > $keyCount) {
-                                    $fSuccess = false;
-                                }
-                            }
-
-                            while ($i-- > 1) {
-                                // If the operation failed, we require that all signatures must be empty vector
-                                if (!$fSuccess && ($flags & self::VERIFY_NULLFAIL) && !$ikey2 && $mainStack[-1]->getSize() > 0) {
-                                    throw new ScriptRuntimeException(self::VERIFY_NULLFAIL, 'Bad signature must be empty vector');
-                                }
-
-                                if ($ikey2 > 0) {
-                                    $ikey2--;
-                                }
-
-                                $mainStack->pop();
-                            }
-
-                            // A bug causes CHECKMULTISIG to consume one extra argument
-                            // whose contents were not checked in any way.
-                            //
-                            // Unfortunately this is a potential source of mutability,
-                            // so optionally verify it is exactly equal to zero prior
-                            // to removing it from the stack.
-                            if ($mainStack->isEmpty()) {
-                                throw new \RuntimeException('Invalid stack operation');
-                            }
-
-                            if ($flags & self::VERIFY_NULL_DUMMY && $mainStack[-1]->getSize() !== 0) {
-                                throw new ScriptRuntimeException(self::VERIFY_NULL_DUMMY, 'Extra P2SH stack value should be OP_0');
-                            }
-
-                            $mainStack->pop();
-                            $mainStack->push($fSuccess ? $this->vchTrue : $this->vchFalse);
-
-                            if ($opCode === Opcodes::OP_CHECKMULTISIGVERIFY) {
-                                if ($fSuccess) {
-                                    $mainStack->pop();
-                                } else {
-                                    throw new \RuntimeException('OP_CHECKMULTISIG verify');
-                                }
-                            }
-                            break;
-
-                        default:
-                            throw new \RuntimeException('Opcode not found');
-                    }
-
-                    if (count($mainStack) + count($altStack) > 1000) {
-                        throw new \RuntimeException('Invalid stack size, exceeds 1000');
-                    }
-                }
-            }
-
-            if (count($vfStack) !== 0) {
-                throw new \RuntimeException('Unbalanced conditional at script end');
-            }
-
-            return true;
-        } catch (ScriptRuntimeException $e) {
-            // echo "\n Runtime: " . $e->getMessage() . "\n" . $e->getTraceAsString() . PHP_EOL;
-            // Failure due to script tags, can access flag: $e->getFailureFlag()
-            return false;
-        } catch (\Exception $e) {
-            // echo "\n General: " . $e->getMessage()  . PHP_EOL . $e->getTraceAsString() . PHP_EOL;
-            return false;
-        }
-    }
+    /**
+     * Return the string representation as a URI reference.
+     *
+     * Depending on which components of the URI are present, the resulting
+     * string is either a full URI or relative reference according to RFC 3986,
+     * Section 4.1. The method concatenates the various components of the URI,
+     * using the appropriate delimiters:
+     *
+     * - If a scheme is present, it MUST be suffixed by ":".
+     * - If an authority is present, it MUST be prefixed by "//".
+     * - The path can be concatenated without delimiters. But there are two
+     *   cases where the path has to be adjusted to make the URI reference
+     *   valid as PHP does not allow to throw an exception in __toString():
+     *     - If the path is rootless and an authority is present, the path MUST
+     *       be prefixed by "/".
+     *     - If the path is starting with more than one "/" and no authority is
+     *       present, the starting slashes MUST be reduced to one.
+     * - If a query is present, it MUST be prefixed by "?".
+     * - If a fragment is present, it MUST be prefixed by "#".
+     *
+     * @see http://tools.ietf.org/html/rfc3986#section-4.1
+     * @return string
+     */
+    public function __toString();
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     INDX( 	 uÔ
-Ù           (   À  è             Õs Õ          Æ»    x h     ±»    ñ ¦/&øÕ¯M¦/&øÕ¯M¦/&øÕ¯M¦/&øÕ        µ              F i e l d D e s c r i p t o r . p h p È»    € j     ±»    ]ÿµ/&øÕP½/&øÕP½/&øÕP½/&øÕ                       F i e l d D e s c r i p t o r P r o t o . p h Ç»   

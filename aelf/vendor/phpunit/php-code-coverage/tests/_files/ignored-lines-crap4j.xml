@@ -1,33 +1,37 @@
-<?xml version="1.0"?>
-<source xmlns="custom:xml:namespace">
- <line no="1">
-  <token name="T_OPEN_TAG">&lt;?php </token>
-  <token name="T_DECLARE">declare</token>
-  <token name="T_OPEN_BRACKET">(</token>
-  <token name="T_STRING">strict_types</token>
-  <token name="T_WHITESPACE"> </token>
-  <token name="T_EQUAL">=</token>
-  <token name="T_WHITESPACE"> </token>
-  <token name="T_LNUMBER">1</token>
-  <token name="T_CLOSE_BRACKET">)</token>
-  <token name="T_SEMICOLON">;</token>
- </line>
- <line no="2">
-  <token name="T_NAMESPACE">namespace</token>
-  <token name="T_WHITESPACE"> </token>
-  <token name="T_STRING">foo</token>
-  <token name="T_SEMICOLON">;</token>
- </line>
- <line no="3"/>
- <line no="4">
-  <token name="T_CLASS">class</token>
-  <token name="T_WHITESPACE"> </token>
-  <token name="T_STRING">bar</token>
-  <token name="T_WHITESPACE"> </token>
-  <token name="T_OPEN_CURLY">{</token>
- </line>
- <line no="5">
-  <token name="T_WHITESPACE">    </token>
-  <token name="T_CONST">const</token>
-  <token name="T_WHITESPACE"> </token>
-  <token name="T_ST
+<?xml version="1.0" encoding="UTF-8"?>
+<crap_result>
+  <project>CoverageForFileWithIgnoredLines</project>
+  <timestamp>%s</timestamp>
+  <stats>
+    <name>Method Crap Stats</name>
+    <methodCount>2</methodCount>
+    <crapMethodCount>0</crapMethodCount>
+    <crapLoad>0</crapLoad>
+    <totalCrap>2</totalCrap>
+    <crapMethodPercent>0</crapMethodPercent>
+  </stats>
+  <methods>
+    <method>
+      <package>global</package>
+      <className>Foo</className>
+      <methodName>bar</methodName>
+      <methodSignature>bar()</methodSignature>
+      <fullMethod>bar()</fullMethod>
+      <crap>1</crap>
+      <complexity>1</complexity>
+      <coverage>100</coverage>
+      <crapLoad>0</crapLoad>
+    </method>
+    <method>
+      <package>global</package>
+      <className>Bar</className>
+      <methodName>foo</methodName>
+      <methodSignature>foo()</methodSignature>
+      <fullMethod>foo()</fullMethod>
+      <crap>1</crap>
+      <complexity>1</complexity>
+      <coverage>100</coverage>
+      <crapLoad>0</crapLoad>
+    </method>
+  </methods>
+</crap_result>

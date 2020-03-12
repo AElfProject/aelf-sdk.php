@@ -1,31 +1,41 @@
 <?php
-
-declare(strict_types=1);
-
-/**
- * This file is part of phpDocumentor.
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * @link      http://phpdoc.org
  */
 
-namespace phpDocumentor\Reflection\DocBlock\Tags;
+namespace PharIo\Version;
 
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\Type;
-use phpDocumentor\Reflection\TypeResolver;
-use phpDocumentor\Reflection\Types\Context as TypeContext;
-use Webmozart\Assert\Assert;
-use function array_shift;
-use function array_unshift;
-use function implode;
-use function preg_split;
-use function strpos;
-use function substr;
-use const PREG_SPLIT_DELIM_CAPTURE;
+class VersionNumber {
+    /**
+     * @var int
+     */
+    private $value;
 
-/**
- * Reflection cl
+    /**
+     * @param mixed $value
+     */
+    public function __construct($value) {
+        if (is_numeric($value)) {
+            $this->value = $value;
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAny() {
+        return $this->value === null;
+    }
+
+    /**
+     * @return int
+     */
+    public function getValue() {
+        return $this->value;
+    }
+}

@@ -1,40 +1,46 @@
+<?php
+
+namespace DeepCopy\Matcher;
+
+use DeepCopy\Reflection\ReflectionHelper;
+use ReflectionException;
+
+/**
+ * Matches a property by its type.
+ *
+ * It is recommended to use {@see DeepCopy\TypeFilter\TypeFilter} instead, as it applies on all occurrences
+ * of given type in copied context (eg. array elements), not just on object properties.
+ *
+ * @final
+ */
+class PropertyTypeMatcher implements Matcher
 {
-    "name": "sebastian/exporter",
-    "description": "Provides the functionality to export PHP variables for visualization",
-    "keywords": ["exporter","export"],
-    "homepage": "http://www.github.com/sebastianbergmann/exporter",
-    "license": "BSD-3-Clause",
-    "authors": [
-        {
-            "name": "Sebastian Bergmann",
-            "email": "sebastian@phpunit.de"
-        },
-        {
-            "name": "Jeff Welch",
-            "email": "whatthejeff@gmail.com"
-        },
-        {
-            "name": "Volker Dusch",
-            "email": "github@wallbash.com"
-        },
-        {
-            "name": "Adam Harvey",
-            "email": "aharvey@php.net"
-        },
-        {
-            "name": "Bernhard Schussek",
-            "email": "bschussek@gmail.com"
+    /**
+     * @var string
+     */
+    private $propertyType;
+
+    /**
+     * @param string $propertyType Property type
+     */
+    public function __construct($propertyType)
+    {
+        $this->propertyType = $propertyType;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function matches($object, $property)
+    {
+        try {
+            $reflectionProperty = ReflectionHelper::getProperty($object, $property);
+        } catch (ReflectionException $exception) {
+            return false;
         }
-    ],
-    "config": {
-        "optimize-autoloader": true,
-        "sort-packages": true
-    },
-    "prefer-stable": true,
-    "require": {
-        "php": "^7.0",
-        "sebastian/recursion-context": "^3.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^6.0",
- 
+
+        $reflectionProperty->setAccessible(true);
+
+        return $reflectionProperty->getValue($object) instanceof $this->propertyType;
+    }
+}

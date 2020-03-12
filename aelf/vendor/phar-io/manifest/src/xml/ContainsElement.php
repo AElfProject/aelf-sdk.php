@@ -1,28 +1,31 @@
-'*'],
-    feature: 'calc',
-    browsers: browsers
-  });
-}); // Background options
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-f(require('caniuse-lite/data/features/background-img-opts'), function (browsers) {
-  return prefix(['background-origin', 'background-size'], {
-    feature: 'background-img-opts',
-    browsers: browsers
-  });
-}); // background-clip: text
+namespace PharIo\Manifest;
 
-f(require('caniuse-lite/data/features/background-clip-text'), function (browsers) {
-  return prefix(['background-clip'], {
-    feature: 'background-clip-text',
-    browsers: browsers
-  });
-}); // Font feature settings
+class ContainsElement extends ManifestElement {
+    public function getName() {
+        return $this->getAttributeValue('name');
+    }
 
-f(require('caniuse-lite/data/features/font-feature'), function (browsers) {
-  return prefix(['font-feature-settings', 'font-variant-ligatures', 'font-language-override'], {
-    feature: 'font-feature',
-    browsers: browsers
-  });
-}); // CSS font-kerning property
+    public function getVersion() {
+        return $this->getAttributeValue('version');
+    }
 
-f(
+    public function getType() {
+        return $this->getAttributeValue('type');
+    }
+
+    public function getExtensionElement() {
+        return new ExtensionElement(
+            $this->getChildByName('extension')
+        );
+    }
+}

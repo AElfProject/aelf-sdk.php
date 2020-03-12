@@ -1,43 +1,53 @@
 <?php
+/*
+ * This file is part of sebastian/comparator.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace SebastianBergmann\Comparator;
 
-namespace BitWasp\Bitcoin\Serializer\Key\PrivateKey;
-
-use BitWasp\Bitcoin\Base58;
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PrivateKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PrivateKeySerializerInterface;
-use BitWasp\Bitcoin\Exceptions\Base58ChecksumFailure;
-use BitWasp\Bitcoin\Exceptions\InvalidPrivateKey;
-use BitWasp\Bitcoin\Network\NetworkInterface;
-use BitWasp\Buffertools\Buffer;
-
-class WifPrivateKeySerializer
+/**
+ * Compares Exception instances for equality.
+ */
+class ExceptionComparator extends ObjectComparator
 {
     /**
-     * @var PrivateKeySerializerInterface
+     * Returns whether the comparator can compare two values.
+     *
+     * @param mixed $expected The first value to compare
+     * @param mixed $actual   The second value to compare
+     *
+     * @return bool
      */
-    private $keySerializer;
-
-    /**
-     * @param PrivateKeySerializerInterface $serializer
-     */
-    public function __construct(PrivateKeySerializerInterface $serializer)
+    public function accepts($expected, $actual)
     {
-        $this->keySerializer = $serializer;
+        return $expected instanceof \Exception && $actual instanceof \Exception;
     }
 
     /**
-     * @param NetworkInterface $network
-     * @param PrivateKeyInterface $privateKey
-     * @return string
-     * @throws \Exception
+     * Converts an object to an array containing all of its private, protected
+     * and public properties.
+     *
+     * @param object $object
+     *
+     * @return array
      */
-    public function serialize(NetworkInterface $network, PrivateKeyInterface $privateKey): string
+    protected function toArray($object)
     {
-        $prefix = pack("H*", $network->getPrivByte());
-        if ($privateKey->isCompressed()) {
-            $ending = "\x01";
-      
+        $array = parent::toArray($object);
+
+        unset(
+            $array['file'],
+            $array['line'],
+            $array['trace'],
+            $array['string'],
+            $array['xdebug_message']
+        );
+
+        return $array;
+    }
+}

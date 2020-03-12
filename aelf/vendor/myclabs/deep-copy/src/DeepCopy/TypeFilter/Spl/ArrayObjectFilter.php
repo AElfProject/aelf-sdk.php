@@ -1,27 +1,36 @@
+<?php
+namespace DeepCopy\TypeFilter\Spl;
+
+use ArrayObject;
+use DeepCopy\DeepCopy;
+use DeepCopy\TypeFilter\TypeFilter;
+
+/**
+ * In PHP 7.4 the storage of an ArrayObject isn't returned as
+ * ReflectionProperty. So we deep copy its array copy.
+ */
+final class ArrayObjectFilter implements TypeFilter
 {
-    "name": "sebastian/object-enumerator",
-    "description": "Traverses array structures and object graphs to enumerate all referenced objects",
-    "homepage": "https://github.com/sebastianbergmann/object-enumerator/",
-    "license": "BSD-3-Clause",
-    "authors": [
-        {
-            "name": "Sebastian Bergmann",
-            "email": "sebastian@phpunit.de"
-        }
-    ],
-    "require": {
-        "php": "^7.0",
-        "sebastian/object-reflector": "^1.1.1",
-        "sebastian/recursion-context": "^3.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^6.0"
-    },
-    "autoload": {
-        "classmap": [
-            "src/"
-        ]
-    },
-    "autoload-dev": {
-        "classmap": [
-            "tests/_fixture
+    /**
+     * @var DeepCopy
+     */
+    private $copier;
+
+    public function __construct(DeepCopy $copier)
+    {
+        $this->copier = $copier;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function apply($arrayObject)
+    {
+        return new ArrayObject(
+            $this->copier->copy($arrayObject->getArrayCopy()),
+            $arrayObject->getFlags(),
+            $arrayObject->getIteratorClass()
+        );
+    }
+}
+

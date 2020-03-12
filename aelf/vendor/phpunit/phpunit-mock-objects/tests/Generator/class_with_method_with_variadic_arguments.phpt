@@ -1,89 +1,99 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('ClassWithMethodWithVariadicArguments', array(), 'MockFoo', true, true)
+--FILE--
 <?php
-
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Math;
-
-use Mdanter\Ecc\Math\GmpMath;
-use Mdanter\Ecc\Util\NumberSize;
-
-class Math extends GmpMath
+class ClassWithMethodWithVariadicArguments
 {
-
-    /**
-     * @param \GMP $integer
-     * @return bool
-     */
-    public function isEven(\GMP $integer): bool
+    public function methodWithVariadicArguments($a, ...$parameters)
     {
-        return $this->cmp($this->mod($integer, gmp_init(2)), gmp_init(0)) === 0;
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'ClassWithMethodWithVariadicArguments',
+    array(),
+    'MockFoo',
+    true,
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends ClassWithMethodWithVariadicArguments implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = ['methodwithvariadicarguments'];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
     }
 
-    /**
-     * @param \GMP $int
-     * @param \GMP $otherInt
-     * @return \GMP
-     */
-    public function bitwiseOr(\GMP $int, \GMP $otherInt): \GMP
+    public function methodWithVariadicArguments($a, ...$parameters)
     {
-        return gmp_or($int, $otherInt);
-    }
+        $arguments = array($a);
+        $count     = func_num_args();
 
-    /**
-     * Similar to gmp_div_qr, return a tuple containing the
-     * result and the remainder
-     *
-     * @param \GMP $dividend
-     * @param \GMP $divisor
-     * @return array
-     */
-    public function divQr(\GMP $dividend, \GMP $divisor): array
-    {
-        // $div = n / q
-        $div = $this->div($dividend, $divisor);
-        // $remainder = n - (n / q) * q
-        $remainder = $this->sub($dividend, $this->mul($div, $divisor));
-        return [$div, $remainder];
-    }
+        if ($count > 1) {
+            $_arguments = func_get_args();
 
-    /**
-     * @param int $compact
-     * @param bool|false $isNegative
-     * @param bool|false $isOverflow
-     * @return \GMP
-     */
-    public function decodeCompact($compact, &$isNegative, &$isOverflow): \GMP
-    {
-        if ($compact < 0 || $compact > pow(2, 32) - 1) {
-            throw new \RuntimeException('Compact integer must be 32bit');
+            for ($i = 1; $i < $count; $i++) {
+                $arguments[] = $_arguments[$i];
+            }
         }
 
-        $compact = gmp_init($compact, 10);
-        $size = $this->rightShift($compact, 24);
-        $word = $this->bitwiseAnd($compact, gmp_init(0x007fffff, 10));
-        if ($this->cmp($size, gmp_init(3)) <= 0) {
-            $positions = (int) $this->toString($this->mul(gmp_init(8, 10), $this->sub(gmp_init(3, 10), $size)));
-            $word = $this->rightShift($word, $positions);
-        } else {
-            $positions = (int) $this->toString($this->mul(gmp_init(8, 10), $this->sub($size, gmp_init(3, 10))));
-            $word = $this->leftShift($word, $positions);
-        }
+        $result = $this->__phpunit_getInvocationMocker()->invoke(
+            new PHPUnit_Framework_MockObject_Invocation_Object(
+                'ClassWithMethodWithVariadicArguments', 'methodWithVariadicArguments', $arguments, '', $this, true
+            )
+        );
 
-        // isNegative: $word !== 0 && $uint32 & 0x00800000 !== 0
-        // isOverflow: $word !== 0 && (($size > 34) || ($word > 0xff && $size > 33) || ($word > 0xffff && $size > 32))
-        $zero = gmp_init(0);
-        $isNegative = ($this->cmp($word, $zero) !== 0) && ($this->cmp($this->bitwiseAnd($compact, gmp_init(0x00800000)), $zero) === 1);
-        $isOverflow = $this->cmp($word, $zero) !== 0 && (
-                ($this->cmp($size, gmp_init(34, 10)) > 0)
-                || ($this->cmp($word, gmp_init(0xff, 10)) > 0 && $this->cmp($size, gmp_init(33, 10)) > 0)
-                || ($this->cmp($word, gmp_init(0xffff, 10)) > 0 && $this->cmp($size, gmp_init(32, 10)) > 0)
-            );
-
-        return $word;
+        return $result;
     }
 
-    /**
-     * @param \GMP $integer
-     * @return \GMP
-     */
-    public 
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
+    {
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
+    }
+
+    public function method()
+    {
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
+    }
+
+    public function __phpunit_setOriginalObject($originalObject)
+    {
+        $this->__phpunit_originalObject = $originalObject;
+    }
+
+    public function __phpunit_getInvocationMocker()
+    {
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
+        }
+
+        return $this->__phpunit_invocationMocker;
+    }
+
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

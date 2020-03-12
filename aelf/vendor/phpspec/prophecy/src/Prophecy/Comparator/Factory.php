@@ -1,19 +1,47 @@
-"use strict";
+<?php
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+namespace Prophecy\Comparator;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+use SebastianBergmann\Comparator\Factory as BaseFactory;
 
-var flexSpec = require('./flex-spec');
+/**
+ * Prophecy comparator factory.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+final class Factory extends BaseFactory
+{
+    /**
+     * @var Factory
+     */
+    private static $instance;
 
-var Declaration = require('../declaration');
+    public function __construct()
+    {
+        parent::__construct();
 
-var FlexShrink =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(FlexShrink, _Declaration);
+        $this->register(new ClosureComparator());
+        $this->register(new ProphecyComparator());
+    }
 
-  function FlexShrink() {
-    return _Declaration.apply(t
+    /**
+     * @return Factory
+     */
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new Factory;
+        }
+
+        return self::$instance;
+    }
+}

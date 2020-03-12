@@ -1,14 +1,40 @@
-ue, "equals true");
-    test((new BigInteger(20))->equals(21), false, "equals false");
-    test((new BigInteger(-20))->sign(), -1, "sign -1");
-    test((new BigInteger(0))->sign(), 0, "sign 0");
-    test((new BigInteger(20))->sign(), 1, "sign 1");
-    testB(new BigInteger("-20"), "-20", "minus");
-    testB(new BigInteger("-14", 16), "-20", "minus");
-    testB(new BigInteger("-10100", 2), "-20", "minus");
-}
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function testBig() {
-    error_log("=============\nTest big\n=============");
-    $bits = "1001010111010010100001000101110110100001000101101000110101010101001";
-    $hex = "eeaf0ab9adb38dd69c33f80afa8fc5e86072618775ff3c0b9ea2314c9c256576d674df7496ea81d3383b4813d692c6e0e0d5d8e250b98be48e495c1d6089dad15dc7d7b46154d6b6ce8ef4ad69b15d4982559b297bcf1885c529f566660e57ec68edbc3c05726cc02fd4cbf4976eaa9afd513
+namespace PHPUnit\Util;
+
+/**
+ * Filesystem helpers.
+ */
+class Filesystem
+{
+    /**
+     * @var array
+     */
+    protected static $buffer = [];
+
+    /**
+     * Maps class names to source file names:
+     *   - PEAR CS:   Foo_Bar_Baz -> Foo/Bar/Baz.php
+     *   - Namespace: Foo\Bar\Baz -> Foo/Bar/Baz.php
+     *
+     * @param string $className
+     *
+     * @return string
+     */
+    public static function classNameToFilename($className)
+    {
+        return \str_replace(
+            ['_', '\\'],
+            DIRECTORY_SEPARATOR,
+            $className
+        ) . '.php';
+    }
+}

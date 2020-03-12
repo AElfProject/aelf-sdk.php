@@ -1,187 +1,186 @@
 <?php
+/*
+ * This file is part of sebastian/environment.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 declare(strict_types=1);
 
-namespace BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Key;
+namespace SebastianBergmann\Environment;
 
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Adapter\EcAdapter;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Serializer\Key\PublicKeySerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\Key;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\KeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Signature\SignatureInterface;
-use BitWasp\Buffertools\BufferInterface;
-use Mdanter\Ecc\Crypto\Signature\Signer;
-use Mdanter\Ecc\Primitives\CurveFpInterface;
-use Mdanter\Ecc\Primitives\GeneratorPoint;
-use Mdanter\Ecc\Primitives\PointInterface;
-
-class PublicKey extends Key implements PublicKeyInterface, \Mdanter\Ecc\Crypto\Key\PublicKeyInterface
+/**
+ * Utility class for HHVM/PHP environment handling.
+ */
+final class Runtime
 {
-    /**
-     * @var EcAdapter
-     */
-    private $ecAdapter;
-
-    /**
-     * @var PointInterface
-     */
-    private $point;
-
     /**
      * @var string
      */
-    private $prefix;
+    private static $binary;
 
     /**
-     * @var bool
+     * Returns true when Xdebug is supported or
+     * the runtime used is PHPDBG.
      */
-    private $compressed;
-
-    /**
-     * PublicKey constructor.
-     * @param EcAdapter $ecAdapter
-     * @param PointInterface $point
-     * @param bool $compressed
-     * @param string $prefix
-     */
-    public function __construct(
-        EcAdapter $ecAdapter,
-        PointInterface $point,
-        bool $compressed = false,
-        string $prefix = null
-    ) {
-        $this->ecAdapter = $ecAdapter;
-        $this->point = $point;
-        $this->prefix = $prefix;
-        $this->compressed = $compressed;
+    public function canCollectCodeCoverage(): bool
+    {
+        return $this->hasXdebug() || $this->hasPHPDBGCodeCoverage();
     }
 
     /**
-     * @return GeneratorPoint
+     * Returns true when OPcache is loaded and opcache.save_comments=0 is set.
+     *
+     * Code taken from Doctrine\Common\Annotations\AnnotationReader::__construct().
      */
-    public function getGenerator(): GeneratorPoint
+    public function discardsComments(): bool
     {
-        return $this->ecAdapter->getGenerator();
-    }
-
-    /**
-     * @return \Mdanter\Ecc\Primitives\CurveFpInterface
-     */
-    public function getCurve(): CurveFpInterface
-    {
-        return $this->ecAdapter->getGenerator()->getCurve();
-    }
-
-    /**
-     * @return string
-     */
-    public function getPrefix()
-    {
-        return $this->prefix;
-    }
-
-    /**
-     * @return PointInterface
-     */
-    public function getPoint(): PointInterface
-    {
-        return $this->point;
-    }
-
-    /**
-     * @param BufferInterface $msg32
-     * @param SignatureInterface $signature
-     * @return bool
-     */
-    public function verify(BufferInterface $msg32, SignatureInterface $signature): bool
-    {
-        $hash = gmp_init($msg32->getHex(), 16);
-        $signer = new Signer($this->ecAdapter->getMath());
-        return $signer->verify($this, $signature, $hash);
-    }
-
-    /**
-     * @param \GMP $tweak
-     * @return KeyInterface
-     */
-    public function tweakAdd(\GMP $tweak): KeyInterface
-    {
-        $offset = $this->ecAdapter->getGenerator()->mul($tweak);
-        $newPoint = $this->point->add($offset);
-        return new PublicKey($this->ecAdapter, $newPoint, $this->compressed);
-    }
-
-    /**
-     * @param \GMP $tweak
-     * @return KeyInterface
-     */
-    public function tweakMul(\GMP $tweak): KeyInterface
-    {
-        $point = $this->point->mul($tweak);
-        return new PublicKey($this->ecAdapter, $point, $this->compressed);
-    }
-
-    /**
-     * @param BufferInterface $publicKey
-     * @return bool
-     */
-    public static function isCompressedOrUncompressed(BufferInterface $publicKey): bool
-    {
-        $vchPubKey = $publicKey->getBinary();
-        if ($publicKey->getSize() < self::LENGTH_COMPRESSED) {
-            return false;
+        if (\extension_loaded('Zend Optimizer+') && (\ini_get('zend_optimizerplus.save_comments') === '0' || \ini_get('opcache.save_comments') === '0')) {
+            return true;
         }
 
-        if ($vchPubKey[0] === self::KEY_UNCOMPRESSED) {
-            if ($publicKey->getSize() !== self::LENGTH_UNCOMPRESSED) {
-                // Invalid length for uncompressed key
-                return false;
-            }
-        } elseif (in_array($vchPubKey[0], [
-            self::KEY_COMPRESSED_EVEN,
-            self::KEY_COMPRESSED_ODD
-        ])) {
-            if ($publicKey->getSize() !== self::LENGTH_COMPRESSED) {
-                return false;
-            }
-        } else {
-            return false;
+        if (\extension_loaded('Zend OPcache') && \ini_get('opcache.save_comments') == 0) {
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     /**
-     * @return bool
+     * Returns the path to the binary of the current runtime.
+     * Appends ' --php' to the path when the runtime is HHVM.
      */
-    public function isCompressed(): bool
+    public function getBinary(): string
     {
-        return $this->compressed;
+        // HHVM
+        if (self::$binary === null && $this->isHHVM()) {
+            // @codeCoverageIgnoreStart
+            if ((self::$binary = \getenv('PHP_BINARY')) === false) {
+                self::$binary = PHP_BINARY;
+            }
+
+            self::$binary = \escapeshellarg(self::$binary) . ' --php' .
+                ' -d hhvm.php7.all=1';
+            // @codeCoverageIgnoreEnd
+        }
+
+        if (self::$binary === null && PHP_BINARY !== '') {
+            self::$binary = \escapeshellarg(PHP_BINARY);
+        }
+
+        if (self::$binary === null) {
+            // @codeCoverageIgnoreStart
+            $possibleBinaryLocations = [
+                PHP_BINDIR . '/php',
+                PHP_BINDIR . '/php-cli.exe',
+                PHP_BINDIR . '/php.exe'
+            ];
+
+            foreach ($possibleBinaryLocations as $binary) {
+                if (\is_readable($binary)) {
+                    self::$binary = \escapeshellarg($binary);
+                    break;
+                }
+            }
+            // @codeCoverageIgnoreEnd
+        }
+
+        if (self::$binary === null) {
+            // @codeCoverageIgnoreStart
+            self::$binary = 'php';
+            // @codeCoverageIgnoreEnd
+        }
+
+        return self::$binary;
     }
 
-    /**
-     * @param PublicKey $other
-     * @return bool
-     */
-    private function doEquals(PublicKey $other): bool
+    public function getNameWithVersion(): string
     {
-        return $this->compressed === $other->compressed
-            && $this->point->equals($other->point)
-            && (($this->prefix === null || $other->prefix === null) || ($this->prefix === $other->prefix));
+        return $this->getName() . ' ' . $this->getVersion();
     }
 
-    /**
-     * @param PublicKeyInterface $other
-     * @return bool
-     */
-    public function equals(PublicKeyInterface $other): bool
+    public function getName(): string
     {
-        /** @var self $other */
-        return $this->doEquals($other);
+        if ($this->isHHVM()) {
+            // @codeCoverageIgnoreStart
+            return 'HHVM';
+            // @codeCoverageIgnoreEnd
+        }
+
+        if ($this->isPHPDBG()) {
+            // @codeCoverageIgnoreStart
+            return 'PHPDBG';
+            // @codeCoverageIgnoreEnd
+        }
+
+        return 'PHP';
+    }
+
+    public function getVendorUrl(): string
+    {
+        if ($this->isHHVM()) {
+            // @codeCoverageIgnoreStart
+            return 'http://hhvm.com/';
+            // @codeCoverageIgnoreEnd
+        }
+
+        return 'https://secure.php.net/';
+    }
+
+    public function getVersion(): string
+    {
+        if ($this->isHHVM()) {
+            // @codeCoverageIgnoreStart
+            return HHVM_VERSION;
+            // @codeCoverageIgnoreEnd
+        }
+
+        return PHP_VERSION;
     }
 
     /**
-     * @return BufferInterface
+     * Returns true when the runtime used is PHP and Xdebug is loaded.
      */
-    public function getBuffer(): Buffer
+    public function hasXdebug(): bool
+    {
+        return ($this->isPHP() || $this->isHHVM()) && \extension_loaded('xdebug');
+    }
+
+    /**
+     * Returns true when the runtime used is HHVM.
+     */
+    public function isHHVM(): bool
+    {
+        return \defined('HHVM_VERSION');
+    }
+
+    /**
+     * Returns true when the runtime used is PHP without the PHPDBG SAPI.
+     */
+    public function isPHP(): bool
+    {
+        return !$this->isHHVM() && !$this->isPHPDBG();
+    }
+
+    /**
+     * Returns true when the runtime used is PHP with the PHPDBG SAPI.
+     */
+    public function isPHPDBG(): bool
+    {
+        return PHP_SAPI === 'phpdbg' && !$this->isHHVM();
+    }
+
+    /**
+     * Returns true when the runtime used is PHP with the PHPDBG SAPI
+     * and the phpdbg_*_oplog() functions are available (PHP >= 7.0).
+     *
+     * @codeCoverageIgnore
+     */
+    public function hasPHPDBGCodeCoverage(): bool
+    {
+        return $this->isPHPDBG();
+    }
+}

@@ -1,7 +1,19 @@
-"use strict";
+<?php
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+namespace PharIo\Manifest;
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+use DOMDocument;
+use LibXMLError;
 
-function _defineProperty(obj, key, value) { if (key
+class ManifestDocumentLoadingExceptionTest extends \PHPUnit_Framework_TestCase {
+    public function testXMLErrorsCanBeRetrieved() {
+        $dom  = new DOMDocument();
+        $prev = libxml_use_internal_errors(true);
+        $dom->loadXML('<?xml version="1.0" ?><broken>');
+        $exception = new ManifestDocumentLoadingException(libxml_get_errors());
+        libxml_use_internal_errors($prev);
+
+        $this->assertContainsOnlyInstancesOf(LibXMLError::class, $exception->getLibxmlErrors());
+    }
+
+}

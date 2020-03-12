@@ -1,92 +1,76 @@
-     return $this->requiredSigs;
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generate('Foo', array(), 'MockFoo', true)
+--FILE--
+<?php
+class Foo
+{
+    public function __construct()
+    {
+    }
+}
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$generator = new PHPUnit_Framework_MockObject_Generator;
+
+$mock = $generator->generate(
+    'Foo',
+    array(),
+    'MockFoo',
+    true
+);
+
+print $mock['code'];
+?>
+--EXPECTF--
+class MockFoo extends Foo implements PHPUnit_Framework_MockObject_MockObject
+{
+    private $__phpunit_invocationMocker;
+    private $__phpunit_originalObject;
+    private $__phpunit_configurable = [];
+
+    public function __clone()
+    {
+        $this->__phpunit_invocationMocker = clone $this->__phpunit_getInvocationMocker();
     }
 
-    /**
-     * @return bool
-     */
-    public function isFullySigned(): bool
+    public function expects(PHPUnit_Framework_MockObject_Matcher_Invocation $matcher)
     {
-        if ($this->required) {
-            return $this->requiredSigs === count($this->signatures);
-        } else {
-            return true;
-        }
+        return $this->__phpunit_getInvocationMocker()->expects($matcher);
     }
 
-    /**
-     * @param int $idx
-     * @return bool
-     */
-    public function hasSignature(int $idx): bool
+    public function method()
     {
-        if ($idx > $this->requiredSigs) {
-            throw new \RuntimeException("Out of range signature queried");
-        }
-
-        return array_key_exists($idx, $this->signatures);
+        $any = new PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount;
+        $expects = $this->expects($any);
+        return call_user_func_array(array($expects, 'method'), func_get_args());
     }
 
-    /**
-     * @param int $idx
-     * @param TransactionSignatureInterface $signature
-     * @return $this
-     */
-    public function setSignature(int $idx, TransactionSignatureInterface $signature)
+    public function __phpunit_setOriginalObject($originalObject)
     {
-        if ($idx < 0 || $idx > $this->keyCount) {
-            throw new \RuntimeException("Out of range signature for operation");
-        }
-
-        $this->signatures[$idx] = $signature;
-        return $this;
+        $this->__phpunit_originalObject = $originalObject;
     }
 
-    /**
-     * @param int $idx
-     * @return TransactionSignatureInterface|null
-     */
-    public function getSignature(int $idx)
+    public function __phpunit_getInvocationMocker()
     {
-        if (!$this->hasSignature($idx)) {
-            return null;
-        }
-
-        return $this->signatures[$idx];
-    }
-
-    /**
-     * @return array
-     */
-    public function getSignatures(): array
-    {
-        return $this->signatures;
-    }
-
-    /**
-     * @param int $idx
-     * @return bool
-     */
-    public function hasKey(int $idx): bool
-    {
-        return array_key_exists($idx, $this->publicKeys);
-    }
-
-    /**
-     * @param int $idx
-     * @return PublicKeyInterface|null
-     */
-    public function getKey(int $idx)
-    {
-        if (!$this->hasKey($idx)) {
-            return null;
+        if ($this->__phpunit_invocationMocker === null) {
+            $this->__phpunit_invocationMocker = new PHPUnit_Framework_MockObject_InvocationMocker($this->__phpunit_configurable);
         }
 
-        return $this->publicKeys[$idx];
+        return $this->__phpunit_invocationMocker;
     }
 
-    /**
-     * @param int $idx
-     * @param PublicKeyInterface|null $key
-     * @return $this
-     */
-    public function setKey(int $idx, Pu
+    public function __phpunit_hasMatchers()
+    {
+        return $this->__phpunit_getInvocationMocker()->hasMatchers();
+    }
+
+    public function __phpunit_verify($unsetInvocationMocker = true)
+    {
+        $this->__phpunit_getInvocationMocker()->verify();
+
+        if ($unsetInvocationMocker) {
+            $this->__phpunit_invocationMocker = null;
+        }
+    }
+}

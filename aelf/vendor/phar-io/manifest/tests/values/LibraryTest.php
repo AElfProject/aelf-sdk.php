@@ -1,59 +1,44 @@
 <?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-namespace BitWasp\Buffertools\Tests;
-
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\Buffertools;
 use PHPUnit\Framework\TestCase;
 
-class BuffertoolsTest extends TestCase
-{
+/**
+ * @covers PharIo\Manifest\Library
+ * @covers PharIo\Manifest\Type
+ */
+class LibraryTest extends TestCase {
     /**
-     * @return array
+     * @var Library
      */
-    private function getUnsortedList(): array
-    {
-        return [
-            '0101',
-            '4102',
-            'a43e',
-            '0000',
-            '0120',
-            'd01b'
-        ];
+    private $type;
+
+    protected function setUp() {
+        $this->type = Type::library();
     }
 
-    /**
-     * @return array
-     */
-    private function getSortedList(): array
-    {
-        return [
-            '0000',
-            '0101',
-            '0120',
-            '4102',
-            'a43e',
-            'd01b'
-        ];
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(Library::class, $this->type);
     }
 
-    /**
-     * @return array
-     */
-    private function getUnsortedBufferList(): array
-    {
-        $results = [];
-        foreach ($this->getUnsortedList() as $hex) {
-            $results[] = Buffer::hex($hex);
-        }
-        return $results;
+    public function testIsNotApplication() {
+        $this->assertFalse($this->type->isApplication());
     }
 
-    /**
-     * @return array
-     */
-    private function getSortedBufferList(): array
-    {
+    public function testIsLibrary() {
+        $this->assertTrue($this->type->isLibrary());
+    }
+
+    public function testIsNotExtension() {
+        $this->assertFalse($this->type->isExtension());
+    }
+}

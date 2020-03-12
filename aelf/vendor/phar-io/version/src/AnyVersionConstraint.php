@@ -1,32 +1,29 @@
 <?php
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace BitWasp\Bitcoin\Network\Networks;
+namespace PharIo\Version;
 
-use BitWasp\Bitcoin\Network\Network;
-use BitWasp\Bitcoin\Script\ScriptType;
-
-class Bitcoin extends Network
-{
+class AnyVersionConstraint implements VersionConstraint {
     /**
-     * {@inheritdoc}
-     * @see Network::$base58PrefixMap
+     * @param Version $version
+     *
+     * @return bool
      */
-    protected $base58PrefixMap = [
-        self::BASE58_ADDRESS_P2PKH => "00",
-        self::BASE58_ADDRESS_P2SH => "05",
-        self::BASE58_WIF => "80",
-    ];
-
-    /**
-     * {@inheritdoc}
-     * @see Network::$bech32PrefixMap
-     */
-    protected $bech32PrefixMap = [
-        self::BECH32_PREFIX_SEGWIT => "bc",
-    ];
+    public function complies(Version $version) {
+        return true;
+    }
 
     /**
-     * {@inheritdoc}
-     * @see Network::$bip32PrefixMap
+     * @return string
      */
-    protecte
+    public function asString() {
+        return '*';
+    }
+}

@@ -1,46 +1,56 @@
-before_commands:
-    - "composer install --no-dev --prefer-source"
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework\Constraint;
 
-checks:
-    php:
-        excluded_dependencies:
-            - phpstan/phpstan
+use numeric;
 
-tools:
-    external_code_coverage:
-        enabled: true
-        timeout: 300
-        filter:
-            excluded_paths: ["examples", "tests", "vendor"]
-    php_code_sniffer:
-        enabled: true
-        config:
-            standard: PSR2
-        filter:
-            paths: ["src/*", "tests/*"]
-            excluded_paths: []
-    php_cpd:
-        enabled: true
-        excluded_dirs: ["examples", "tests", "vendor"]
-    php_cs_fixer:
-        enabled: true
-        config:
-            level: all
-        filter:
-            paths: ["src/*", "tests/*"]
-    php_loc:
-        enabled: true
-        excluded_dirs: ["examples", "tests", "vendor"]
-    php_mess_detector:
-        enabled: true
-        config:
-            ruleset: phpmd.xml.dist
-            design_rules: { eval_expression: false }
-        filter:
-            paths: ["src/*"]
-    php_pdepend:
-        enabled: true
-        excluded_dirs: ["examples", "tests", "vendor"]
-    php_analyzer:
-        enabled: true
-        filter:
+/**
+ * Constraint that asserts that the value it is evaluated for is greater
+ * than a given value.
+ */
+class GreaterThan extends Constraint
+{
+    /**
+     * @var numeric
+     */
+    protected $value;
+
+    /**
+     * @param numeric $value
+     */
+    public function __construct($value)
+    {
+        parent::__construct();
+        $this->value = $value;
+    }
+
+    /**
+     * Evaluates the constraint for parameter $other. Returns true if the
+     * constraint is met, false otherwise.
+     *
+     * @param mixed $other Value or object to evaluate.
+     *
+     * @return bool
+     */
+    protected function matches($other)
+    {
+        return $this->value < $other;
+    }
+
+    /**
+     * Returns a string representation of the constraint.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return 'is greater than ' . $this->exporter->export($this->value);
+    }
+}

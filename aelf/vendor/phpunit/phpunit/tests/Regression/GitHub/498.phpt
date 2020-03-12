@@ -1,1 +1,29 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"1":"H I","2":"2 C d J M"},C:{"1":"0 1 3 4 7 8 9 s t u v w x y z HB GB BB CB FB","2":"2 6 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r ZB YB"},D:{"1":"0 1 3 4 7 8 9 x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"2 6 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u","194":"v w"},E:{"1":"5 A B C XB p aB","2":"F N K D G E RB IB TB UB VB WB"},F:{"1":"0 1 k l m n o L q r s t u v w x y z","2":"5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i bB cB dB eB p AB gB","194":"j"},G:{"1":"pB qB rB sB tB uB","2":"G IB hB EB jB KB lB mB nB oB"},H:{"2":"vB"},I:{"1":"4","2":"DB F wB xB yB zB EB 0B 1B"},J:{"2":"D A"},K:{"
+--TEST--
+GH-498: The test methods won't be run if a dataProvider throws Exception and --group is added in command line
+--FILE--
+<?php
+
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--group';
+$_SERVER['argv'][3] = 'trueOnly';
+$_SERVER['argv'][4] = 'Issue498Test';
+$_SERVER['argv'][5] = __DIR__ . '/498/Issue498Test.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+?>
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+W                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 warning:
+
+1) Warning
+The data provider specified for Issue498Test::shouldBeFalse is invalid.
+Can't create the data
+
+WARNINGS!
+Tests: 1, Assertions: 0, Warnings: 1.

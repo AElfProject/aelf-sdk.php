@@ -1,36 +1,50 @@
-                } else {
-                            $step = new Conditional($op->getOp());
-                        }
+<?php
+use PHPUnit\Framework\TestCase;
 
-                        $steps[] = $step;
+class DataProviderDebugTest extends TestCase
+{
+    /**
+     * @dataProvider provider
+     */
+    public function testProvider()
+    {
+        $this->assertTrue(true);
+    }
 
-                        if ($op->getOp() === Opcodes::OP_NOTIF) {
-                            $value = !$value;
-                        }
+    public static function provider()
+    {
+        $obj2      = new \stdClass();
+        $obj2->foo = 'bar';
 
-                        $vfStack->push($value);
-                        break;
-                    case Opcodes::OP_ENDIF:
-                        $vfStack->pop();
-                        break;
-                    case Opcodes::OP_ELSE:
-                        $vfStack->push(!$vfStack->pop());
-                        break;
-                }
-            } else {
-                $templateTypes = $this->parseSequence($scriptSection);
+        $obj3 = (object) [1,2,"Test\r\n",4,5,6,7,8];
 
-                // Detect if effect on mainStack is `false`
-                $resolvesFalse = count($pathCopy) > 0 && !$pathCopy[0];
-                if ($resolvesFalse) {
-                    if (count($templateTypes) > 1) {
-                        throw new UnsupportedScript("Unsupported script, multiple steps to segment which is negated");
-                    }
-                }
+        $obj = new \stdClass();
+        //@codingStandardsIgnoreStart
+        $obj->null = null;
+        //@codingStandardsIgnoreEnd
+        $obj->boolean     = true;
+        $obj->integer     = 1;
+        $obj->double      = 1.2;
+        $obj->string      = '1';
+        $obj->text        = "this\nis\na\nvery\nvery\nvery\nvery\nvery\nvery\rlong\n\rtext";
+        $obj->object      = $obj2;
+        $obj->objectagain = $obj2;
+        $obj->array       = ['foo' => 'bar'];
+        $obj->self        = $obj;
 
-                foreach ($templateTypes as $k => $checksig) {
-                    if ($fExec) {
-                        if ($checksig instanceof Checksig) {
-                            $this->extractChecksig($signScript->getScript(), $checksig, $stack, $this->fqs->sigVersion(), $resolvesFalse);
+        $storage = new \SplObjectStorage();
+        $storage->attach($obj2);
+        $storage->foo = $obj2;
 
-                            // If this statement results is later co
+        return [
+            [null, true, 1, 1.0],
+            [1.2, fopen('php://memory', 'r'), '1'],
+            [[[1,2,3], [3,4,5]]],
+            // \n\r and \r is converted to \n
+            ["this\nis\na\nvery\nvery\nvery\nvery\nvery\nvery\rlong\n\rtext"],
+            [new \stdClass(), $obj, [], $storage, $obj3],
+            [chr(0) . chr(1) . chr(2) . chr(3) . chr(4) . chr(5), implode('', array_map('chr', range(0x0e, 0x1f)))],
+            [chr(0x00) . chr(0x09)]
+        ];
+    }
+}

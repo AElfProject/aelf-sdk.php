@@ -1,63 +1,59 @@
-=>$sign);
-        $execute = $this->Aelf->executeRawTransaction($transaction1);
-        print_r($execute.'<br/>');
-        $transaction2 = array('Transaction'=>$raw_transaction['RawTransaction'],'signature'=>$sign,'returnTransaction'=>true);
-        $execute1 = $this->Aelf->sendRawTransaction($transaction2);
-        print_r($execute1.'<br/>');
-    }
-    public function testgetAddressFromPubKeyTest(){
-        $pubKeyAddress = $this->Aelf->getAddressFromPubKey($this->public_key);
-        $this->assertTrue($pubKeyAddress == $this->address);
-    }
+# Changes in PHPUnit 6.1
 
-    public function testSendTransactionApi(){
-        $currentHeight = $this->Aelf->getBlockHeight();
-        $block = $this->Aelf->getBlockByHeight($currentHeight,False);
-        $params = hex2bin(hash('sha256','AElf.ContractNames.Vote'));
-        $transaction = $this->buildTransaction($this->Aelf->getGenesisContractAddress(),'GetContractAddressByName',$params);
+All notable changes of the PHPUnit 6.1 release series are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-        $result =  $this->Aelf->sendTransaction(bin2hex($transaction->serializeToString()));
-        print_r($result);
-        $this->assertTrue($result['TransactionId'] != "");
-    }
-    public function testsendTransactions() {
-        $toAddress = $this->Aelf->getGenesisContractAddress();
-        $param1 =hex2bin(hash('sha256','AElf.ContractNames.Token'));
-        $param2 =hex2bin(hash('sha256','AElf.ContractNames.Vote'));
-        $methodName = "GetContractAddressByName";
-        $tmp  = [$param1,$param2];
-        foreach($tmp as $k){
-            $transactionObj = $this->buildTransaction($toAddress,$methodName,$k);
-            $rawTransactions = bin2hex($transactionObj->serializeToString());
-            $sendTransactionsInputs = ['RawTransactions'=>$rawTransactions];
-            $listString = $this->Aelf->sendTransactions($sendTransactionsInputs);
-            print_r($listString);
-        }
+## [6.1.4] - 2017-05-22
 
-    }
-    public function testTxPoolApi(){
-        $txPoolStatus = $this->Aelf->getTransactionPoolStatus();
-        print_r('# get_transaction_pool_status:');
-        print_r($txPoolStatus);
-        $this->assertTrue($txPoolStatus['Queued'] >= 0);
-    }
+### Changed
 
-    public function testTaskQueueApi(){
-        $task_queue_status = $this->Aelf->getTaskQueueStatus();
-        print_r($task_queue_status);
-        $this->assertTrue(count($task_queue_status) > 0);
-    }
+* Version 3.0.2 of `sebastian/environment` is now required
 
-    public function testNetworkApi(){
-        print('getNetworkInfo');
-        print_r($this->Aelf->getNetworkInfo());
-        print('remove_peer');
-        print($this->Aelf->removePeer('18.223.158.83:7003'));
-        print('add_peer');
-        print_r($this->Aelf->addPeer($this->OPREATIONADDRESS));
-        print_r($this->Aelf->getPeers(true));
+### Fixed
 
-    }
+* Fixed [#2563](https://github.com/sebastianbergmann/phpunit/pull/2563): `phpunit --version` does not display version when running unsupported PHP
 
-    public function testGetContractFilCeDescriptorSet(){
-    
+## [6.1.3] - 2017-04-29
+
+* Fixed [#2661](https://github.com/sebastianbergmann/phpunit/pull/2661): Inconsistent information in JUnit XML logfile for tests that use data provider
+
+## [6.1.2] - 2017-04-25
+
+### Changed
+
+* Version 3.0.1 of `sebastian/environment` is now required
+
+## [6.1.1] - 2017-04-21
+
+### Changed
+
+* Version 5.2 of `phpunit/php-code-coverage` is now required
+* Version 3.0.0 of `sebastian/environment` is now required
+
+## [6.1.0] - 2017-04-07
+
+### Added
+
+* Implemented [#2437](https://github.com/sebastianbergmann/phpunit/issues/2437): Show previous exceptions in TeamCity logfile
+* Implemented [#2533](https://github.com/sebastianbergmann/phpunit/pull/2533): Implement configuration option to set a default test suite
+* Implemented [#2541](https://github.com/sebastianbergmann/phpunit/issues/2541): Implement configuration option to ignore deprecated code from code coverage
+* Implemented [#2546](https://github.com/sebastianbergmann/phpunit/issues/2546): Render `__FILE__` and `__DIR__` in `SKIPIF` section of PHPT tests
+* Implemented [#2551](https://github.com/sebastianbergmann/phpunit/issues/2551): Allow directory traversal in `FILE_EXTERNAL` section of PHPT tests
+* Implemented [#2579](https://github.com/sebastianbergmann/phpunit/issues/2579): Added `classname` attribute to JUnit XML logfile
+* Implemented [#2623](https://github.com/sebastianbergmann/phpunit/pull/2623): Added support for Composer-style version constraints to `@requires` annotation
+
+### Changed
+
+* `.phar` files that are to be loaded as a PHPUnit extension must now have a valid `manifest.xml` file
+* Details about risky tests are now always displayed
+
+### Fixed
+
+* Fixed [#2049](https://github.com/sebastianbergmann/phpunit/issues/2049): Misleading error message when whitelist configuration contains paths that do not exist
+* Fixed [#2472](https://github.com/sebastianbergmann/phpunit/issues/2472): `PHPUnit\Util\Getopt` uses deprecated `each()` function
+
+[6.1.4]: https://github.com/sebastianbergmann/phpunit/compare/6.1.3...6.1.4
+[6.1.3]: https://github.com/sebastianbergmann/phpunit/compare/6.1.2...6.1.3
+[6.1.2]: https://github.com/sebastianbergmann/phpunit/compare/6.1.1...6.1.2
+[6.1.1]: https://github.com/sebastianbergmann/phpunit/compare/6.1.0...6.1.1
+[6.1.0]: https://github.com/sebastianbergmann/phpunit/compare/6.0...6.1.0
+

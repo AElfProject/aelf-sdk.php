@@ -1,222 +1,265 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\DocBlock\Tags;
+
+use InvalidArgumentException;
+use phpDocumentor\Reflection\DocBlock\Description;
+use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
+use phpDocumentor\Reflection\Type;
+use phpDocumentor\Reflection\TypeResolver;
+use phpDocumentor\Reflection\Types\Context as TypeContext;
+use phpDocumentor\Reflection\Types\Mixed_;
+use phpDocumentor\Reflection\Types\Void_;
+use Webmozart\Assert\Assert;
+use function array_keys;
+use function explode;
+use function implode;
+use function is_string;
+use function preg_match;
+use function sort;
+use function strpos;
+use function substr;
+use function trim;
+use function var_export;
+
+/**
+ * Reflection class for an {@}method in a Docblock.
+ */
+final class Method extends BaseTag implements Factory\StaticMethod
 {
-    "_readme": [
-        "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
-        "This file is @generated automatically"
-    ],
-    "content-hash": "03e8a05af388b5f30e45a584e3fe7e80",
-    "packages": [],
-    "packages-dev": [
-        {
-            "name": "doctrine/instantiator",
-            "version": "1.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/doctrine/instantiator.git",
-                "reference": "185b8868aa9bf7159f5f953ed5afb2d7fcdc3bda"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/instantiator/zipball/185b8868aa9bf7159f5f953ed5afb2d7fcdc3bda",
-                "reference": "185b8868aa9bf7159f5f953ed5afb2d7fcdc3bda",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.1"
-            },
-            "require-dev": {
-                "athletic/athletic": "~0.1.8",
-                "ext-pdo": "*",
-                "ext-phar": "*",
-                "phpunit/phpunit": "^6.2.3",
-                "squizlabs/php_codesniffer": "^3.0.2"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.2.x-dev"
+    /** @var string */
+    protected $name = 'method';
+
+    /** @var string */
+    private $methodName;
+
+    /**
+     * @phpstan-var array<int, array{name: string, type: Type}>
+     * @var array<int, array<string, Type|string>>
+     */
+    private $arguments;
+
+    /** @var bool */
+    private $isStatic;
+
+    /** @var Type */
+    private $returnType;
+
+    /**
+     * @param array<int, array<string, Type|string>> $arguments
+     *
+     * @phpstan-param array<int, array{name: string, type: Type}|string> $arguments
+     */
+    public function __construct(
+        string $methodName,
+        array $arguments = [],
+        ?Type $returnType = null,
+        bool $static = false,
+        ?Description $description = null
+    ) {
+        Assert::stringNotEmpty($methodName);
+
+        if ($returnType === null) {
+            $returnType = new Void_();
+        }
+
+        $this->methodName  = $methodName;
+        $this->arguments   = $this->filterArguments($arguments);
+        $this->returnType  = $returnType;
+        $this->isStatic    = $static;
+        $this->description = $description;
+    }
+
+    public static function create(
+        string $body,
+        ?TypeResolver $typeResolver = null,
+        ?DescriptionFactory $descriptionFactory = null,
+        ?TypeContext $context = null
+    ) : ?self {
+        Assert::stringNotEmpty($body);
+        Assert::notNull($typeResolver);
+        Assert::notNull($descriptionFactory);
+
+        // 1. none or more whitespace
+        // 2. optionally the keyword "static" followed by whitespace
+        // 3. optionally a word with underscores followed by whitespace : as
+        //    type for the return value
+        // 4. then optionally a word with underscores followed by () and
+        //    whitespace : as method name as used by phpDocumentor
+        // 5. then a word with underscores, followed by ( and any character
+        //    until a ) and whitespace : as method name with signature
+        // 6. any remaining text : as description
+        if (!preg_match(
+            '/^
+                # Static keyword
+                # Declares a static method ONLY if type is also present
+                (?:
+                    (static)
+                    \s+
+                )?
+                # Return type
+                (?:
+                    (
+                        (?:[\w\|_\\\\]*\$this[\w\|_\\\\]*)
+                        |
+                        (?:
+                            (?:[\w\|_\\\\]+)
+                            # array notation
+                            (?:\[\])*
+                        )*+
+                    )
+                    \s+
+                )?
+                # Method name
+                ([\w_]+)
+                # Arguments
+                (?:
+                    \(([^\)]*)\)
+                )?
+                \s*
+                # Description
+                (.*)
+            $/sux',
+            $body,
+            $matches
+        )) {
+            return null;
+        }
+
+        [, $static, $returnType, $methodName, $argumentLines, $description] = $matches;
+
+        $static = $static === 'static';
+
+        if ($returnType === '') {
+            $returnType = 'void';
+        }
+
+        $returnType  = $typeResolver->resolve($returnType, $context);
+        $description = $descriptionFactory->create($description, $context);
+
+        /** @phpstan-var array<int, array{name: string, type: Type}> $arguments */
+        $arguments = [];
+        if ($argumentLines !== '') {
+            $argumentsExploded = explode(',', $argumentLines);
+            foreach ($argumentsExploded as $argument) {
+                $argument = explode(' ', self::stripRestArg(trim($argument)), 2);
+                if (strpos($argument[0], '$') === 0) {
+                    $argumentName = substr($argument[0], 1);
+                    $argumentType = new Mixed_();
+                } else {
+                    $argumentType = $typeResolver->resolve($argument[0], $context);
+                    $argumentName = '';
+                    if (isset($argument[1])) {
+                        $argument[1]  = self::stripRestArg($argument[1]);
+                        $argumentName = substr($argument[1], 1);
+                    }
                 }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Doctrine\\Instantiator\\": "src/Doctrine/Instantiator/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Marco Pivetta",
-                    "email": "ocramius@gmail.com",
-                    "homepage": "http://ocramius.github.com/"
-                }
-            ],
-            "description": "A small, lightweight utility to instantiate objects in PHP without invoking their constructors",
-            "homepage": "https://github.com/doctrine/instantiator",
-            "keywords": [
-                "constructor",
-                "instantiate"
-            ],
-            "time": "2017-07-22T11:58:36+00:00"
-        },
-        {
-            "name": "myclabs/deep-copy",
-            "version": "1.6.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/myclabs/DeepCopy.git",
-                "reference": "8e6e04167378abf1ddb4d3522d8755c5fd90d102"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/8e6e04167378abf1ddb4d3522d8755c5fd90d102",
-                "reference": "8e6e04167378abf1ddb4d3522d8755c5fd90d102",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "doctrine/collections": "1.*",
-                "phpunit/phpunit": "~4.1"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "DeepCopy\\": "src/DeepCopy/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Create deep copies (clones) of your objects",
-            "homepage": "https://github.com/myclabs/DeepCopy",
-            "keywords": [
-                "clone",
-                "copy",
-                "duplicate",
-                "object",
-                "object graph"
-            ],
-            "time": "2017-04-12T18:52:22+00:00"
-        },
-        {
-            "name": "nette/bootstrap",
-            "version": "v2.4.5",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/nette/bootstrap.git",
-                "reference": "804925787764d708a7782ea0d9382a310bb21968"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/nette/bootstrap/zipball/804925787764d708a7782ea0d9382a310bb21968",
-                "reference": "804925787764d708a7782ea0d9382a310bb21968",
-                "shasum": ""
-            },
-            "require": {
-                "nette/di": "~2.4.7",
-                "nette/utils": "~2.4",
-                "php": ">=5.6.0"
-            },
-            "conflict": {
-                "nette/nette": "<2.2"
-            },
-            "require-dev": {
-                "latte/latte": "~2.2",
-                "nette/application": "~2.3",
-                "nette/caching": "~2.3",
-                "nette/database": "~2.3",
-                "nette/forms": "~2.3",
-                "nette/http": "~2.4.0",
-                "nette/mail": "~2.3",
-                "nette/robot-loader": "^2.4.2 || ^3.0",
-                "nette/safe-stream": "~2.2",
-                "nette/security": "~2.3",
-                "nette/tester": "~2.0",
-                "tracy/tracy": "^2.4.1"
-            },
-            "suggest": {
-                "nette/robot-loader": "to use Configurator::createRobotLoader()",
-                "tracy/tracy": "to use Configurator::enableTracy()"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.4-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause",
-                "GPL-2.0",
-                "GPL-3.0"
-            ],
-            "authors": [
-                {
-                    "name": "David Grudl",
-                    "homepage": "https://davidgrudl.com"
-                },
-                {
-                    "name": "Nette Community",
-                    "homepage": "https://nette.org/contributors"
-                }
-            ],
-            "description": "🅱 Nette Bootstrap: the simple way to configure and bootstrap your Nette application.",
-            "homepage": "https://nette.org",
-            "keywords": [
-                "bootstrapping",
-                "configurator",
-                "nette"
-            ],
-            "time": "2017-08-20T17:36:59+00:00"
-        },
-        {
-            "name": "nette/caching",
-            "version": "v2.5.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/nette/caching.git",
-                "reference": "1231735b5135ca02bd381b70482c052d2a90bdc9"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/nette/caching/zipball/1231735b5135ca02bd381b70482c052d2a90bdc9",
-                "reference": "1231735b5135ca02bd381b70482c052d2a90bdc9",
-                "shasum": ""
-            },
-            "require": {
-                "nette/finder": "^2.2 || ~3.0.0",
-                "nette/utils": "^2.4 || ~3.0.0",
-                "php": ">=5.6.0"
-            },
-            "conflict": {
-                "nette/nette": "<2.2"
-            },
-            "require-dev": {
-                "latte/latte": "^2.4",
-                "nette/di": "^2.4 || ~3.0.0",
-                "nette/tester": "^2.0",
-                "tracy/tracy": "^2.4"
-            },
-            "suggest": {
-                "ext-pdo_sqlite": "to use SQLiteStorage or SQLiteJournal"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.5-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-      
+
+                $arguments[] = ['name' => $argumentName, 'type' => $argumentType];
+            }
+        }
+
+        return new static($methodName, $arguments, $returnType, $static, $description);
+    }
+
+    /**
+     * Retrieves the method name.
+     */
+    public function getMethodName() : string
+    {
+        return $this->methodName;
+    }
+
+    /**
+     * @return array<int, array<string, Type|string>>
+     *
+     * @phpstan-return array<int, array{name: string, type: Type}>
+     */
+    public function getArguments() : array
+    {
+        return $this->arguments;
+    }
+
+    /**
+     * Checks whether the method tag describes a static method or not.
+     *
+     * @return bool TRUE if the method declaration is for a static method, FALSE otherwise.
+     */
+    public function isStatic() : bool
+    {
+        return $this->isStatic;
+    }
+
+    public function getReturnType() : Type
+    {
+        return $this->returnType;
+    }
+
+    public function __toString() : string
+    {
+        $arguments = [];
+        foreach ($this->arguments as $argument) {
+            $arguments[] = $argument['type'] . ' $' . $argument['name'];
+        }
+
+        return trim(($this->isStatic() ? 'static ' : '')
+            . (string) $this->returnType . ' '
+            . $this->methodName
+            . '(' . implode(', ', $arguments) . ')'
+            . ($this->description ? ' ' . $this->description->render() : ''));
+    }
+
+    /**
+     * @param mixed[][]|string[] $arguments
+     *
+     * @return mixed[][]
+     *
+     * @phpstan-param array<int, array{name: string, type: Type}|string> $arguments
+     * @phpstan-return array<int, array{name: string, type: Type}>
+     */
+    private function filterArguments(array $arguments = []) : array
+    {
+        $result = [];
+        foreach ($arguments as $argument) {
+            if (is_string($argument)) {
+                $argument = ['name' => $argument];
+            }
+
+            if (!isset($argument['type'])) {
+                $argument['type'] = new Mixed_();
+            }
+
+            $keys = array_keys($argument);
+            sort($keys);
+            if ($keys !== ['name', 'type']) {
+                throw new InvalidArgumentException(
+                    'Arguments can only have the "name" and "type" fields, found: ' . var_export($keys, true)
+                );
+            }
+
+            $result[] = $argument;
+        }
+
+        return $result;
+    }
+
+    private static function stripRestArg(string $argument) : string
+    {
+        if (strpos($argument, '...') === 0) {
+            $argument = trim(substr($argument, 3));
+        }
+
+        return $argument;
+    }
+}

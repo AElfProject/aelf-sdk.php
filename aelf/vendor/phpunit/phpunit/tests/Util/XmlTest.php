@@ -1,82 +1,92 @@
-   return $num->_clone()->ior($this);
-    }
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-    public function uor(BN $num) {
-        if( $this->ucmp($num) > 0 )
-            return $this->_clone()->iuor($num);
-        return $num->_clone()->ior($this);
-    }
+namespace PHPUnit\Util;
 
-    // And `num` with `this` in-place
-    public function iuand(BN $num) {
-        $this->bi = $this->bi->binaryAnd($num->bi);
-        return $this;
-    }
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Exception;
 
-    public function iand(BN $num) {
-        if (assert_options(ASSERT_ACTIVE)) assert(!$this->negative() && !$num->negative());
-        return $this->iuand($num);
-    }
-
-    // And `num` with `this`
-    public function _and(BN $num) {
-        if( $this->ucmp($num) > 0 )
-            return $this->_clone()->iand($num);
-        return $num->_clone()->iand($this);
-    }
-
-    public function uand(BN $num) {
-        if( $this->ucmp($num) > 0 )
-            return $this->_clone()->iuand($num);
-        return $num->_clone()->iuand($this);
-    }
-
-    // Xor `num` with `this` in-place
-    public function iuxor(BN $num) {
-        $this->bi = $this->bi->binaryXor($num->bi);
-        return $this;
-    }
-
-    public function ixor(BN $num) {
-        if (assert_options(ASSERT_ACTIVE)) assert(!$this->negative() && !$num->negative());
-        return $this->iuxor($num);
-    }
-
-    // Xor `num` with `this`
-    public function _xor(BN $num) {
-        if( $this->ucmp($num) > 0 )
-            return $this->_clone()->ixor($num);
-        return $num->_clone()->ixor($this);
-    }
-
-    public function uxor(BN $num) {
-        if( $this->ucmp($num) > 0 )
-            return $this->_clone()->iuxor($num);
-        return $num->_clone()->iuxor($this);
-    }
-
-    // Not ``this`` with ``width`` bitwidth
-    public function inotn($width)
+class XmlTest extends TestCase
+{
+    /**
+     * @dataProvider charProvider
+     */
+    public function testPrepareString($char)
     {
-        assert(is_integer($width) && $width >= 0);
-        $neg = false;
-        if( $this->isNeg() )
-        {
-            $this->negi();
-            $neg = true;
+        $e = null;
+
+        $escapedString = Xml::prepareString($char);
+        $xml           = "<?xml version='1.0' encoding='UTF-8' ?><tag>$escapedString</tag>";
+        $dom           = new \DOMDocument('1.0', 'UTF-8');
+
+        try {
+            $dom->loadXML($xml);
+        } catch (Exception $e) {
         }
 
-        for($i = 0; $i < $width; $i++)
-            $this->bi = $this->bi->setbit($i, !$this->bi->testbit($i));
-
-        return $neg ? $this->negi() : $this;
+        $this->assertNull($e, \sprintf(
+            'PHPUnit_Util_XML::prepareString("\x%02x") should not crash DomDocument',
+            \ord($char)
+        ));
     }
 
-    public function notn($width) {
-        return $this->_clone()->inotn($width);
+    public function charProvider()
+    {
+        $data = [];
+
+        for ($i = 0; $i < 256; $i++) {
+            $data[] = [\chr($i)];
+        }
+
+        return $data;
     }
 
-    // Set `bit` of `this`
-    public function setn($bit, $val) {
-        assert(is_integer($bit) && $bit > 0);
-        $this->bi 
+    public function testLoadEmptyString()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Could not load XML from empty string');
+
+        Xml::load('');
+    }
+
+    public function testLoadArray()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Could not load XML from array');
+
+        Xml::load([1, 2, 3]);
+    }
+
+    public function testLoadBoolean()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Could not load XML from boolean');
+
+        Xml::load(false);
+    }
+
+    public function testNestedXmlToVariable()
+    {
+        $xml = '<array><element key="a"><array><element key="b"><string>foo</string></element></array></element><element key="c"><string>bar</string></element></array>';
+        $dom = new \DOMDocument;
+        $dom->loadXML($xml);
+
+        $expected = [
+            'a' => [
+                'b' => 'foo',
+            ],
+            'c' => 'bar',
+        ];
+
+        $actual = Xml::xmlToVariable($dom->documentElement);
+
+        $this->assertSame($expected, $actual);
+    }
+}

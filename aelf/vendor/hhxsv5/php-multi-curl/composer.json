@@ -1,3 +1,28 @@
-xÍ½w“cYrå¹×§ˆ)+³ªf7»ä;Ğh¨†V$ö$TBkpú»ïÏ‘‰Dàe ¶ga6³ÙÕU™÷]á~üøq¿ş—¥ÿf¸©ü_ÿıÿ^W?ıôû?üÃOoòÏÛÿğö»ñróVòoÕåf²»¼U&‹0š{‹_ÿı§ŸŞ<Ú®¼ zKOvÁr²¨ëÿşí·¹L¶•úçŸ~ú)øâm··o¸şm;ÚîŞ¢Ó.Z„Û·çg:‹Éî?óv\nfÿ)_ÏxÛè§ÿúé_«Íäàí¢·_¢Ó*
-vQØŒ¶û/»mi»\¼ıËÛ¯ÿö_?Ë·”£óÏÿô³o{fdézz›bø¦©¦­¶®kŠé¦o›ªfº±a…kØjhxNªšâjîÏú9XÎW›h»ÂúŞÿúTE÷TÅ·¢(2l/4tGsU3Ô;ŠìHµ£ĞöCM<ÏµmUsœ0ÖÓR"{^è8ÊÃsSa¸a¬j~ÔòºSobÌ‡Îø²è¦sS”sšÖíNºå?µ_d>ñêxBİ0uSqıØW|ß<_1/¶âÈŠâPñMÍ04ÕuMİŠC#6Uf3ÒC	ÛtB?1²ÛUÚ{;ÖËş¨Æ&³8ZáğR>„fá¼
-Úåç¿ıéırÅ‘{¦j)®ëÄFhDªÆ¶ê)®ÁÂØad9ŠîêA¬šQìè8ëÚ¦š†¥GÖÃ´Ş—K‹tĞ•È1LìšJ`ëA ëF`ZQhiFŠjk®ã¸šn
+{
+  "name": "hhxsv5/php-multi-curl",
+  "type": "library",
+  "license": "MIT",
+  "description": "A simple and efficient library wrapping curl_multi_* is used to handle parallel http requests.",
+  "keywords": [
+    "curl",
+    "multi-curl",
+    "parallel-request",
+    "multi-http-request"
+  ],
+  "homepage": "https://github.com/hhxsv5/php-multi-curl",
+  "authors": [
+    {
+      "name": "Xie Biao",
+      "email": "hhxsv5@sina.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.4",
+    "ext-curl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Hhxsv5\\PhpMultiCurl\\": "src"
+    }
+  }
+}

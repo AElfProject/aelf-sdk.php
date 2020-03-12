@@ -1,7 +1,6 @@
-#!/usr/bin/env php
 <?php
 /*
- * This file is part of resource-operations.
+ * This file is part of the phpunit-mock-objects package.
  *
  * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
@@ -9,33 +8,23 @@
  * file that was distributed with this source code.
  */
 
-$functions         = require __DIR__ . '/arginfo.php';
-$resourceFunctions = [];
+use PHPUnit\Framework\SelfDescribing;
 
-foreach ($functions as $function => $arguments) {
-    foreach ($arguments as $argument) {
-        if ($argument == 'resource') {
-            $resourceFunctions[] = $function;
-        }
-    }
-}
-
-$resourceFunctions = array_unique($resourceFunctions);
-sort($resourceFunctions);
-
-$buffer = <<<EOT
-<?php
-/*
- * This file is part of resource-operations.
+/**
+ * An object that stubs the process of a normal method for a mock object.
  *
- * (c) Sebastian Bergmann <sebastian@phpunit.de>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * The stub object will replace the code for the stubbed method and return a
+ * specific value instead of the original value.
  */
-
-namespace SebastianBergmann\ResourceOperations;
-
-class ResourceOperations
+interface PHPUnit_Framework_MockObject_Stub extends SelfDescribing
 {
-    /*
+    /**
+     * Fakes the processing of the invocation $invocation by returning a
+     * specific value.
+     *
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation The invocation which was mocked and matched by the current method and argument matchers
+     *
+     * @return mixed
+     */
+    public function invoke(PHPUnit_Framework_MockObject_Invocation $invocation);
+}

@@ -1,40 +1,45 @@
 <?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Key\Deterministic\Slip132;
-
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Key\Deterministic\HdPrefix\ScriptPrefix;
-use BitWasp\Bitcoin\Key\KeyToScript\ScriptDataFactory;
-use BitWasp\Bitcoin\Key\KeyToScript\KeyToScriptHelper;
-
-class Slip132
+/**
+ * Stubs a method by returning a value from a map.
+ */
+class PHPUnit_Framework_MockObject_Stub_ReturnValueMap implements PHPUnit_Framework_MockObject_Stub
 {
-    /**
-     * @var KeyToScriptHelper
-     */
-    private $helper;
+    protected $valueMap;
 
-    public function __construct(KeyToScriptHelper $helper = null)
+    public function __construct(array $valueMap)
     {
-        $this->helper = $helper ?: new KeyToScriptHelper(Bitcoin::getEcAdapter());
+        $this->valueMap = $valueMap;
     }
 
-    /**
-     * @param PrefixRegistry $registry
-     * @param ScriptDataFactory $factory
-     * @return ScriptPrefix
-     * @throws \BitWasp\Bitcoin\Exceptions\InvalidNetworkParameter
-     */
-    private function loadPrefix(PrefixRegistry $registry, ScriptDataFactory $factory): ScriptPrefix
+    public function invoke(PHPUnit_Framework_MockObject_Invocation $invocation)
     {
-        list ($private, $public) = $registry->getPrefixes($factory->getScriptType());
-        return new ScriptPrefix($factory, $private, $public);
+        $parameterCount = count($invocation->parameters);
+
+        foreach ($this->valueMap as $map) {
+            if (!is_array($map) || $parameterCount != count($map) - 1) {
+                continue;
+            }
+
+            $return = array_pop($map);
+            if ($invocation->parameters === $map) {
+                return $return;
+            }
+        }
+
+        return;
     }
 
-    /**
-     * xpub on bitcoin
-     * @param PrefixRegistry $registry
-     * @return ScriptPrefix
-     * @throws \B
+    public function toString()
+    {
+        return 'return value from a map';
+    }
+}

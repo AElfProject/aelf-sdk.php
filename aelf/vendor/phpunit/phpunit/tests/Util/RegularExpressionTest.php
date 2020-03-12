@@ -1,45 +1,51 @@
-N $num)
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PHPUnit\Util;
+
+use PHPUnit\Framework\TestCase;
+
+class RegularExpressionTest extends TestCase
+{
+    public function validRegexpProvider()
     {
-        if (assert_options(ASSERT_ACTIVE)) assert(!$num->isZero());
-
-        $negative = $this->negative() !== $num->negative();
-
-        $res = $this->_clone()->abs();
-        $arr = $res->bi->divQR($num->bi->abs());
-        $res->bi = $arr[0];
-        $tmp = $num->bi->sub($arr[1]->mul(2));
-        if( $tmp->cmp(0) <= 0 && (!$negative || $this->negative() === 0) )
-            $res->iaddn(1);
-        return $negative ? $res->negi() : $res;
+        return [
+          ['#valid regexp#', 'valid regexp', 1],
+          [';val.*xp;', 'valid regexp', 1],
+          ['/val.*xp/i', 'VALID REGEXP', 1],
+          ['/a val.*p/','valid regexp', 0],
+        ];
     }
 
-    public function modn($num) {
-        assert(is_numeric($num) && $num != 0);
-        return $this->bi->divR(intval($num))->toNumber();
+    public function invalidRegexpProvider()
+    {
+        return [
+          ['valid regexp', 'valid regexp'],
+          [';val.*xp', 'valid regexp'],
+          ['val.*xp/i', 'VALID REGEXP'],
+        ];
     }
 
-    // In-place division by number
-    public function idivn($num) {
-        assert(is_numeric($num) && $num != 0);
-        $this->bi = $this->bi->div(intval($num));
-        return $this;
+    /**
+     * @dataProvider validRegexpProvider
+     */
+    public function testValidRegex($pattern, $subject, $return)
+    {
+        $this->assertEquals($return, RegularExpression::safeMatch($pattern, $subject));
     }
 
-    public function divn($num) {
-        return $this->_clone()->idivn($num);
+    /**
+     * @dataProvider invalidRegexpProvider
+     */
+    public function testInvalidRegex($pattern, $subject)
+    {
+        $this->assertFalse(RegularExpression::safeMatch($pattern, $subject));
     }
-
-    public function gcd(BN $num) {
-        $res = clone($this);
-        $res->bi = $this->bi->gcd($num->bi);
-        return $res;
-    }
-
-    public function invm(BN $num) {
-        $res = clone($this);
-        $res->bi = $res->bi->modInverse($num->bi);
-        return $res;
-    }
-
-    public function isEven() {
-        return !$this->bi->testbit(0)
+}

@@ -1,19 +1,30 @@
+--TEST--
+PHPUnit_Framework_MockObject_Generator::generateClassFromWsdl('GoogleSearch.wsdl', 'GoogleSearch', array('doGoogleSearch'))
+--SKIPIF--
 <?php
+if (!extension_loaded('soap')) echo 'skip: SOAP extension is required';
+?>
+--FILE--
+<?php
+require __DIR__ . '/../../vendor/autoload.php';
 
-declare(strict_types=1);
+$generator = new PHPUnit_Framework_MockObject_Generator;
 
-namespace BitWasp\Bitcoin\Key\Factory;
+print $generator->generateClassFromWsdl(
+    __DIR__ . '/../_fixture/GoogleSearch.wsdl',
+    'GoogleSearch',
+    array('doGoogleSearch')
+);
+?>
+--EXPECTF--
+class GoogleSearch extends \SoapClient
+{
+    public function __construct($wsdl, array $options)
+    {
+        parent::__construct('%s/GoogleSearch.wsdl', $options);
+    }
 
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\EcSerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PublicKeySerializerInterface;
-use BitWasp\Bitcoin\Crypto\Hash;
-use BitWasp\Bitcoin\Crypto\Random\Random;
-use BitWasp\Bitcoin\Key\Deterministic\HierarchicalKey;
-use BitWasp\Bitcoin\Key\Deterministic\MultisigHD;
-use BitWasp\Bitcoin\Key\KeyToScript\Factory\P2pkhScriptDataFactory;
-use BitWasp\Bitcoin\Key\KeyToScript\ScriptDataFactory;
-use BitWasp\Bitcoin\Network\NetworkInterface;
-use BitWasp\Bitcoin\Serializer\Key\HierarchicalKey\Base58ExtendedKeySerializer;
-use BitWasp\Bitcoin\Serializer\Key\HierarchicalKey\ExtendedKeySerializer;
+    public function doGoogleSearch($key, $q, $start, $maxResults, $filter, $restrict, $safeSearch, $lr, $ie, $oe)
+    {
+    }
+}

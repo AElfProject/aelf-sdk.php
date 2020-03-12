@@ -1,78 +1,88 @@
-rs. Got: %s',
-                static::valueToString($value),
-                $max
-            ));
-        }
-    }
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace SebastianBergmann\CodeCoverage\Report\Xml;
+
+class Node
+{
+    /**
+     * @var \DOMDocument
+     */
+    private $dom;
 
     /**
-     * Inclusive , so Assert::lengthBetween('asd', 3, 5); passes the assertion.
-     *
-     * @param mixed  $value
-     * @param mixed  $min
-     * @param mixed  $max
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
+     * @var \DOMElement
      */
-    public static function lengthBetween($value, $min, $max, $message = '')
-    {
-        $length = static::strlen($value);
+    private $contextNode;
 
-        if ($length < $min || $length > $max) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected a value to contain between %2$s and %3$s characters. Got: %s',
-                static::valueToString($value),
-                $min,
-                $max
-            ));
-        }
+    public function __construct(\DOMElement $context)
+    {
+        $this->setContextNode($context);
     }
 
-    /**
-     * Will also pass if $value is a directory, use Assert::file() instead if you need to be sure it is a file.
-     *
-     * @param mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function fileExists($value, $message = '')
+    protected function setContextNode(\DOMElement $context)
     {
-        static::string($value);
-
-        if (!\file_exists($value)) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'The file %s does not exist.',
-                static::valueToString($value)
-            ));
-        }
+        $this->dom         = $context->ownerDocument;
+        $this->contextNode = $context;
     }
 
-    /**
-     * @param mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function file($value, $message = '')
+    public function getDom()
     {
-        static::fileExists($value, $message);
-
-        if (!\is_file($value)) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'The path %s is not a file.',
-                static::valueToString($value)
-            ));
-        }
+        return $this->dom;
     }
 
-    /**
-     * @param mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function directory($value, $message = '')
+    protected function getContextNode()
     {
-      
+        return $this->contextNode;
+    }
+
+    public function getTotals()
+    {
+        $totalsContainer = $this->getContextNode()->firstChild;
+
+        if (!$totalsContainer) {
+            $totalsContainer = $this->getContextNode()->appendChild(
+                $this->dom->createElementNS(
+                    'http://schema.phpunit.de/coverage/1.0',
+                    'totals'
+                )
+            );
+        }
+
+        return new Totals($totalsContainer);
+    }
+
+    public function addDirectory($name)
+    {
+        $dirNode = $this->getDom()->createElementNS(
+            'http://schema.phpunit.de/coverage/1.0',
+            'directory'
+        );
+
+        $dirNode->setAttribute('name', $name);
+        $this->getContextNode()->appendChild($dirNode);
+
+        return new Directory($dirNode);
+    }
+
+    public function addFile($name, $href)
+    {
+        $fileNode = $this->getDom()->createElementNS(
+            'http://schema.phpunit.de/coverage/1.0',
+            'file'
+        );
+
+        $fileNode->setAttribute('name', $name);
+        $fileNode->setAttribute('href', $href);
+        $this->getContextNode()->appendChild($fileNode);
+
+        return new File($fileNode);
+    }
+}

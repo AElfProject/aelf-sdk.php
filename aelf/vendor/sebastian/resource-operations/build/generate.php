@@ -1,59 +1,62 @@
+#!/usr/bin/env php
 <?php
 /*
- * This file is part of the PHPASN1 library.
+ * This file is part of resource-operations.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-namespace FG\Utility;
+$functions         = require __DIR__ . '/arginfo.php';
+$resourceFunctions = [];
 
-/**
- * Class BigIntegerBcmath
- * Integer representation of big numbers using the bcmath library to perform large operations.
- * @package FG\Utility
- * @internal
+foreach ($functions as $function => $arguments) {
+    foreach ($arguments as $argument) {
+        if ($argument == 'resource') {
+            $resourceFunctions[] = $function;
+        }
+    }
+}
+
+$resourceFunctions = array_unique($resourceFunctions);
+sort($resourceFunctions);
+
+$buffer = <<<EOT
+<?php
+/*
+ * This file is part of resource-operations.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
-class BigIntegerBcmath extends BigInteger
+
+namespace SebastianBergmann\ResourceOperations;
+
+class ResourceOperations
 {
-    protected $_str;
-
-    public function __clone()
+    /**
+     * @return string[]
+     */
+    public static function getFunctions()
     {
-        // nothing needed to copy
+        return [
+
+EOT;
+
+foreach ($resourceFunctions as $function) {
+    $buffer .= sprintf("            '%s',\n", $function);
+}
+
+$buffer .= <<< EOT
+        ];
     }
+}
 
-    protected function _fromString($str)
-    {
-        $this->_str = (string)$str;
-    }
+EOT;
 
-    protected function _fromInteger($integer)
-    {
-        $this->_str = (string)$integer;
-    }
+file_put_contents(__DIR__ . '/../src/ResourceOperations.php', $buffer);
 
-    public function __toString()
-    {
-        return $this->_str;
-    }
-
-    public function toInteger()
-    {
-        if ($this->compare(PHP_INT_MAX) > 0 || $this->compare(PHP_INT_MIN) < 0) {
-            throw new \OverflowException(sprintf('Can not represent %s as integer.', $this->_str));
-        }
-        return (int)$this->_str;
-    }
-
-    public function isNegative()
-    {
-        return bccomp($this->_str, '0', 0) < 0;
-    }
-
-    protected function _unwrap($number)
-    {
-        if ($number instanceof self) {
-            return $number->_str;
-        }
-        re

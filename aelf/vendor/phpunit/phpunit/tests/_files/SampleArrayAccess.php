@@ -1,17 +1,36 @@
-"use strict";
+<?php
+/**
+ * Sample class that implements ArrayAccess copied from
+ * http://www.php.net/manual/en/class.arrayaccess.php
+ * with some minor changes
+ * This class required for PHPUnit_Framework_Constraint_ArrayHasKey testing
+ */
+class SampleArrayAccess implements ArrayAccess
+{
+    private $container;
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
-
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var Declaration = require('../declaration');
-
-var Animation =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(Animation, _Declaration);
-
-  function Animation() {
-    return _De
+    public function __construct()
+    {
+        $this->container = [];
+    }
+    public function offsetSet($offset, $value)
+    {
+        if (is_null($offset)) {
+            $this->container[] = $value;
+        } else {
+            $this->container[$offset] = $value;
+        }
+    }
+    public function offsetExists($offset)
+    {
+        return isset($this->container[$offset]);
+    }
+    public function offsetUnset($offset)
+    {
+        unset($this->container[$offset]);
+    }
+    public function offsetGet($offset)
+    {
+        return isset($this->container[$offset]) ? $this->container[$offset] : null;
+    }
+}

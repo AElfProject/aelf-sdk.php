@@ -1,21 +1,24 @@
-$j += $i;
-                $result[] = $step;
-            }
-        }
-
-        return $result;
+<?php
+class DataProviderDependencyTest extends PHPUnit\Framework\TestCase
+{
+    public function testReference()
+    {
+        $this->markTestSkipped('This test should be skipped.');
+        $this->assertTrue(true);
     }
 
     /**
-     * @param Operation $operation
-     * @param Stack $mainStack
-     * @param bool[] $pathData
-     * @return Conditional
+     * @see https://github.com/sebastianbergmann/phpunit/issues/1896
+     * @depends testReference
+     * @dataProvider provider
      */
-    public function extractConditionalOp(Operation $operation, Stack $mainStack, array &$pathData): Conditional
+    public function testDependency($param)
     {
-        $opValue = null;
+    }
 
-        if (!$mainStack->isEmpty()) {
-            if (count($pathData) === 0) {
-                throw new \RuntimeException("Extracted conditional op (including mainstack) without correspon
+    public function provider()
+    {
+        $this->markTestSkipped('Any test with this data provider should be skipped.');
+        return [];
+    }
+}

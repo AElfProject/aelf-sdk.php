@@ -1,46 +1,41 @@
 <?php
-declare(strict_types=1);
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace Mdanter\Ecc\Serializer\PublicKey;
+namespace PharIo\Manifest;
 
-use Mdanter\Ecc\Crypto\Key\PublicKeyInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
+ * @covers PharIo\Manifest\License
  *
- * @link https://tools.ietf.org/html/rfc5480#page-3
+ * @uses PharIo\Manifest\Url
  */
-class PemPublicKeySerializer implements PublicKeySerializerInterface
-{
-
+class LicenseTest extends TestCase {
     /**
-     * @var DerPublicKeySerializer
+     * @var License
      */
-    private $derSerializer;
+    private $license;
 
-    /**
-     * @param DerPublicKeySerializer $serializer
-     */
-    public function __construct(DerPublicKeySerializer $serializer)
-    {
-        $this->derSerializer = $serializer;
+    protected function setUp() {
+        $this->license = new License('BSD-3-Clause', new Url('https://github.com/sebastianbergmann/phpunit/blob/master/LICENSE'));
     }
 
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Serializer\PublicKey\PublicKeySerializerInterface::serialize()
-     */
-    public function serialize(PublicKeyInterface $key): string
-    {
-        $publicKeyInfo = $this->derSerializer->serialize($key);
-
-        $content  = '-----BEGIN PUBLIC KEY-----'.PHP_EOL;
-        $content .= trim(chunk_split(base64_encode($publicKeyInfo), 64, PHP_EOL)).PHP_EOL;
-        $content .= '-----END PUBLIC KEY-----';
-
-        return $content;
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(License::class, $this->license);
     }
 
-    /**
-     * {@inheritDoc}
-     * @see \Mdanter\Ecc\Serializer\PublicKey\PublicKeySerializerInterface::parse()
- 
+    public function testNameCanBeRetrieved() {
+        $this->assertEquals('BSD-3-Clause', $this->license->getName());
+    }
+
+    public function testUrlCanBeRetrieved() {
+        $this->assertEquals('https://github.com/sebastianbergmann/phpunit/blob/master/LICENSE', $this->license->getUrl());
+    }
+}

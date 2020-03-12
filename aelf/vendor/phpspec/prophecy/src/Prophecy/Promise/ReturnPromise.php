@@ -1,43 +1,55 @@
-$buffer
-     * @param bool $flipBytes
-     * @return Parser
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Promise;
+
+use Prophecy\Prophecy\ObjectProphecy;
+use Prophecy\Prophecy\MethodProphecy;
+
+/**
+ * Return promise.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class ReturnPromise implements PromiseInterface
+{
+    private $returnValues = array();
+
+    /**
+     * Initializes promise.
+     *
+     * @param array $returnValues Array of values
      */
-    public function appendBuffer(BufferInterface $buffer, bool $flipBytes = false): Parser
+    public function __construct(array $returnValues)
     {
-        $this->appendBinary($buffer->getBinary(), $flipBytes);
-        return $this;
+        $this->returnValues = $returnValues;
     }
 
     /**
-     * @param string $binary
-     * @param bool $flipBytes
-     * @return Parser
+     * Returns saved values one by one until last one, then continuously returns last value.
+     *
+     * @param array          $args
+     * @param ObjectProphecy $object
+     * @param MethodProphecy $method
+     *
+     * @return mixed
      */
-    public function appendBinary(string $binary, bool $flipBytes = false): Parser
+    public function execute(array $args, ObjectProphecy $object, MethodProphecy $method)
     {
-        if ($flipBytes) {
-            $binary = Buffertools::flipBytes($binary);
+        $value = array_shift($this->returnValues);
+
+        if (!count($this->returnValues)) {
+            $this->returnValues[] = $value;
         }
 
-        $this->string .= $binary;
-        $this->size += strlen($binary);
-        return $this;
+        return $value;
     }
-
-    /**
-     * Take an array containing serializable objects.
-     * @param array<mixed|SerializableInterface|BufferInterface> $serializable
-     * @return Parser
-     */
-    public function writeArray(array $serializable): Parser
-    {
-        $parser = new Parser(Buffertools::numToVarInt(count($serializable)));
-        foreach ($serializable as $object) {
-            if ($object instanceof SerializableInterface) {
-                $object = $object->getBuffer();
-            }
-
-            if ($object instanceof BufferInterface) {
-                $parser->writeBytes($object->getSize(), $object);
-            } else {
-                throw new \RuntimeExceptio
+}

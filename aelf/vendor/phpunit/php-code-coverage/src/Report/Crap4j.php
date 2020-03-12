@@ -1,310 +1,182 @@
-$package->getName().'/'.$package->getVersion().'-'.$package->getDistReference().'.'.$package->getDistType();
-}
-}
 <?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
+namespace SebastianBergmann\CodeCoverage\Report;
 
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\InvalidArgumentException;
+use SebastianBergmann\CodeCoverage\Node\File;
+use SebastianBergmann\CodeCoverage\RuntimeException;
 
-
-
-
-
-
-
-
-
-namespace Composer\Downloader;
-
-use Composer\Package\PackageInterface;
-use Composer\Util\Svn as SvnUtil;
-
-
-
-
-
-class SvnDownloader extends VcsDownloader
+class Crap4j
 {
+    /**
+     * @var int
+     */
+    private $threshold;
 
+    /**
+     * @param int $threshold
+     */
+    public function __construct($threshold = 30)
+    {
+        if (!\is_int($threshold)) {
+            throw InvalidArgumentException::create(
+                1,
+                'integer'
+            );
+        }
 
+        $this->threshold = $threshold;
+    }
 
-public function doDownload(PackageInterface $package, $path)
-{
-$url = $package->getSourceUrl();
-$ref = $package->getSourceReference();
+    /**
+     * @param CodeCoverage $coverage
+     * @param string       $target
+     * @param string       $name
+     *
+     * @return string
+     *
+     * @throws \SebastianBergmann\CodeCoverage\RuntimeException
+     */
+    public function process(CodeCoverage $coverage, $target = null, $name = null)
+    {
+        $document               = new \DOMDocument('1.0', 'UTF-8');
+        $document->formatOutput = true;
 
-$this->io->write("    Checking out ".$package->getSourceReference());
-$this->execute($url, "svn co", sprintf("%s/%s", $url, $ref), null, $path);
+        $root = $document->createElement('crap_result');
+        $document->appendChild($root);
+
+        $project = $document->createElement('project', \is_string($name) ? $name : '');
+        $root->appendChild($project);
+        $root->appendChild($document->createElement('timestamp', \date('Y-m-d H:i:s', (int) $_SERVER['REQUEST_TIME'])));
+
+        $stats       = $document->createElement('stats');
+        $methodsNode = $document->createElement('methods');
+
+        $report = $coverage->getReport();
+        unset($coverage);
+
+        $fullMethodCount     = 0;
+        $fullCrapMethodCount = 0;
+        $fullCrapLoad        = 0;
+        $fullCrap            = 0;
+
+        foreach ($report as $item) {
+            $namespace = 'global';
+
+            if (!$item instanceof File) {
+                continue;
+            }
+
+            $file = $document->createElement('file');
+            $file->setAttribute('name', $item->getPath());
+
+            $classes = $item->getClassesAndTraits();
+
+            foreach ($classes as $className => $class) {
+                foreach ($class['methods'] as $methodName => $method) {
+                    $crapLoad = $this->getCrapLoad($method['crap'], $method['ccn'], $method['coverage']);
+
+                    $fullCrap += $method['crap'];
+                    $fullCrapLoad += $crapLoad;
+                    $fullMethodCount++;
+
+                    if ($method['crap'] >= $this->threshold) {
+                        $fullCrapMethodCount++;
+                    }
+
+                    $methodNode = $document->createElement('method');
+
+                    if (!empty($class['package']['namespace'])) {
+                        $namespace = $class['package']['namespace'];
+                    }
+
+                    $methodNode->appendChild($document->createElement('package', $namespace));
+                    $methodNode->appendChild($document->createElement('className', $className));
+                    $methodNode->appendChild($document->createElement('methodName', $methodName));
+                    $methodNode->appendChild($document->createElement('methodSignature', \htmlspecialchars($method['signature'])));
+                    $methodNode->appendChild($document->createElement('fullMethod', \htmlspecialchars($method['signature'])));
+                    $methodNode->appendChild($document->createElement('crap', $this->roundValue($method['crap'])));
+                    $methodNode->appendChild($document->createElement('complexity', $method['ccn']));
+                    $methodNode->appendChild($document->createElement('coverage', $this->roundValue($method['coverage'])));
+                    $methodNode->appendChild($document->createElement('crapLoad', \round($crapLoad)));
+
+                    $methodsNode->appendChild($methodNode);
+                }
+            }
+        }
+
+        $stats->appendChild($document->createElement('name', 'Method Crap Stats'));
+        $stats->appendChild($document->createElement('methodCount', $fullMethodCount));
+        $stats->appendChild($document->createElement('crapMethodCount', $fullCrapMethodCount));
+        $stats->appendChild($document->createElement('crapLoad', \round($fullCrapLoad)));
+        $stats->appendChild($document->createElement('totalCrap', $fullCrap));
+
+        if ($fullMethodCount > 0) {
+            $crapMethodPercent = $this->roundValue((100 * $fullCrapMethodCount) / $fullMethodCount);
+        } else {
+            $crapMethodPercent = 0;
+        }
+
+        $stats->appendChild($document->createElement('crapMethodPercent', $crapMethodPercent));
+
+        $root->appendChild($stats);
+        $root->appendChild($methodsNode);
+
+        $buffer = $document->saveXML();
+
+        if ($target !== null) {
+            if (!\is_dir(\dirname($target))) {
+                \mkdir(\dirname($target), 0777, true);
+            }
+
+            if (@\file_put_contents($target, $buffer) === false) {
+                throw new RuntimeException(
+                    \sprintf(
+                        'Could not write to "%s',
+                        $target
+                    )
+                );
+            }
+        }
+
+        return $buffer;
+    }
+
+    /**
+     * @param float $crapValue
+     * @param int   $cyclomaticComplexity
+     * @param float $coveragePercent
+     *
+     * @return float
+     */
+    private function getCrapLoad($crapValue, $cyclomaticComplexity, $coveragePercent)
+    {
+        $crapLoad = 0;
+
+        if ($crapValue >= $this->threshold) {
+            $crapLoad += $cyclomaticComplexity * (1.0 - $coveragePercent / 100);
+            $crapLoad += $cyclomaticComplexity / $this->threshold;
+        }
+
+        return $crapLoad;
+    }
+
+    /**
+     * @param float $value
+     *
+     * @return float
+     */
+    private function roundValue($value)
+    {
+        return \round($value, 2);
+    }
 }
-
-
-
-
-public function doUpdate(PackageInterface $initial, PackageInterface $target, $path)
-{
-$url = $target->getSourceUrl();
-$ref = $target->getSourceReference();
-
-$this->io->write("    Checking out " . $ref);
-$this->execute($url, "svn switch", sprintf("%s/%s", $url, $ref), $path);
-}
-
-
-
-
-public function getLocalChanges($path)
-{
-if (!is_dir($path.'/.svn')) {
-return;
-}
-
-$this->process->execute('svn status --ignore-externals', $output, $path);
-
-return preg_match('{^ *[^X ] +}m', $output) ? $output : null;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-protected function execute($baseUrl, $command, $url, $cwd = null, $path = null)
-{
-$util = new SvnUtil($baseUrl, $this->io);
-try {
-return $util->execute($command, $url, $cwd, $path, $this->io->isVerbose());
-} catch (\RuntimeException $e) {
-throw new \RuntimeException(
-'Package could not be downloaded, '.$e->getMessage()
-);
-}
-}
-
-
-
-
-protected function cleanChanges($path, $update)
-{
-if (!$changes = $this->getLocalChanges($path)) {
-return;
-}
-
-if (!$this->io->isInteractive()) {
-if (true === $this->config->get('discard-changes')) {
-return $this->discardChanges($path);
-}
-
-return parent::cleanChanges($path, $update);
-}
-
-$changes = array_map(function ($elem) {
-return '    '.$elem;
-}, preg_split('{\s*\r?\n\s*}', $changes));
-$this->io->write('    <error>The package has modified files:</error>');
-$this->io->write(array_slice($changes, 0, 10));
-if (count($changes) > 10) {
-$this->io->write('    <info>'.count($changes) - 10 . ' more files modified, choose "v" to view the full list</info>');
-}
-
-while (true) {
-switch ($this->io->ask('    <info>Discard changes [y,n,v,?]?</info> ', '?')) {
-case 'y':
-$this->discardChanges($path);
-break 2;
-
-case 'n':
-throw new \RuntimeException('Update aborted');
-
-case 'v':
-$this->io->write($changes);
-break;
-
-case '?':
-default:
-$this->io->write(array(
-'    y - discard changes and apply the '.($update ? 'update' : 'uninstall'),
-'    n - abort the '.($update ? 'update' : 'uninstall').' and let you manually clean things up',
-'    v - view modified files',
-'    ? - print help',
-));
-break;
-}
-}
-}
-
-
-
-
-protected function getCommitLogs($fromReference, $toReference, $path)
-{
-
- $fromRevision = preg_replace('{.*@(\d+)$}', '$1', $fromReference);
-$toRevision = preg_replace('{.*@(\d+)$}', '$1', $toReference);
-
-$command = sprintf('cd %s && svn log -r%s:%s --incremental', escapeshellarg($path), $fromRevision, $toRevision);
-
-if (0 !== $this->process->execute($command, $output)) {
-throw new \RuntimeException('Failed to execute ' . $command . "\n\n" . $this->process->getErrorOutput());
-}
-
-return $output;
-}
-
-protected function discardChanges($path)
-{
-if (0 !== $this->process->execute('svn revert -R .', $output, $path)) {
-throw new \RuntimeException("Could not reset changes\n\n:".$this->process->getErrorOutput());
-}
-}
-}
-<?php
-
-
-
-
-
-
-
-
-
-
-
-namespace Composer\Downloader;
-
-use Composer\Util\Filesystem;
-
-
-
-
-
-
-
-
-
-
-class PearPackageExtractor
-{
-private static $rolesWithoutPackageNamePrefix = array('php', 'script', 'www');
-
-private $filesystem;
-private $file;
-
-public function __construct($file)
-{
-if (!is_file($file)) {
-throw new \UnexpectedValueException('PEAR package file is not found at '.$file);
-}
-
-$this->filesystem = new Filesystem();
-$this->file = $file;
-}
-
-
-
-
-
-
-
-
-
-
-
-public function extractTo($target, array $roles = array('php' => '/', 'script' => '/bin'), $vars = array())
-{
-$extractionPath = $target.'/tarball';
-
-try {
-$archive = new \PharData($this->file);
-$archive->extractTo($extractionPath, null, true);
-
-if (!is_file($this->combine($extractionPath, '/package.xml'))) {
-throw new \RuntimeException('Invalid PEAR package. It must contain package.xml file.');
-}
-
-$fileCopyActions = $this->buildCopyActions($extractionPath, $roles, $vars);
-$this->copyFiles($fileCopyActions, $extractionPath, $target, $roles, $vars);
-$this->filesystem->removeDirectory($extractionPath);
-} catch (\Exception $exception) {
-throw new \UnexpectedValueException(sprintf('Failed to extract PEAR package %s to %s. Reason: %s', $this->file, $target, $exception->getMessage()), 0, $exception);
-}
-}
-
-
-
-
-
-
-
-
-
-
-private function copyFiles($files, $source, $target, $roles, $vars)
-{
-foreach ($files as $file) {
-$from = $this->combine($source, $file['from']);
-$to = $this->combine($target, $roles[$file['role']]);
-$to = $this->combine($to, $file['to']);
-$tasks = $file['tasks'];
-$this->copyFile($from, $to, $tasks, $vars);
-}
-}
-
-private function copyFile($from, $to, $tasks, $vars)
-{
-if (!is_file($from)) {
-throw new \RuntimeException('Invalid PEAR package. package.xml defines file that is not located inside tarball.');
-}
-
-$this->filesystem->ensureDirectoryExists(dirname($to));
-
-if (0 == count($tasks)) {
-$copied = copy($from, $to);
-} else {
-$content = file_get_contents($from);
-$replacements = array();
-foreach ($tasks as $task) {
-$pattern = $task['from'];
-$varName = $task['to'];
-if (isset($vars[$varName])) {
-if ($varName === 'php_bin' && false === strpos($to, '.bat')) {
-$replacements[$pattern] = preg_replace('{\.bat$}', '', $vars[$varName]);
-} else {
-$replacements[$pattern] = $vars[$varName];
-}
-}
-}
-$content = strtr($content, $replacements);
-
-$copied = file_put_contents($to, $content);
-}
-
-if (false === $copied) {
-throw new \RuntimeException(sprintf('Failed to copy %s to %s', $from, $to));
-}
-}
-
-
-
-
-
-
-
-
-
-
-
-private function buildCopyActions($source, array $roles, $vars)
-{
-
-$package = simplexml_load_file($this->combine($source, 'package.xml'));
-if(false === $package)
-throw new \RuntimeException('Package definition file is not valid.');
-
-$packageSchemaVersion = $package['version'];
-if ('1.0' == $packageSchemaVersion) {

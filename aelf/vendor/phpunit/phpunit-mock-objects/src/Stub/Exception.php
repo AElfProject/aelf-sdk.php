@@ -1,47 +1,46 @@
 <?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use StephenHill\Base58;
-use StephenHill\BCMathService;
-use StephenHill\GMPService;
+use SebastianBergmann\Exporter\Exporter;
 
-class Base58Tests extends PHPUnit_Framework_TestCase
+/**
+ * Stubs a method by raising a user-defined exception.
+ */
+class PHPUnit_Framework_MockObject_Stub_Exception implements PHPUnit_Framework_MockObject_Stub
 {
-    /**
-     * @dataProvider encodingsProvider
-     */
-    public function testEncode($string, $encoded, $instance)
-    {
-        $string = (string) $string;
-        $encoded = (string) $encoded;
+    protected $exception;
 
-        $this->assertSame($encoded, $instance->encode($string));
+    public function __construct($exception)
+    {
+        // TODO Replace check with type declaration when support for PHP 5 is dropped
+        if (!$exception instanceof Throwable && !$exception instanceof Exception) {
+            throw new PHPUnit_Framework_MockObject_RuntimeException(
+                'Exception must be an instance of Throwable (PHP 7) or Exception (PHP 5)'
+            );
+        }
+
+        $this->exception = $exception;
     }
 
-    /**
-     * @dataProvider encodingsProvider
-     */
-    public function testDecode($string, $encoded, $instance)
+    public function invoke(PHPUnit_Framework_MockObject_Invocation $invocation)
     {
-        $string = (string) $string;
-        $encoded = (string) $encoded;
-
-        $this->assertSame($string, $instance->decode($encoded));
+        throw $this->exception;
     }
 
-    public function encodingsProvider()
+    public function toString()
     {
-        $instances = array(
-            new Base58(null, new BCMathService()),
-            new Base58(null, new GMPService())
+        $exporter = new Exporter;
+
+        return sprintf(
+            'raise user-specified exception %s',
+            $exporter->export($this->exception)
         );
-
-        $tests = array(
-            array('', ''),
-            array('1', 'r'),
-            array('a', '2g'),
-            array('bbb', 'a3gV'),
-            array('ccc', 'aPEr'),
-            array('hello!', 'tzCkV5Di'),
-            array('Hello World', 'JxF12TrwUP45BMd'),
-            array('this is a test', 'jo91waLQA1NNeBmZKUF'),
-            array('the qu
+    }
+}

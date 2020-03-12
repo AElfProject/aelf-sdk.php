@@ -1,116 +1,124 @@
-Add(BN $num) {
-        if( $this->red === null )
-            throw new Exception("redIAdd works only with red numbers");
-        $res = $this;
-        $res->bi = $res->bi->add($num->bi);
-        if ($res->bi->cmp($this->red->m->bi) >= 0)
-            $res->bi = $res->bi->sub($this->red->m->bi);
-        return $res;
-        //return $this->red->iadd($this, $num);
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PHPUnit\Util\PHP;
+
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Exception;
+
+class AbstractPhpProcessTest extends TestCase
+{
+    /**
+     * @var AbstractPhpProcess|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private $phpProcess;
+
+    protected function setUp()
+    {
+        $this->phpProcess = $this->getMockForAbstractClass(AbstractPhpProcess::class);
     }
 
-    public function redSub(BN $num) {
-        if( $this->red === null )
-            throw new Exception("redSub works only with red numbers");
-        $res = clone($this);
-        $res->bi = $this->bi->sub($num->bi);
-        if ($res->bi->sign() < 0)
-            $res->bi = $res->bi->add($this->red->m->bi);
-        return $res;
-        //return $this->red->sub($this, $num);
+    public function testShouldNotUseStderrRedirectionByDefault()
+    {
+        $this->assertFalse($this->phpProcess->useStderrRedirection());
     }
 
-    public function redISub(BN $num) {
-        if( $this->red === null )
-            throw new Exception("redISub works only with red numbers");
-        $this->bi = $this->bi->sub($num->bi);
-        if ($this->bi->sign() < 0)
-            $this->bi = $this->bi->add($this->red->m->bi);
-        return $this;
-            
-//        return $this->red->isub($this, $num);
+    public function testShouldDefinedIfUseStderrRedirection()
+    {
+        $this->phpProcess->setUseStderrRedirection(true);
+
+        $this->assertTrue($this->phpProcess->useStderrRedirection());
     }
 
-    public function redShl(BN $num) {
-        if( $this->red === null )
-            throw new Exception("redShl works only with red numbers");
-        return $this->red->shl($this, $num);
+    public function testShouldDefinedIfDoNotUseStderrRedirection()
+    {
+        $this->phpProcess->setUseStderrRedirection(false);
+
+        $this->assertFalse($this->phpProcess->useStderrRedirection());
     }
 
-    public function redMul(BN $num) {
-        if( $this->red === null )
-            throw new Exception("redMul works only with red numbers");
-        $res = clone($this);
-        $res->bi = $this->bi->mul($num->bi)->mod($this->red->m->bi);
-        return $res;            
-        /*
-        return $this->red->mul($this, $num);
-        */
+    public function testShouldThrowsExceptionWhenStderrRedirectionVariableIsNotABoolean()
+    {
+        $this->expectException(Exception::class);
+
+        $this->phpProcess->setUseStderrRedirection(null);
     }
 
-    public function redIMul(BN $num) {
-        if( $this->red === null )
-            throw new Exception("redIMul works only with red numbers");
-        $this->bi = $this->bi->mul($num->bi)->mod($this->red->m->bi);
-        return $this;
-        //return $this->red->imul($this, $num);
+    public function testShouldUseGivenSettingsToCreateCommand()
+    {
+        $settings = [
+            'allow_url_fopen=1',
+            'auto_append_file=',
+            'display_errors=1',
+        ];
+
+        $expectedCommandFormat  = '%s -d allow_url_fopen=1 -d auto_append_file= -d display_errors=1';
+        $actualCommand          = $this->phpProcess->getCommand($settings);
+
+        $this->assertStringMatchesFormat($expectedCommandFormat, $actualCommand);
     }
 
-    public function redSqr() {
-        if( $this->red === null )
-            throw new Exception("redSqr works only with red numbers");
-        $res = clone($this);
-        $res->bi = $this->bi->mul($this->bi)->mod($this->red->m->bi);
-        return $res;
-        /*
-        $this->red->verify1($this);
-        return $this->red->sqr($this);
-        */
+    public function testShouldRedirectStderrToStdoutWhenDefined()
+    {
+        $this->phpProcess->setUseStderrRedirection(true);
+
+        $expectedCommandFormat  = '%s 2>&1';
+        $actualCommand          = $this->phpProcess->getCommand([]);
+
+        $this->assertStringMatchesFormat($expectedCommandFormat, $actualCommand);
     }
 
-    public function redISqr() {
-        if( $this->red === null )
-            throw new Exception("redISqr works only with red numbers");
-        $res = $this;
-        $res->bi = $this->bi->mul($this->bi)->mod($this->red->m->bi);
-        return $res;
-/*        $this->red->verify1($this);
-        return $this->red->isqr($this);
-        */
+    public function testShouldUseArgsToCreateCommand()
+    {
+        $this->phpProcess->setArgs('foo=bar');
+
+        $expectedCommandFormat  = '%s -- foo=bar';
+        $actualCommand          = $this->phpProcess->getCommand([]);
+
+        $this->assertStringMatchesFormat($expectedCommandFormat, $actualCommand);
     }
 
-    public function redSqrt() {
-        if( $this->red === null )
-            throw new Exception("redSqrt works only with red numbers");
-        $this->red->verify1($this);
-        return $this->red->sqrt($this);
+    public function testShouldHaveFileToCreateCommand()
+    {
+        $argumentEscapingCharacter = DIRECTORY_SEPARATOR === '\\' ? '"' : '\'';
+        $expectedCommandFormat     = \sprintf('%%s -%%c %1$sfile.php%1$s', $argumentEscapingCharacter);
+        $actualCommand             = $this->phpProcess->getCommand([], 'file.php');
+
+        $this->assertStringMatchesFormat($expectedCommandFormat, $actualCommand);
     }
 
-    public function redInvm() {
-        if( $this->red === null )
-            throw new Exception("redInvm works only with red numbers");
-        $this->red->verify1($this);
-        return $this->red->invm($this);
+    public function testStdinGetterAndSetter()
+    {
+        $this->phpProcess->setStdin('foo');
+
+        $this->assertEquals('foo', $this->phpProcess->getStdin());
     }
 
-    public function redNeg() {
-        if( $this->red === null )
-            throw new Exception("redNeg works only with red numbers");
-        $this->red->verify1($this);
-        return $this->red->neg($this);
+    public function testArgsGetterAndSetter()
+    {
+        $this->phpProcess->setArgs('foo=bar');
+
+        $this->assertEquals('foo=bar', $this->phpProcess->getArgs());
     }
 
-    public function redPow(BN $num) {
-        $this->red->verify2($this, $num);
-        return $this->red->pow($this, $num);
+    public function testEnvGetterAndSetter()
+    {
+        $this->phpProcess->setEnv(['foo' => 'bar']);
+
+        $this->assertEquals(['foo' => 'bar'], $this->phpProcess->getEnv());
     }
 
-    public static function red($num) {
-        return new Red($num);
-    }
+    public function testTimeoutGetterAndSetter()
+    {
+        $this->phpProcess->setTimeout(30);
 
-    public static function mont($num) {
-        return new Red($num);
+        $this->assertEquals(30, $this->phpProcess->getTimeout());
     }
-
-    public function inspect() {
+}

@@ -1,28 +1,36 @@
-"use strict";
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+/**
+ * Interface for builders which can register builders with a given identification.
+ *
+ * This interface relates to PHPUnit_Framework_MockObject_Builder_Identity.
+ */
+interface PHPUnit_Framework_MockObject_Builder_Namespace
+{
+    /**
+     * Looks up the match builder with identification $id and returns it.
+     *
+     * @param string $id The identification of the match builder
+     *
+     * @return PHPUnit_Framework_MockObject_Builder_Match
+     */
+    public function lookupId($id);
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var Declaration = require('../declaration');
-
-var utils = require('./grid-utils');
-
-var PlaceSelf =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(PlaceSelf, _Declaration);
-
-  function PlaceSelf() {
-    return _Declaration.apply(this, arguments) || this;
-  }
-
-  var _proto = PlaceSelf.prototype;
-
-  /**
-   * Translate place-self to separate -ms- prefixed properties
-   */
-  _proto.insert = function insert(decl, prefix, prefixes) {
-    if (prefix !== '-ms-') return _Declaration.prototype.insert.call(th
+    /**
+     * Registers the match builder $builder with the identification $id. The
+     * builder can later be looked up using lookupId() to figure out if it
+     * has been invoked.
+     *
+     * @param string                                     $id      The identification of the match builder
+     * @param PHPUnit_Framework_MockObject_Builder_Match $builder The builder which is being registered
+     */
+    public function registerId($id, PHPUnit_Framework_MockObject_Builder_Match $builder);
+}

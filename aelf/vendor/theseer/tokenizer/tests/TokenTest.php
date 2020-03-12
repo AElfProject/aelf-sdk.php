@@ -1,18 +1,31 @@
-<?php
+<?php declare(strict_types = 1);
+namespace TheSeer\Tokenizer;
 
-declare(strict_types=1);
+use PHPUnit\Framework\TestCase;
 
-namespace BitWasp\Bitcoin\Serializer\Key\HierarchicalKey;
+class TokenTest extends TestCase {
 
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Key\Deterministic\HdPrefix\GlobalPrefixConfig;
-use BitWasp\Bitcoin\Key\Deterministic\HierarchicalKey;
-use BitWasp\Bitcoin\Key\KeyToScript\Factory\P2pkhScriptDataFactory;
-use BitWasp\Bitcoin\Crypto\EcAdapter\EcSerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PrivateKeySerializerInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PublicKeySerializerInterface;
-use BitWasp\Bitcoin\Network\NetworkInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-use BitWasp\Buffertools\Exceptions\ParserOutOfRange;
-use BitWasp\Buffertools
+    /** @var  Token */
+    private $token;
+
+    protected function setUp() {
+        $this->token = new Token(1,'test-dummy', 'blank');
+    }
+
+    public function testTokenCanBeCreated() {
+        $this->assertInstanceOf(Token::class, $this->token);
+    }
+
+    public function testTokenLineCanBeRetrieved() {
+        $this->assertEquals(1, $this->token->getLine());
+    }
+
+    public function testTokenNameCanBeRetrieved() {
+        $this->assertEquals('test-dummy', $this->token->getName());
+    }
+
+    public function testTokenValueCanBeRetrieved() {
+        $this->assertEquals('blank', $this->token->getValue());
+    }
+
+}

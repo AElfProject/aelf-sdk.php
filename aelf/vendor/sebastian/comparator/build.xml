@@ -1,20 +1,21 @@
-<?php
-declare(strict_types=1);
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="comparator" default="setup">
+    <target name="setup" depends="clean,composer"/>
 
-namespace Mdanter\Ecc\Primitives;
+    <target name="clean" description="Cleanup build artifacts">
+        <delete dir="${basedir}/vendor"/>
+        <delete file="${basedir}/composer.lock"/>
+    </target>
 
-use Mdanter\Ecc\Math\ModularArithmetic;
-use Mdanter\Ecc\Random\RandomNumberGeneratorInterface;
+    <target name="composer" depends="clean" description="Install dependencies with Composer">
+        <exec executable="composer" taskname="composer">
+            <env key="COMPOSER_DISABLE_XDEBUG_WARN" value="1"/>
+            <arg value="update"/>
+            <arg value="--no-interaction"/>
+            <arg value="--no-progress"/>
+            <arg value="--no-ansi"/>
+            <arg value="--no-suggest"/>
+        </exec>
+    </target>
+</project>
 
-/**
- * *********************************************************************
- * Copyright (C) 2012 Matyas Danter
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright noti

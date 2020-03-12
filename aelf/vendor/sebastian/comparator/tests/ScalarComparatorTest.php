@@ -1,123 +1,161 @@
 <?php
 /*
- * This file is part of the PHPASN1 library.
+ * This file is part of sebastian/comparator.
  *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-namespace FG\ASN1\Universal;
+namespace SebastianBergmann\Comparator;
 
-use FG\ASN1\AbstractTime;
-use FG\ASN1\Parsable;
-use FG\ASN1\Identifier;
-use FG\ASN1\Exception\ParserException;
+use PHPUnit\Framework\TestCase;
 
 /**
- * This ASN.1 universal type contains date and time information according to ISO 8601.
+ * @coversDefaultClass SebastianBergmann\Comparator\ScalarComparator
  *
- * The type consists of values representing:
- * a) a calendar date, as defined in ISO 8601; and
- * b) a time of day, to any of the precisions defined in ISO 8601, except for the hours value 24 which shall not be used; and
- * c) the local time differential factor as defined in ISO 8601.
- *
- * Decoding of this type will accept the Basic Encoding Rules (BER)
- * The encoding will comply with the Distinguished Encoding Rules (DER).
+ * @uses SebastianBergmann\Comparator\Comparator
+ * @uses SebastianBergmann\Comparator\Factory
+ * @uses SebastianBergmann\Comparator\ComparisonFailure
  */
-class GeneralizedTime extends AbstractTime implements Parsable
+class ScalarComparatorTest extends TestCase
 {
-    private $microseconds;
+    private $comparator;
 
-    public function __construct($dateTime = null, $dateTimeZone = 'UTC')
+    protected function setUp()
     {
-        parent::__construct($dateTime, $dateTimeZone);
-        $this->microseconds = $this->value->format('u');
-        if ($this->containsFractionalSecondsElement()) {
-            // DER requires us to remove trailing zeros
-            $this->microseconds = preg_replace('/([1-9]+)0+$/', '$1', $this->microseconds);
+        $this->comparator = new ScalarComparator;
+    }
+
+    public function acceptsSucceedsProvider()
+    {
+        return [
+          ['string', 'string'],
+          [new ClassWithToString, 'string'],
+          ['string', new ClassWithToString],
+          ['string', null],
+          [false, 'string'],
+          [false, true],
+          [null, false],
+          [null, null],
+          ['10', 10],
+          ['', false],
+          ['1', true],
+          [1, true],
+          [0, false],
+          [0.1, '0.1']
+        ];
+    }
+
+    public function acceptsFailsProvider()
+    {
+        return [
+          [[], []],
+          ['string', []],
+          [new ClassWithToString, new ClassWithToString],
+          [false, new ClassWithToString],
+          [\tmpfile(), \tmpfile()]
+        ];
+    }
+
+    public function assertEqualsSucceedsProvider()
+    {
+        return [
+          ['string', 'string'],
+          [new ClassWithToString, new ClassWithToString],
+          ['string representation', new ClassWithToString],
+          [new ClassWithToString, 'string representation'],
+          ['string', 'STRING', true],
+          ['STRING', 'string', true],
+          ['String Representation', new ClassWithToString, true],
+          [new ClassWithToString, 'String Representation', true],
+          ['10', 10],
+          ['', false],
+          ['1', true],
+          [1, true],
+          [0, false],
+          [0.1, '0.1'],
+          [false, null],
+          [false, false],
+          [true, true],
+          [null, null]
+        ];
+    }
+
+    public function assertEqualsFailsProvider()
+    {
+        $stringException = 'Failed asserting that two strings are equal.';
+        $otherException  = 'matches expected';
+
+        return [
+          ['string', 'other string', $stringException],
+          ['string', 'STRING', $stringException],
+          ['STRING', 'string', $stringException],
+          ['string', 'other string', $stringException],
+          // https://github.com/sebastianbergmann/phpunit/issues/1023
+          ['9E6666666','9E7777777', $stringException],
+          [new ClassWithToString, 'does not match', $otherException],
+          ['does not match', new ClassWithToString, $otherException],
+          [0, 'Foobar', $otherException],
+          ['Foobar', 0, $otherException],
+          ['10', 25, $otherException],
+          ['1', false, $otherException],
+          ['', true, $otherException],
+          [false, true, $otherException],
+          [true, false, $otherException],
+          [null, true, $otherException],
+          [0, true, $otherException]
+        ];
+    }
+
+    /**
+     * @covers       ::accepts
+     * @dataProvider acceptsSucceedsProvider
+     */
+    public function testAcceptsSucceeds($expected, $actual)
+    {
+        $this->assertTrue(
+          $this->comparator->accepts($expected, $actual)
+        );
+    }
+
+    /**
+     * @covers       ::accepts
+     * @dataProvider acceptsFailsProvider
+     */
+    public function testAcceptsFails($expected, $actual)
+    {
+        $this->assertFalse(
+          $this->comparator->accepts($expected, $actual)
+        );
+    }
+
+    /**
+     * @covers       ::assertEquals
+     * @dataProvider assertEqualsSucceedsProvider
+     */
+    public function testAssertEqualsSucceeds($expected, $actual, $ignoreCase = false)
+    {
+        $exception = null;
+
+        try {
+            $this->comparator->assertEquals($expected, $actual, 0.0, false, $ignoreCase);
+        } catch (ComparisonFailure $exception) {
         }
+
+        $this->assertNull($exception, 'Unexpected ComparisonFailure');
     }
 
-    public function getType()
+    /**
+     * @covers       ::assertEquals
+     * @dataProvider assertEqualsFailsProvider
+     */
+    public function testAssertEqualsFails($expected, $actual, $message)
     {
-        return Identifier::GENERALIZED_TIME;
+        $this->expectException(ComparisonFailure::class);
+        $this->expectExceptionMessage($message);
+
+        $this->comparator->assertEquals($expected, $actual);
     }
-
-    protected function calculateContentLength()
-    {
-        $contentSize = 15; // YYYYMMDDHHmmSSZ
-
-        if ($this->containsFractionalSecondsElement()) {
-            $contentSize += 1 + strlen($this->microseconds);
-        }
-
-        return $contentSize;
-    }
-
-    public function containsFractionalSecondsElement()
-    {
-        return intval($this->microseconds) > 0;
-    }
-
-    protected function getEncodedValue()
-    {
-        $encodedContent = $this->value->format('YmdHis');
-        if ($this->containsFractionalSecondsElement()) {
-            $encodedContent .= ".{$this->microseconds}";
-        }
-
-        return $encodedContent.'Z';
-    }
-
-    public function __toString()
-    {
-        if ($this->containsFractionalSecondsElement()) {
-            return $this->value->format("Y-m-d\tH:i:s.uP");
-        } else {
-            return $this->value->format("Y-m-d\tH:i:sP");
-        }
-    }
-
-    public static function fromBinary(&$binaryData, &$offsetIndex = 0)
-    {
-        self::parseIdentifier($binaryData[$offsetIndex], Identifier::GENERALIZED_TIME, $offsetIndex++);
-        $lengthOfMinimumTimeString = 14; // YYYYMMDDHHmmSS
-        $contentLength = self::parseContentLength($binaryData, $offsetIndex, $lengthOfMinimumTimeString);
-        $maximumBytesToRead = $contentLength;
-
-        $format = 'YmdGis';
-        $content = substr($binaryData, $offsetIndex, $contentLength);
-        $dateTimeString = substr($content, 0, $lengthOfMinimumTimeString);
-        $offsetIndex += $lengthOfMinimumTimeString;
-        $maximumBytesToRead -= $lengthOfMinimumTimeString;
-
-        if ($contentLength == $lengthOfMinimumTimeString) {
-            $localTimeZone = new \DateTimeZone(date_default_timezone_get());
-            $dateTime = \DateTime::createFromFormat($format, $dateTimeString, $localTimeZone);
-        } else {
-            if ($binaryData[$offsetIndex] == '.') {
-                $maximumBytesToRead--; // account for the '.'
-                $nrOfFractionalSecondElements = 1; // account for the '.'
-
-                while ($maximumBytesToRead > 0
-                      && $binaryData[$offsetIndex + $nrOfFractionalSecondElements] != '+'
-                      && $binaryData[$offsetIndex + $nrOfFractionalSecondElements] != '-'
-                      && $binaryData[$offsetIndex + $nrOfFractionalSecondElements] != 'Z') {
-                    $nrOfFractionalSecondElements++;
-                    $maximumBytesToRead--;
-                }
-
-                $dateTimeString .= substr($binaryData, $offsetIndex, $nrOfFractionalSecondElements);
-                $offsetIndex += $nrOfFractionalSecondElements;
-                $format .= '.u';
-            }
-
-            $dateTime = \DateTime::createFromFormat($format, $dateTimeString, new \DateTimeZone('UTC'));
-
-            if ($maximumBytesToRead > 0) {
-                if ($binaryData[$offsetIndex] == '+'
-                || $binaryData[$offsetIndex] == '-') {
-                    $dateTime = static::extractTimeZoneData($binaryData, $offsetIndex, $dateTime);
-                } elseif ($binaryData[$of
+}

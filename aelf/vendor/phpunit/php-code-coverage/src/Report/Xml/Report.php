@@ -1,86 +1,92 @@
- the key %s to not exist.',
-                static::valueToString($key)
-            ));
-        }
+<?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace SebastianBergmann\CodeCoverage\Report\Xml;
+
+class Report extends File
+{
+    public function __construct($name)
+    {
+        $dom = new \DOMDocument();
+        $dom->loadXML('<?xml version="1.0" ?><phpunit xmlns="http://schema.phpunit.de/coverage/1.0"><file /></phpunit>');
+
+        $contextNode = $dom->getElementsByTagNameNS(
+            'http://schema.phpunit.de/coverage/1.0',
+            'file'
+        )->item(0);
+
+        parent::__construct($contextNode);
+        $this->setName($name);
     }
 
-    /**
-     * Checks if a value is a valid array key (int or string).
-     *
-     * @psalm-assert array-key $value
-     *
-     * @param mixed  $value
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function validArrayKey($value, $message = '')
+    private function setName($name)
     {
-        if (!(\is_int($value) || \is_string($value))) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected string or integer. Got: %s',
-                static::typeToString($value)
-            ));
-        }
+        $this->getContextNode()->setAttribute('name', \basename($name));
+        $this->getContextNode()->setAttribute('path', \dirname($name));
     }
 
-    /**
-     * Does not check if $array is countable, this can generate a warning on php versions after 7.2.
-     *
-     * @param mixed  $array
-     * @param mixed  $number
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function count($array, $number, $message = '')
+    public function asDom()
     {
-        static::eq(
-            \count($array),
-            $number,
-            $message ?: \sprintf('Expected an array to contain %d elements. Got: %d.', $number, \count($array))
+        return $this->getDomDocument();
+    }
+
+    public function getFunctionObject($name)
+    {
+        $node = $this->getContextNode()->appendChild(
+            $this->getDomDocument()->createElementNS(
+                'http://schema.phpunit.de/coverage/1.0',
+                'function'
+            )
         );
+
+        return new Method($node, $name);
     }
 
-    /**
-     * Does not check if $array is countable, this can generate a warning on php versions after 7.2.
-     *
-     * @param mixed  $array
-     * @param mixed  $min
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function minCount($array, $min, $message = '')
+    public function getClassObject($name)
     {
-        if (\count($array) < $min) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected an array to contain at least %2$d elements. Got: %d',
-                \count($array),
-                $min
-            ));
-        }
+        return $this->getUnitObject('class', $name);
     }
 
-    /**
-     * Does not check if $array is countable, this can generate a warning on php versions after 7.2.
-     *
-     * @param mixed  $array
-     * @param mixed  $max
-     * @param string $message
-     *
-     * @throws InvalidArgumentException
-     */
-    public static function maxCount($array, $max, $message = '')
+    public function getTraitObject($name)
     {
-        if (\count($array) > $max) {
-            static::reportInvalidArgument(\sprintf(
-                $message ?: 'Expected an array to contain at most %2$d elements. Got: %d',
-                \count($array),
-                $max
-            ));
-        }
+        return $this->getUnitObject('trait', $name);
     }
 
-    /**
-     * Does not check if $
+    private function getUnitObject($tagName, $name)
+    {
+        $node = $this->getContextNode()->appendChild(
+            $this->getDomDocument()->createElementNS(
+                'http://schema.phpunit.de/coverage/1.0',
+                $tagName
+            )
+        );
+
+        return new Unit($node, $name);
+    }
+
+    public function getSource()
+    {
+        $source = $this->getContextNode()->getElementsByTagNameNS(
+            'http://schema.phpunit.de/coverage/1.0',
+            'source'
+        )->item(0);
+
+        if (!$source) {
+            $source = $this->getContextNode()->appendChild(
+                $this->getDomDocument()->createElementNS(
+                    'http://schema.phpunit.de/coverage/1.0',
+                    'source'
+                )
+            );
+        }
+
+        return new Source($source);
+    }
+}

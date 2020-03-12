@@ -1,27 +1,55 @@
-/**
-     * Always has exactly three or four elements: start line, start column,
-     * end line (optional, otherwise assumed same as start line), end column.
-     * These are packed into a single field for efficiency.  Note that line
-     * and column numbers are zero-based -- typically you will want to add
-     * 1 to each before displaying to a user.
-     *
-     * Generated from protobuf field <code>repeated int32 span = 2 [packed = true];</code>
-     * @param int[]|\Google\Protobuf\Internal\RepeatedField $var
-     * @return $this
+<?php declare(strict_types = 1);
+namespace TheSeer\Tokenizer;
+
+class Token {
+
+    /**
+     * @var int
      */
-    public function setSpan($var)
-    {
-        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::INT32);
-        $this->span = $arr;
-        $this->has_span = true;
+    private $line;
 
-        return $this;
-    }
+    /**
+     * @var string
+     */
+    private $name;
 
-    public function hasSpan()
-    {
-        return $this->has_span;
+    /**
+     * @var string
+     */
+    private $value;
+
+    /**
+     * Token constructor.
+     *
+     * @param int    $line
+     * @param string $name
+     * @param string $value
+     */
+    public function __construct(int $line, string $name, string $value) {
+        $this->line  = $line;
+        $this->name  = $name;
+        $this->value = $value;
     }
 
     /**
-     * If this SourceCodeInfo
+     * @return int
+     */
+    public function getLine(): int {
+        return $this->line;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName(): string {
+        return $this->name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getValue(): string {
+        return $this->value;
+    }
+
+}

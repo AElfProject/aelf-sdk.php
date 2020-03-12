@@ -1,73 +1,41 @@
-<?php
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="version" default="setup">
+    <target name="setup" depends="clean,install-tools,generate-autoloader"/>
 
-namespace BitWasp\Bitcoin;
+    <target name="clean" unless="clean.done" description="Cleanup build artifacts">
+        <delete dir="${basedir}/tools"/>
+        <delete dir="${basedir}/vendor"/>
+        <delete file="${basedir}/src/autoload.php"/>
 
-use BitWasp\Bitcoin\Chain\Params;
-use BitWasp\Bitcoin\Chain\ParamsInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\EcAdapterFactory;
-use BitWasp\Bitcoin\Math\Math;
-use BitWasp\Bitcoin\Network\NetworkFactory;
-use BitWasp\Bitcoin\Network\NetworkInterface;
-use Mdanter\Ecc\EccFactory;
-use Mdanter\Ecc\Primitives\GeneratorPoint;
+        <property name="clean.done" value="true"/>
+    </target>
 
-class Bitcoin
-{
-    /**
-     * @var NetworkInterface
-     */
-    private static $network;
+    <target name="prepare" unless="prepare.done" depends="clean" description="Prepare for build">
+        <property name="prepare.done" value="true"/>
+    </target>
 
-    /**
-     * @var EcAdapterInterface
-     */
-    private static $adapter;
+    <target name="-tools-installed">
+        <available file="${basedir}/tools" property="tools-installed" type="dir"/>
+    </target>
 
-    /**
-     * @var ParamsInterface
-     */
-    private static $params;
+    <target name="install-tools" unless="tools-installed" depends="-tools-installed" description="Install tools with Phive">
+        <exec executable="phive" taskname="phive">
+            <arg value="install"/>
+            <arg value="--trust-gpg-keys" />
+            <arg value="4AA394086372C20A,2A8299CE842DD38C" />
+        </exec>
+    </target>
 
-    /**
-     * @return Math
-     */
-    public static function getMath()
-    {
-        return new Math();
-    }
+    <target name="generate-autoloader" depends="install-tools" description="Generate autoloader using PHPAB">
+        <exec executable="${basedir}/tools/phpab" taskname="phpab">
+            <arg value="--output"/>
+            <arg path="${basedir}/src/autoload.php"/>
+            <arg path="${basedir}/src"/>
+        </exec>
+    </target>
 
-    /**
-     * Load the generator to be used throughout
-     */
-    public static function getGenerator()
-    {
-        return EccFactory::getSecgCurves(self::getMath())->generator256k1();
-    }
+    <target name="test" depends="generate-autoloader" description="Run tests">
+        <exec executable="${basedir}/tools/phpunit" taskname="phpunit"/>
+    </target>
+</project>
 
-    /**
-     * @param Math $math
-     * @param GeneratorPoint $generator
-     * @return EcAdapterInterface
-     */
-    public static function getEcAdapter(Math $math = null, GeneratorPoint $generator = null)
-    {
-        if (null === self::$adapter) {
-            self::$adapter = EcAdapterFactory::getAdapter(
-                ($math ?: self::getMath()),
-                ($generator ?: self::getGenerator())
-            );
-        }
-
-        return self::$adapter;
-    }
-
-    /**
-     * @param ParamsInterface $params
-     */
-    public static function setParams(ParamsInterface $params)
-    {
-        self::$params = $params;
-    }
-
-   

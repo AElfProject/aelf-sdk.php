@@ -1,65 +1,31 @@
-<?php
+phar-io/version
 
-declare(strict_types=1);
+Copyright (c) 2016-2017 Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de> and contributors
+All rights reserved.
 
-namespace BitWasp\Bitcoin\Block;
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
 
-use BitWasp\Bitcoin\Bloom\BloomFilter;
-use BitWasp\Bitcoin\Math\Math;
-use BitWasp\Bitcoin\Serializable;
-use BitWasp\Bitcoin\Serializer\Block\BlockHeaderSerializer;
-use BitWasp\Bitcoin\Serializer\Block\BlockSerializer;
-use BitWasp\Bitcoin\Serializer\Transaction\TransactionSerializer;
-use BitWasp\Bitcoin\Transaction\TransactionInterface;
-use BitWasp\Buffertools\BufferInterface;
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
 
-class Block extends Serializable implements BlockInterface
-{
-    /**
-     * @var Math
-     */
-    private $math;
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-    /**
-     * @var BlockHeaderInterface
-     */
-    private $header;
+* Neither the name of Arne Blankerts nor the names of contributors
+  may be used to endorse or promote products derived from this software
+  without specific prior written permission.
 
-    /**
-     * @var TransactionInterface[]
-     */
-    private $transactions;
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT  * NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
 
-    /**
-     * @var MerkleRoot
-     */
-    private $merkleRoot;
-
-    /**
-     * Block constructor.
-     * @param Math $math
-     * @param BlockHeaderInterface $header
-     * @param TransactionInterface[] ...$transactions
-     */
-    public function __construct(Math $math, BlockHeaderInterface $header, TransactionInterface ...$transactions)
-    {
-        $this->math = $math;
-        $this->header = $header;
-        $this->transactions = $transactions;
-    }
-
-    /**
-     * {@inheritdoc}
-     * @see \BitWasp\Bitcoin\Block\BlockInterface::getHeader()
-     */
-    public function getHeader(): BlockHeaderInterface
-    {
-        return $this->header;
-    }
-
-    /**
-     * {@inheritdoc}
-     * @see \BitWasp\Bitcoin\Block\BlockInterface::getMerkleRoot()
-     * @throws \BitWasp\Bitcoin\Exceptions\MerkleTreeEmpty
-     */
-    public function getMerkleRoot(): BufferInterface

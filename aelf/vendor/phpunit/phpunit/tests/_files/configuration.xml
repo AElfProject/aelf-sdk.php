@@ -1,131 +1,125 @@
-<?php
+<?xml version="1.0" encoding="utf-8" ?>
 
-declare(strict_types=1);
+<phpunit backupGlobals="true"
+         backupStaticAttributes="false"
+         bootstrap="/path/to/bootstrap.php"
+         cacheTokens="false"
+         columns="80"
+         colors="false"
+         stderr="false"
+         convertDeprecationsToExceptions="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         forceCoversAnnotation="false"
+         stopOnFailure="false"
+         stopOnWarning="false"
+         failOnWarning="false"
+         failOnRisky="false"
+         extensionsDirectory="/tmp"
+         printerClass="PHPUnit\TextUI\ResultPrinter"
+         testSuiteLoaderClass="PHPUnit\Runner\StandardTestSuiteLoader"
+         defaultTestSuite="My Test Suite"
+         beStrictAboutChangesToGlobalState="false"
+         beStrictAboutOutputDuringTests="false"
+         beStrictAboutResourceUsageDuringSmallTests="false"
+         beStrictAboutTestsThatDoNotTestAnything="false"
+         beStrictAboutTodoAnnotatedTests="false"
+         beStrictAboutCoversAnnotation="false"
+         enforceTimeLimit="false"
+         ignoreDeprecatedCodeUnitsFromCodeCoverage="false"
+         timeoutForSmallTests="1"
+         timeoutForMediumTests="10"
+         timeoutForLargeTests="60"
+         verbose="false">
+  <testsuites>
+    <testsuite name="My Test Suite">
+      <directory suffix="Test.php" phpVersion="5.3.0" phpVersionOperator=">=">/path/to/files</directory>
+      <file phpVersion="5.3.0" phpVersionOperator=">=">/path/to/MyTest.php</file>
+    </testsuite>
+  </testsuites>
 
-namespace BitWasp\Bitcoin\Script\ScriptInfo;
+  <groups>
+    <include>
+      <group>name</group>
+    </include>
+    <exclude>
+      <group>name</group>
+    </exclude>
+  </groups>
 
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\EcAdapter\EcSerializer;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Impl\PhpEcc\Key\PublicKey;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Serializer\Key\PublicKeySerializerInterface;
-use BitWasp\Bitcoin\Script\Opcodes;
-use BitWasp\Bitcoin\Script\Parser\Operation;
-use BitWasp\Bitcoin\Script\ScriptInterface;
-use BitWasp\Bitcoin\Script\ScriptType;
-use BitWasp\Buffertools\BufferInterface;
+  <testdoxGroups>
+    <include>
+      <group>name</group>
+    </include>
+    <exclude>
+      <group>name</group>
+    </exclude>
+  </testdoxGroups>
 
-class Multisig
-{
-    /**
-     * @var int
-     */
-    private $m;
+  <filter>
+    <whitelist addUncoveredFilesFromWhitelist="true"
+               processUncoveredFilesFromWhitelist="false">
+      <directory suffix=".php">/path/to/files</directory>
+      <file>/path/to/file</file>
+      <file>
+        /path/to/file
+      </file>
+      <exclude>
+        <directory suffix=".php">/path/to/files</directory>
+        <file>/path/to/file</file>
+      </exclude>
+    </whitelist>
+  </filter>
 
-    /**
-     * @var int
-     */
-    private $n;
+  <listeners>
+    <listener class="MyListener" file="/optional/path/to/MyListener.php">
+      <arguments>
+        <array>
+          <element key="0">
+            <string>Sebastian</string>
+          </element>
+        </array>
+        <integer>22</integer>
+        <string>April</string>
+        <double>19.78</double>
+        <null/>
+        <object class="stdClass"/>
+        <file>MyTestFile.php</file>
+        <directory>MyRelativePath</directory>
+      </arguments>
+    </listener>
+    <listener class="IncludePathListener" file="ConfigurationTest.php" />
+    <listener class="CompactArgumentsListener" file="/CompactArgumentsListener.php"><arguments><integer>42</integer></arguments></listener>
+  </listeners>
 
-    /**
-     * @var bool
-     */
-    private $verify = false;
+  <logging>
+    <log type="coverage-html" target="/tmp/report" lowUpperBound="50" highLowerBound="90"/>
+    <log type="coverage-clover" target="/tmp/clover.xml"/>
+    <log type="json" target="/tmp/logfile.json"/>
+    <log type="plain" target="/tmp/logfile.txt"/>
+    <log type="tap" target="/tmp/logfile.tap"/>
+    <log type="junit" target="/tmp/logfile.xml"/>
+    <log type="testdox-html" target="/tmp/testdox.html"/>
+    <log type="testdox-text" target="/tmp/testdox.txt"/>
+    <log type="testdox-xml" target="/tmp/testdox.xml"/>
+  </logging>
 
-    /**
-     * @var BufferInterface[]
-     */
-    private $keyBuffers = [];
+  <php>
+    <includePath>.</includePath>
+    <includePath>/path/to/lib</includePath>
+    <ini name="foo" value="bar"/>
+    <const name="FOO" value="false"/>
+    <const name="BAR" value="true"/>
+    <var name="foo" value="false"/>
+    <env name="foo" value="true"/>
+    <env name="bar" value="true" verbatim="true"/>
+    <post name="foo" value="bar"/>
+    <get name="foo" value="bar"/>
+    <cookie name="foo" value="bar"/>
+    <server name="foo" value="bar"/>
+    <files name="foo" value="bar"/>
+    <request name="foo" value="bar"/>
+  </php>
+</phpunit>
 
-    /**
-     * @var PublicKeySerializerInterface
-     */
-    private $pubKeySerializer;
-
-    /**
-     * Multisig constructor.
-     * @param int $requiredSigs
-     * @param BufferInterface[] $keys
-     * @param int $opcode
-     * @param bool $allowVerify
-     * @param PublicKeySerializerInterface|null $pubKeySerializer
-     */
-    public function __construct(int $requiredSigs, array $keys, int $opcode, $allowVerify = false, PublicKeySerializerInterface $pubKeySerializer = null)
-    {
-        if ($opcode === Opcodes::OP_CHECKMULTISIG) {
-            $verify = false;
-        } else if ($allowVerify && $opcode === Opcodes::OP_CHECKMULTISIGVERIFY) {
-            $verify = true;
-        } else {
-            throw new \InvalidArgumentException('Malformed multisig script');
-        }
-
-        foreach ($keys as $key) {
-            if (!PublicKey::isCompressedOrUncompressed($key)) {
-                throw new \RuntimeException("Malformed public key");
-            }
-        }
-
-        $keyCount = count($keys);
-        if ($requiredSigs < 0 || $requiredSigs > $keyCount) {
-            throw new \RuntimeException("Invalid number of required signatures");
-        }
-
-        if ($keyCount < 1 || $keyCount > 16) {
-            throw new \RuntimeException("Invalid number of public keys");
-        }
-
-        if (null === $pubKeySerializer) {
-            $pubKeySerializer = EcSerializer::getSerializer(PublicKeySerializerInterface::class, true, Bitcoin::getEcAdapter());
-        }
-
-        $this->verify = $verify;
-        $this->m = $requiredSigs;
-        $this->n = $keyCount;
-        $this->keyBuffers = $keys;
-        $this->pubKeySerializer = $pubKeySerializer;
-    }
-
-    /**
-     * @param Operation[] $decoded
-     * @param PublicKeySerializerInterface|null $pubKeySerializer
-     * @param bool $allowVerify
-     * @return Multisig
-     */
-    public static function fromDecodedScript(array $decoded, PublicKeySerializerInterface $pubKeySerializer = null, $allowVerify = false)
-    {
-        if (count($decoded) < 4) {
-            throw new \InvalidArgumentException('Malformed multisig script');
-        }
-
-        $mCode = $decoded[0]->getOp();
-        $nCode = $decoded[count($decoded) - 2]->getOp();
-        $opCode = end($decoded)->getOp();
-
-        $requiredSigs = \BitWasp\Bitcoin\Script\decodeOpN($mCode);
-        $publicKeyBuffers = [];
-        foreach (array_slice($decoded, 1, -2) as $key) {
-            /** @var \BitWasp\Bitcoin\Script\Parser\Operation $key */
-            if (!$key->isPush()) {
-                throw new \RuntimeException('Malformed multisig script');
-            }
-
-            $buffer = $key->getData();
-            $publicKeyBuffers[] = $buffer;
-        }
-
-        $keyCount = \BitWasp\Bitcoin\Script\decodeOpN($nCode);
-        if ($keyCount !== count($publicKeyBuffers)) {
-            throw new \LogicException('No public keys found in script');
-        }
-
-        return new Multisig($requiredSigs, $publicKeyBuffers, $opCode, $allowVerify, $pubKeySerializer);
-    }
-
-    /**
-     * @param ScriptInterface $script
-     * @param PublicKeySerializerInterface|null $pubKeySerializer
-     * @param bool $allowVerify
-     * @return Multisig
-     */
-    public static function fromScript(ScriptInterface $script, PublicKeySerializerInterface $pubKeySerializer =

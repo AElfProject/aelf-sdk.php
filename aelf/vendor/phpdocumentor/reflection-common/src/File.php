@@ -1,33 +1,36 @@
 <?php
+declare(strict_types=1);
 
-namespace Elliptic\Curve;
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @copyright 2010-2018 Mike van Riel<mike@phpdoc.org>
+ * @license   http://www.opensource.org/licenses/mit-license.php MIT
+ * @link      http://phpdoc.org
+ */
 
-use Elliptic\Curve\MontCurve\Point;
-use Elliptic\Utils;
-use BN\BN;
+namespace phpDocumentor\Reflection;
 
-class MontCurve extends BaseCurve
+/**
+ * Interface for files processed by the ProjectFactory
+ */
+interface File
 {
-    public $a;
-    public $b;
-    public $i4;
-    public $a24;
+    /**
+     * Returns the content of the file as a string.
+     */
+    public function getContents(): string;
 
-    function __construct($conf)
-    {
-        parent::__construct("mont", $conf);
+    /**
+     * Returns md5 hash of the file.
+     */
+    public function md5(): string;
 
-        $this->a = (new BN($conf["a"], 16))->toRed($this->red);
-        $this->b = (new BN($conf["b"], 16))->toRed($this->red);
-        $this->i4 = (new BN(4))->toRed($this->red)->redInvm();
-        $this->a24 = $this->i4->redMul($this->a->redAdd($this->two));
-    }
-
-    public function validate($point)
-    {
-        $x = $point->normalize()->x;
-        $x2 = $x->redSqr();
-        $rhs = $x2->redMul($x)->redAdd($x2->redMul($this->a))->redAdd($x);
-        $y = $rhs->redSqr();
-
-        return $y->r
+    /**
+     * Returns an relative path to the file.
+     */
+    public function path(): string;
+}

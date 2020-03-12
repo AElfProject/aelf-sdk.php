@@ -1,1 +1,148 @@
-9f5c80009ee9f097678488ef578d0a","compressedPubKey":"038d844d05f34cab273d7c56c2a3d6c554b071babffa30df19301d22355d5cc4a8","compressedAddr":"1PmteQ28y3wJfqjM11eL3D7AVdXcTiojHC","unCompressedPubKey":"048d844d05f34cab273d7c56c2a3d6c554b071babffa30df19301d22355d5cc4a863ff10369f9fbf716911297579bca95da9fa94bf978df7c26e7f75a338614a39","unCompressedAddr":"17tequbyh9mUfkaNEMRs9SZRjRyH5RjmBT"},{"privKey":"e44bff8c645d62e37e39bd693d58957847ce2c41ef1e860b9d64e25d0dbd32ba","compressedPubKey":"031138ff6be50dfcf8e8f4059f91865f54a023063ec9a1381c3b073ca3a24c02b9","compressedAddr":"1EoWit9bUoybLrCVeVRVP2NvzQ59KcR9zW","unCompressedPubKey":"041138ff6be50dfcf8e8f4059f91865f54a023063ec9a1381c3b073ca3a24c02b91fe66663a6e56f479b3d379f765648978b33a6ee2801268db6cf912a5e95387f","unCompressedAddr":"1HjdsdUhBD5PyLF6MMsiEnC8U84edZRfVZ"},{"privKey":"9187c8277ea4efbe6fe7b9d3c3ecd668ca3befa93220746849ae70e0105524ce","compressedPubKey":"024a7d2cf864f0c465fe736b3dd1ebe951d80900cd3587c5866833de84cf7728fa","compressedAddr":"1BkQJoNFPYck6a6yp693pPKcwjzXmD4DCN","unCompressedPubKey":"044a7d2cf864f0c465fe736b3dd1ebe951d80900cd3587c5866833de84cf7728fa31b2bd76092ad601a48ffa4dcb62e4b81c3f1754686b02d2d19caf16a3517eee","unCompressedAddr":"1HiKytCLNFeNzSpNvFhqcgCbqqHHPWtC4j"},{"privKey":"81e136d45f18c03897aaf39366be6f604393cd5263a3356691995098d915d46b","compressedPubKey":"03885281c638db7c7e0e613a6734d2db1c538101b49bdc5b2228572da3f782d4a9","compressedAddr":"1AjwuQMbgkRASAWvLgTcRD4Ycwmnk1Cis1","unCompressedPubKey":"04885281c638db7c7e0e613a6734d2db1c538101b49bdc5b2228572da3f782d4a96ff8a73908e2b61e0f76b8debf7d5799986c9369abd3468fc9d44b75d458e26f","unCompressedAddr":"17hZBAXc3hWJjsWTBcZcLGHsLKZg3DBLBd"},{"privKey":"97fe45d3875d7f1fcc2c79501f26f33e0b2d31e2ea8f82ed54a00a0fa7c8ee5b","compressedPubKey":"02cc0734a91df5720f1fd79c74954390b9dfc4834ef156a05ad9d2441e0664f2b1","compressedAddr":"13mPwvJY8vvMdB9RDh9Z7eMvVcYrE5SGBi","unCompressedPubKey":"04cc0734a91df5720f1fd79c74954390b9dfc4834ef156a05ad9d2441e0664f2b1f4c8352a0ee4ea60c8a3e3629659b53158b13917ce6920a99f785d78f22e05ce","unCompressedAddr":"1Q1qiLNRo9xxahd6zHvrTwaBL7UJVmjL18"},{"privKey":"a545e817d8951d5c2e96be41fb7ed00d938191dc8f2c2136cf3e5dfbe04f025e","compressedPubKey":"02455602db3f1b06983fd9606e127e0d6c12073c0d72ae63bcc9e7bb69afbb1f97","compressedAddr":"1CvNP3moGJKGWEY5UvDTeg6myt9HzssXRn","unCompressedPubKey":"04455602db3f1b06983fd9606e127e0d6c12073c0d72ae63bcc9e7bb69afbb1f97b49f71749b5019e535ede3f0a528718dab2456a3f65ede8e2296097977caceb0","unCompressedAddr":"1Lu2qfKMUJqLzd7T53cr4uqwKNygZ9hCtS"},{"privKey":"fb590472919c9906625f9ca7ac1e8de79b8b6e04b27b684c8b732f37b476b010","compressedPubKey":"0331d91951a7f0728f7a8038ae86e341e158de146657176d37ef4370a6e1a1b199","compressedAddr":"1FiRdtUZiBKP1ExZXEQ2MUEQtYcieGvVxS","unCompressedPubKey":"0431d91951a7f0728f7a8038ae86e341e158de146657176d37ef4370a6e1a1b19988f46aac1874711b33806be901711064da6daa05886956045afa39c86981511f","unCompressedAddr":"1JGP8AANPEfD5f7TNuRztH5CE8pk3uMN2w"},{"privKey":"083748dc519b47f67e54c42fcd801fb721a1b0943cbeeb9ff510610e47fcfecc","compressedPubKey":"03fe6a52e9fcb37cd401f71812a1097e929589bda6e5c06fc9e446fdbee55e7508","compressedAddr":"1DwmbRvyj7uzaNbBSPR4UvDLjoDB6fNUi3","unCompressedPubKey":"04fe6a52e9fcb37cd401f71812a1097e929589bda6e5c06fc9e446fdbee55e7508b97c78530b3795129689fafba96893cd6afaaed2175a82b575b5a766e6d2fbc9","unCompressedAddr":"1Q7K2kGXeepDNfJMcx4RvL8NUhkXvDjFF5"},{"privKey":"3760cac064413d956dfed17bbb3733a2caa09fd20069ba9cfe865a5bd2aaa50d","compressedPubKey":"031a50c7f1929d7fb2475c34f5ae2b7b01eef88cdd1df822f79f21ebd2540be6bb","compressedAddr":"1NudURJcTBFgHtQf1upaVbrbwwPccVDKEN","unCompressedPubKey":"041a50c7f1929d7fb2475c34f5ae2b7b01eef88cdd1df822f79f21ebd2540be6bb27c720fa818aa76155b0d894d2940119da13e027cde89ad2fe95a8b9b528d07f","unCompressedAddr":"1BkbcRjDjKmgMsc118CepwEmV6b796czgP"},{"privKey":"584bbc638e537f1d0d61d460cdbff01679567dbd3c1c364998de77a4ab60444f","compressedPubKey":"03f03dbb2e688cbc09c53002ce4ae73664cf694a770270d682f77aa3e87b60c6f1","compressedAddr":"1DEoB2hZzmU2i6YLRJXzkTfm3DvEFYA4wV","unCompressedPubKey":"04f03dbb2e688cbc09c53002ce4ae73664cf694a770270d682f77aa3e87b60c6f11b7ae0ec880d27531a67b1d0db092a88e0d8a0803495d9faad9b1b530f688cad","unCompressedAddr":"13z24juNx6ma4i28AUWTXZbgmxEyqt9uTS"},{"privKey":"7cb517c00c0eb282eb31171dfa1179090fd76190298bfc16f540318960abf35e","compressedPubKey":"039c7bb69cb65ee6fd66e1fafb5698dbfc1929b5c334c6c7a5c3e3878df5a447f5","compressedAddr":"178cWkyAhnA3Fd4Re1YbXtEaM9dHbzkR9Y","unCompressedPubKey":"049c7bb69cb65ee6fd66e1fafb5698dbfc1929b5c334c6c7a5c3e3878df5a447f57a4369bd267946ca5cb4ad739ed46a735abe22b91dce84e7b2ae142436fd6fbf","unCompressedAddr":"15oWgMy1QMTePnrsJhpWWzUEg79w25uqWy"},{"privKey":"b18e59ba4cf39ed92b69e28373b823bedae70104498ae0cc737a7a63e77c9d36","compressedPubKey":"02cbcc4adb5d7885a7c31d3cfc9e5920777bfe6ba466135b3878693111ef7095c5","compressedAddr":"1CMkLD1na1umjxgsJiLHScVrzEWaA3DaMX","unCompressedPubKey":"04cbcc4adb5d7885a7c31d3cfc9e5920777bfe6ba466135b3
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PHPUnit\Framework\Constraint;
+
+use PHPUnit\Framework\TestCase;
+
+class CountTest extends TestCase
+{
+    public function testCount()
+    {
+        $countConstraint = new Count(3);
+        $this->assertTrue($countConstraint->evaluate([1, 2, 3], '', true));
+
+        $countConstraint = new Count(0);
+        $this->assertTrue($countConstraint->evaluate([], '', true));
+
+        $countConstraint = new Count(2);
+        $it              = new \TestIterator([1, 2]);
+        $ia              = new \TestIteratorAggregate($it);
+        $ia2             = new \TestIteratorAggregate2($ia);
+
+        $this->assertTrue($countConstraint->evaluate($it, '', true));
+        $this->assertTrue($countConstraint->evaluate($ia, '', true));
+        $this->assertTrue($countConstraint->evaluate($ia2, '', true));
+    }
+
+    public function testCountDoesNotChangeIteratorKey()
+    {
+        $countConstraint = new Count(2);
+
+        // test with 1st implementation of Iterator
+        $it = new \TestIterator([1, 2]);
+
+        $countConstraint->evaluate($it, '', true);
+        $this->assertEquals(1, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($it, '', true);
+        $this->assertEquals(2, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($it, '', true);
+        $this->assertFalse($it->valid());
+
+        // test with 2nd implementation of Iterator
+        $it = new \TestIterator2([1, 2]);
+
+        $countConstraint = new Count(2);
+        $countConstraint->evaluate($it, '', true);
+        $this->assertEquals(1, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($it, '', true);
+        $this->assertEquals(2, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($it, '', true);
+        $this->assertFalse($it->valid());
+
+        // test with IteratorAggregate
+        $it = new \TestIterator([1, 2]);
+        $ia = new \TestIteratorAggregate($it);
+
+        $countConstraint = new Count(2);
+        $countConstraint->evaluate($ia, '', true);
+        $this->assertEquals(1, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($ia, '', true);
+        $this->assertEquals(2, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($ia, '', true);
+        $this->assertFalse($it->valid());
+
+        // test with nested IteratorAggregate
+        $it  = new \TestIterator([1, 2]);
+        $ia  = new \TestIteratorAggregate($it);
+        $ia2 = new \TestIteratorAggregate2($ia);
+
+        $countConstraint = new Count(2);
+        $countConstraint->evaluate($ia2, '', true);
+        $this->assertEquals(1, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($ia2, '', true);
+        $this->assertEquals(2, $it->current());
+
+        $it->next();
+        $countConstraint->evaluate($ia2, '', true);
+        $this->assertFalse($it->valid());
+    }
+
+    public function testCountGeneratorsDoNotRewind()
+    {
+        $generatorMaker = new \TestGeneratorMaker;
+
+        $countConstraint = new Count(3);
+
+        $generator = $generatorMaker->create([1, 2, 3]);
+        $this->assertEquals(1, $generator->current());
+        $countConstraint->evaluate($generator, '', true);
+        $this->assertEquals(null, $generator->current());
+
+        $countConstraint = new Count(2);
+
+        $generator = $generatorMaker->create([1, 2, 3]);
+        $this->assertEquals(1, $generator->current());
+        $generator->next();
+        $this->assertEquals(2, $generator->current());
+        $countConstraint->evaluate($generator, '', true);
+        $this->assertEquals(null, $generator->current());
+
+        $countConstraint = new Count(1);
+
+        $generator = $generatorMaker->create([1, 2, 3]);
+        $this->assertEquals(1, $generator->current());
+        $generator->next();
+        $this->assertEquals(2, $generator->current());
+        $generator->next();
+        $this->assertEquals(3, $generator->current());
+        $countConstraint->evaluate($generator, '', true);
+        $this->assertEquals(null, $generator->current());
+    }
+
+    public function testCountTraversable()
+    {
+        $countConstraint = new Count(5);
+
+        // DatePeriod is used as an object that is Traversable but does not
+        // implement Iterator or IteratorAggregate. The following ISO 8601
+        // recurring time interval will yield five total DateTime objects.
+        $datePeriod = new \DatePeriod('R4/2017-05-01T00:00:00Z/P1D');
+
+        $this->assertInstanceOf(\Traversable::class, $datePeriod);
+        $this->assertNotInstanceOf(\Iterator::class, $datePeriod);
+        $this->assertNotInstanceOf(\IteratorAggregate::class, $datePeriod);
+        $this->assertTrue($countConstraint->evaluate($datePeriod, '', true));
+    }
+}

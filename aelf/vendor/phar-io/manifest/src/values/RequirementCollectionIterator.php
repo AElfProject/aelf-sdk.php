@@ -1,56 +1,56 @@
 <?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-namespace BitWasp\Buffertools\Types;
-
-use BitWasp\Buffertools\Parser;
-
-class Vector extends AbstractType
-{
+class RequirementCollectionIterator implements \Iterator {
     /**
-     * @var VarInt
+     * @var Requirement[]
      */
-    private $varint;
-
-    /**
-     * @var callable
-     */
-    private $readFxn;
+    private $requirements = [];
 
     /**
-     * @param VarInt   $varInt
-     * @param callable $readFunction
+     * @var int
      */
-    public function __construct(VarInt $varInt, callable $readFunction)
-    {
-        $this->varint = $varInt;
-        $this->readFxn = $readFunction;
-        parent::__construct($varInt->getByteOrder());
+    private $position;
+
+    public function __construct(RequirementCollection $requirements) {
+        $this->requirements = $requirements->getRequirements();
+    }
+
+    public function rewind() {
+        $this->position = 0;
     }
 
     /**
-     * {@inheritdoc}
-     * @see \BitWasp\Buffertools\Types\TypeInterface::write()
+     * @return bool
      */
-    public function write($items): string
-    {
-        if (false === is_array($items)) {
-            throw new \InvalidArgumentException('Vector::write() must be supplied with an array');
-        }
-
-        $parser = new Parser();
-        return $parser
-            ->writeArray($items)
-            ->getBuffer()
-            ->getBinary();
+    public function valid() {
+        return $this->position < count($this->requirements);
     }
 
     /**
-     * {@inheritdoc}
-     * @see \BitWasp\Buffertools\Types\TypeInterface::read()
-     * @param Parser $parser
-     * @return array
-     * @throws \Exception
+     * @return int
      */
-  
+    public function key() {
+        return $this->position;
+    }
+
+    /**
+     * @return Requirement
+     */
+    public function current() {
+        return $this->requirements[$this->position];
+    }
+
+    public function next() {
+        $this->position++;
+    }
+}

@@ -1,27 +1,28 @@
 <?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Key\KeyToScript\Factory;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
-use BitWasp\Bitcoin\Key\KeyToScript\ScriptAndSignData;
-use BitWasp\Bitcoin\Script\ScriptFactory;
-use BitWasp\Bitcoin\Script\ScriptType;
-use BitWasp\Bitcoin\Transaction\Factory\SignData;
-
-class P2wpkhScriptDataFactory extends KeyToScriptDataFactory
+/**
+ * Invocation matcher which checks if a method has been invoked zero or more
+ * times. This matcher will always match.
+ */
+class PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount extends PHPUnit_Framework_MockObject_Matcher_InvokedRecorder
 {
     /**
      * @return string
      */
-    public function getScriptType(): string
+    public function toString()
     {
-        return ScriptType::P2WKH;
+        return 'invoked zero or more times';
     }
 
-    /**
-     * @param PublicKeyInterface ...$keys
-     * @return ScriptAndSignData
-     */
-    protected function convertKeyToScriptData(PublicKeyIn
+    public function verify()
+    {
+    }
+}

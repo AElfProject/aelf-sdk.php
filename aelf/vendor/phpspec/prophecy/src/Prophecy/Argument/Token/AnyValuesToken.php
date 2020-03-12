@@ -1,20 +1,52 @@
-ance with the specified query string arguments.
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Argument\Token;
+
+/**
+ * Any values token.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class AnyValuesToken implements TokenInterface
+{
+    /**
+     * Always scores 2 for any argument.
      *
-     * These values SHOULD remain immutable over the course of the incoming
-     * request. They MAY be injected during instantiation, such as from PHP's
-     * $_GET superglobal, or MAY be derived from some other value such as the
-     * URI. In cases where the arguments are parsed from the URI, the data
-     * MUST be compatible with what PHP's parse_str() would return for
-     * purposes of how duplicate query parameters are handled, and how nested
-     * sets are handled.
+     * @param $argument
      *
-     * Setting query string arguments MUST NOT change the URI stored by the
-     * request, nor the values in the server params.
+     * @return int
+     */
+    public function scoreArgument($argument)
+    {
+        return 2;
+    }
+
+    /**
+     * Returns true to stop wildcard from processing other tokens.
      *
-     * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return an instance that has the
-     * updated query string arguments.
+     * @return bool
+     */
+    public function isLast()
+    {
+        return true;
+    }
+
+    /**
+     * Returns string representation for token.
      *
-     * @param array $query Array of query string arguments, typically from
-     *     $_GET.
-     * @return static
+     * @return string
+     */
+    public function __toString()
+    {
+        return '* [, ...]';
+    }
+}

@@ -1,19 +1,53 @@
-"use strict";
+<?php
+use PHPUnit\Framework\TestCase;
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+class TemplateMethodsTest extends TestCase
+{
+    public static function setUpBeforeClass()
+    {
+        print __METHOD__ . "\n";
+    }
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+    protected function setUp()
+    {
+        print __METHOD__ . "\n";
+    }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+    protected function assertPreConditions()
+    {
+        print __METHOD__ . "\n";
+    }
 
-var flexSpec = require('./flex-spec');
+    public function testOne()
+    {
+        print __METHOD__ . "\n";
+        $this->assertTrue(true);
+    }
 
-var Declaration = require('../declaration');
+    public function testTwo()
+    {
+        print __METHOD__ . "\n";
+        $this->assertTrue(false);
+    }
 
-var AlignSelf =
-/*#__PURE__*/
-function (_Declaration) {
-  _inheritsLoose(AlignSelf, _Declaration);
+    protected function assertPostConditions()
+    {
+        print __METHOD__ . "\n";
+    }
 
-  function AlignSelf() {
-    r
+    protected function tearDown()
+    {
+        print __METHOD__ . "\n";
+    }
+
+    public static function tearDownAfterClass()
+    {
+        print __METHOD__ . "\n";
+    }
+
+    protected function onNotSuccessfulTest(Exception $t)
+    {
+        print __METHOD__ . "\n";
+        throw $t;
+    }
+}

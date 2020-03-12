@@ -1,44 +1,87 @@
-otected $leading_comments = '';
-    private $has_leading_comments = false;
-    /**
-     * Generated from protobuf field <code>optional string trailing_comments = 4;</code>
-     */
-    protected $trailing_comments = '';
-    private $has_trailing_comments = false;
-    /**
-     * Generated from protobuf field <code>repeated string leading_detached_comments = 6;</code>
-     */
-    private $leading_detached_comments;
-    private $has_leading_detached_comments = false;
+<?php declare(strict_types = 1);
+namespace TheSeer\Tokenizer;
+
+class Tokenizer {
 
     /**
-     * Constructor.
+     * Token Map for "non-tokens"
      *
-     * @param array $data {
-     *     Optional. Data for populating the Message object.
-     *
-     *     @type int[]|\Google\Protobuf\Internal\RepeatedField $path
-     *           Identifies which part of the FileDescriptorProto was defined at this
-     *           location.
-     *           Each element is a field number or an index.  They form a path from
-     *           the root FileDescriptorProto to the place where the definition.  For
-     *           example, this path:
-     *             [ 4, 3, 2, 7, 1 ]
-     *           refers to:
-     *             file.message_type(3)  // 4, 3
-     *                 .field(7)         // 2, 7
-     *                 .name()           // 1
-     *           This is because FileDescriptorProto.message_type has field number 4:
-     *             repeated DescriptorProto message_type = 4;
-     *           and DescriptorProto.field has field number 2:
-     *             repeated FieldDescriptorProto field = 2;
-     *           and FieldDescriptorProto.name has field number 1:
-     *             optional string name = 1;
-     *           Thus, the above path gives the location of a field name.  If we removed
-     *           the last element:
-     *             [ 4, 3, 2, 7 ]
-     *           this path refers to the whole field declaration (from the beginning
-     *           of the label to the terminating semicolon).
-     *     @type int[]|\Google\Protobuf\Internal\RepeatedField $span
-     *           Always has exactly three or four elements: start line, start column,
-     *           end line (optional, otherwise assumed same
+     * @var array
+     */
+    private $map = [
+        '(' => 'T_OPEN_BRACKET',
+        ')' => 'T_CLOSE_BRACKET',
+        '[' => 'T_OPEN_SQUARE',
+        ']' => 'T_CLOSE_SQUARE',
+        '{' => 'T_OPEN_CURLY',
+        '}' => 'T_CLOSE_CURLY',
+        ';' => 'T_SEMICOLON',
+        '.' => 'T_DOT',
+        ',' => 'T_COMMA',
+        '=' => 'T_EQUAL',
+        '<' => 'T_LT',
+        '>' => 'T_GT',
+        '+' => 'T_PLUS',
+        '-' => 'T_MINUS',
+        '*' => 'T_MULT',
+        '/' => 'T_DIV',
+        '?' => 'T_QUESTION_MARK',
+        '!' => 'T_EXCLAMATION_MARK',
+        ':' => 'T_COLON',
+        '"' => 'T_DOUBLE_QUOTES',
+        '@' => 'T_AT',
+        '&' => 'T_AMPERSAND',
+        '%' => 'T_PERCENT',
+        '|' => 'T_PIPE',
+        '$' => 'T_DOLLAR',
+        '^' => 'T_CARET',
+        '~' => 'T_TILDE',
+        '`' => 'T_BACKTICK'
+    ];
+
+    public function parse(string $source): TokenCollection {
+        $result = new TokenCollection();
+
+        if ($source === '') {
+            return $result;
+        }
+
+        $tokens = token_get_all($source);
+
+        $lastToken = new Token(
+            $tokens[0][2],
+            'Placeholder',
+            ''
+        );
+
+        foreach ($tokens as $pos => $tok) {
+            if (is_string($tok)) {
+                $token = new Token(
+                    $lastToken->getLine(),
+                    $this->map[$tok],
+                    $tok
+                );
+                $result->addToken($token);
+                $lastToken = $token;
+                continue;
+            }
+
+            $line   = $tok[2];
+            $values = preg_split('/\R+/Uu', $tok[1]);
+
+            foreach ($values as $v) {
+                $token = new Token(
+                    $line,
+                    token_name($tok[0]),
+                    $v
+                );
+                $result->addToken($token);
+                $line++;
+                $lastToken = $token;
+            }
+        }
+
+        return $result;
+    }
+
+}

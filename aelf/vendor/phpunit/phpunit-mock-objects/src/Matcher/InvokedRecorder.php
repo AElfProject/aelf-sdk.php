@@ -1,47 +1,65 @@
-if ($this->current === $this->buffer_end) {
-            // Make sure that it failed due to EOF, not because we hit
-            // total_bytes_limit, which, unlike normal limits, is not a valid
-            // place to end a message.
-            $current_position = $this->total_bytes_read -
-                $this->buffer_size_after_limit;
-            if ($current_position >= $this->total_bytes_limit) {
-                // Hit total_bytes_limit_.  But if we also hit the normal limit,
-                // we're still OK.
-                $this->legitimate_message_end =
-                    ($this->current_limit === $this->total_bytes_limit);
-            } else {
-                $this->legitimate_message_end = true;
-            }
-            return 0;
-        }
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-        $result = 0;
-        // The largest tag is 2^29 - 1, which can be represented by int32.
-        $success = $this->readVarint32($result);
-        if ($success) {
-            return $result;
-        } else {
-            return 0;
-        }
+/**
+ * Records invocations and provides convenience methods for checking them later
+ * on.
+ * This abstract class can be implemented by matchers which needs to check the
+ * number of times an invocation has occurred.
+ */
+abstract class PHPUnit_Framework_MockObject_Matcher_InvokedRecorder implements PHPUnit_Framework_MockObject_Matcher_Invocation
+{
+    /**
+     * @var PHPUnit_Framework_MockObject_Invocation[]
+     */
+    protected $invocations = [];
+
+    /**
+     * @return int
+     */
+    public function getInvocationCount()
+    {
+        return count($this->invocations);
     }
 
-    public function readRaw($size, &$buffer)
+    /**
+     * @return PHPUnit_Framework_MockObject_Invocation[]
+     */
+    public function getInvocations()
     {
-        $current_buffer_size = 0;
-        if ($this->bufferSize() < $size) {
-            return false;
-        }
+        return $this->invocations;
+    }
 
-        if ($size === 0) {
-          $buffer = "";
-        } else {
-          $buffer = substr($this->buffer, $this->current, $size);
-          $this->advance($size);
-        }
+    /**
+     * @return bool
+     */
+    public function hasBeenInvoked()
+    {
+        return count($this->invocations) > 0;
+    }
 
+    /**
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation
+     */
+    public function invoked(PHPUnit_Framework_MockObject_Invocation $invocation)
+    {
+        $this->invocations[] = $invocation;
+    }
+
+    /**
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation
+     *
+     * @return bool
+     */
+    public function matches(PHPUnit_Framework_MockObject_Invocation $invocation)
+    {
         return true;
     }
-
-    /* Places a limit on the number of bytes that the stream may read, starting
-     * from the current position.  Once the stream hits this limit, it will act
-     * like the end of the i
+}

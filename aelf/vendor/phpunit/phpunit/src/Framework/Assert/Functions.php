@@ -1,1178 +1,1843 @@
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\Constraint\Constraint;
+use PHPUnit\Framework\Constraint\Count;
+use PHPUnit\Framework\Constraint\LogicalAnd;
+use PHPUnit\Framework\Constraint\ArrayHasKey;
+use PHPUnit\Framework\Constraint\Attribute;
+use PHPUnit\Framework\Constraint\ClassHasAttribute;
+use PHPUnit\Framework\Constraint\ClassHasStaticAttribute;
+use PHPUnit\Framework\Constraint\DirectoryExists;
+use PHPUnit\Framework\Constraint\FileExists;
+use PHPUnit\Framework\Constraint\GreaterThan;
+use PHPUnit\Framework\Constraint\IsAnything;
+use PHPUnit\Framework\Constraint\IsEmpty;
+use PHPUnit\Framework\Constraint\IsEqual;
+use PHPUnit\Framework\Constraint\IsFalse;
+use PHPUnit\Framework\Constraint\IsIdentical;
+use PHPUnit\Framework\Constraint\IsInfinite;
+use PHPUnit\Framework\Constraint\IsInstanceOf;
+use PHPUnit\Framework\Constraint\IsJson;
+use PHPUnit\Framework\Constraint\IsNan;
+use PHPUnit\Framework\Constraint\IsNull;
+use PHPUnit\Framework\Constraint\IsReadable;
+use PHPUnit\Framework\Constraint\IsTrue;
+use PHPUnit\Framework\Constraint\IsType;
+use PHPUnit\Framework\Constraint\IsWritable;
+use PHPUnit\Framework\Constraint\LessThan;
+use PHPUnit\Framework\Constraint\LogicalNot;
+use PHPUnit\Framework\Constraint\ObjectHasAttribute;
+use PHPUnit\Framework\Constraint\LogicalOr;
+use PHPUnit\Framework\Constraint\LogicalXor;
+use PHPUnit\Framework\Constraint\TraversableContainsOnly;
+use PHPUnit\Framework\Constraint\TraversableContains;
+use PHPUnit\Framework\Constraint\StringStartsWith;
+use PHPUnit\Framework\Constraint\StringMatchesFormatDescription;
+use PHPUnit\Framework\Constraint\StringEndsWith;
+use PHPUnit\Framework\Constraint\StringContains;
+use PHPUnit\Framework\Constraint\RegularExpression;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Returns a matcher that matches when the method is executed
+ * zero or more times.
+ *
+ * @return PHPUnit_Framework_MockObject_Matcher_AnyInvokedCount
+ */
+function any()
 {
-    "_readme": [
-        "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
-        "This file is @generated automatically"
-    ],
-    "content-hash": "43014a0c3c9637e8b3924876bba983d8",
-    "packages": [],
-    "packages-dev": [
-        {
-            "name": "dflydev/markdown",
-            "version": "v1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/dflydev/dflydev-markdown.git",
-                "reference": "76501a808522dbe40a5a71d272bd08d54cbae03d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/dflydev/dflydev-markdown/zipball/76501a808522dbe40a5a71d272bd08d54cbae03d",
-                "reference": "76501a808522dbe40a5a71d272bd08d54cbae03d",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "dflydev\\markdown": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "New BSD License"
-            ],
-            "authors": [
-                {
-                    "name": "Dragonfly Development Inc.",
-                    "email": "info@dflydev.com",
-                    "homepage": "http://dflydev.com"
-                },
-                {
-                    "name": "Beau Simensen",
-                    "email": "beau@dflydev.com",
-                    "homepage": "http://beausimensen.com"
-                },
-                {
-                    "name": "Michel Fortin",
-                    "homepage": "http://michelf.com"
-                },
-                {
-                    "name": "John Gruber",
-                    "homepage": "http://daringfireball.net"
-                }
-            ],
-            "description": "PHP Markdown & Extra",
-            "homepage": "http://github.com/dflydev/dflydev-markdown",
-            "keywords": [
-                "markdown"
-            ],
-            "abandoned": "michelf/php-markdown",
-            "time": "2012-01-02T23:11:32+00:00"
-        },
-        {
-            "name": "doctrine/instantiator",
-            "version": "1.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/doctrine/instantiator.git",
-                "reference": "f976e5de371104877ebc89bd8fecb0019ed9c119"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/instantiator/zipball/f976e5de371104877ebc89bd8fecb0019ed9c119",
-                "reference": "f976e5de371104877ebc89bd8fecb0019ed9c119",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3,<8.0-DEV"
-            },
-            "require-dev": {
-                "athletic/athletic": "~0.1.8",
-                "ext-pdo": "*",
-                "ext-phar": "*",
-                "phpunit/phpunit": "~4.0",
-                "squizlabs/php_codesniffer": "2.0.*@ALPHA"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Doctrine\\Instantiator\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Marco Pivetta",
-                    "email": "ocramius@gmail.com",
-                    "homepage": "http://ocramius.github.com/"
-                }
-            ],
-            "description": "A small, lightweight utility to instantiate objects in PHP without invoking their constructors",
-            "homepage": "https://github.com/doctrine/instantiator",
-            "keywords": [
-                "constructor",
-                "instantiate"
-            ],
-            "time": "2014-10-13T12:58:55+00:00"
-        },
-        {
-            "name": "myclabs/deep-copy",
-            "version": "1.3.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/myclabs/DeepCopy.git",
-                "reference": "96fbdc07635989c35c5a1912379f4c4b2ab15fd5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/96fbdc07635989c35c5a1912379f4c4b2ab15fd5",
-                "reference": "96fbdc07635989c35c5a1912379f4c4b2ab15fd5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "doctrine/collections": "1.*",
-                "phpunit/phpunit": "~4.1"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "DeepCopy\\": "src/DeepCopy/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Create deep copies (clones) of your objects",
-            "homepage": "https://github.com/myclabs/DeepCopy",
-            "keywords": [
-                "clone",
-                "copy",
-                "duplicate",
-                "object",
-                "object graph"
-            ],
-            "time": "2015-03-21T22:40:23+00:00"
-        },
-        {
-            "name": "phpdocumentor/reflection-docblock",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "66ae84e9d7c8ea85c979cb65977bd8e608baf0c5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/66ae84e9d7c8ea85c979cb65977bd8e608baf0c5",
-                "reference": "66ae84e9d7c8ea85c979cb65977bd8e608baf0c5",
-                "shasum": ""
-            },
-            "require": {
-                "dflydev/markdown": "1.0.*",
-                "php": ">=5.3.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "3.7.*@stable"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "phpDocumentor": [
-                        "src/"
-                    ]
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mike van Riel",
-                    "email": "mike.vanriel@naenius.com"
-                }
-            ],
-            "time": "2013-08-07T11:04:22+00:00"
-        },
-        {
-            "name": "phpspec/prophecy",
-            "version": "v1.6.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "6c52c2722f8460122f96f86346600e1077ce22cb"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/6c52c2722f8460122f96f86346600e1077ce22cb",
-                "reference": "6c52c2722f8460122f96f86346600e1077ce22cb",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/instantiator": "^1.0.2",
-                "php": "^5.3|^7.0",
-                "phpdocumentor/reflection-docblock": "^2.0|^3.0.2",
-                "sebastian/comparator": "^1.1",
-                "sebastian/recursion-context": "^1.0|^2.0"
-            },
-            "require-dev": {
-                "phpspec/phpspec": "^2.0",
-                "phpunit/phpunit": "^4.8 || ^5.6.5"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.6.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Prophecy\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Konstantin Kudryashov",
-                    "email": "ever.zet@gmail.com",
-                    "homepage": "http://everzet.com"
-                },
-                {
-                    "name": "Marcello Duarte",
-                    "email": "marcello.duarte@gmail.com"
-                }
-            ],
-            "description": "Highly opinionated mocking framework for PHP 5.3+",
-            "homepage": "https://github.com/phpspec/prophecy",
-            "keywords": [
-                "Double",
-                "Dummy",
-                "fake",
-                "mock",
-                "spy",
-                "stub"
-            ],
-            "time": "2016-11-21T14:58:47+00:00"
-        },
-        {
-            "name": "phpunit/php-code-coverage",
-            "version": "5.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "e7d7a4acca58e45bdfd00221563d131cfb04ba96"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/e7d7a4acca58e45bdfd00221563d131cfb04ba96",
-                "reference": "e7d7a4acca58e45bdfd00221563d131cfb04ba96",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.0",
-                "phpunit/php-file-iterator": "^1.3",
-                "phpunit/php-text-template": "^1.2",
-                "phpunit/php-token-stream": "^1.4.2",
-                "sebastian/code-unit-reverse-lookup": "^1.0",
-                "sebastian/environment": "^2.0",
-                "sebastian/version": "^2.0"
-            },
-            "require-dev": {
-                "ext-xdebug": "^2.5",
-                "phpunit/phpunit": "^6.0"
-            },
-            "suggest": {
-                "ext-dom": "*",
-                "ext-xmlwriter": "*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "5.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Library that provides collection, processing, and rendering functionality for PHP code coverage information.",
-            "homepage": "https://github.com/sebastianbergmann/php-code-coverage",
-            "keywords": [
-                "coverage",
-                "testing",
-                "xunit"
-            ],
-            "time": "2017-02-02T10:35:41+00:00"
-        },
-        {
-            "name": "phpunit/php-file-iterator",
-            "version": "1.4.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-file-iterator.git",
-                "reference": "a923bb15680d0089e2316f7a4af8f437046e96bb"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/a923bb15680d0089e2316f7a4af8f437046e96bb",
-                "reference": "a923bb15680d0089e2316f7a4af8f437046e96bb",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.4.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "FilterIterator implementation that filters files based on a list of suffixes.",
-            "homepage": "https://github.com/sebastianbergmann/php-file-iterator/",
-            "keywords": [
-                "filesystem",
-                "iterator"
-            ],
-            "time": "2015-04-02T05:19:05+00:00"
-        },
-        {
-            "name": "phpunit/php-text-template",
-            "version": "1.2.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-text-template.git",
-                "reference": "206dfefc0ffe9cebf65c413e3d0e809c82fbf00a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/206dfefc0ffe9cebf65c413e3d0e809c82fbf00a",
-                "reference": "206dfefc0ffe9cebf65c413e3d0e809c82fbf00a",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "type": "library",
-            "autoload": {
-                "classmap": [
-                    "Text/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "include-path": [
-                ""
-            ],
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Simple template engine.",
-            "homepage": "https://github.com/sebastianbergmann/php-text-template/",
-            "keywords": [
-                "template"
-            ],
-            "time": "2014-01-30T17:20:04+00:00"
-        },
-        {
-            "name": "phpunit/php-timer",
-            "version": "1.0.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-timer.git",
-                "reference": "83fe1bdc5d47658b727595c14da140da92b3d66d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-timer/zipball/83fe1bdc5d47658b727595c14da140da92b3d66d",
-                "reference": "83fe1bdc5d47658b727595c14da140da92b3d66d",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "type": "library",
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Utility class for timing",
-            "homepage": "https://github.com/sebastianbergmann/php-timer/",
-            "keywords": [
-                "timer"
-            ],
-            "time": "2015-06-13T07:35:30+00:00"
-        },
-        {
-            "name": "phpunit/php-token-stream",
-            "version": "1.4.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/php-token-stream.git",
-                "reference": "db63be1159c81df649cd0260e30249a586d4129e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-token-stream/zipball/db63be1159c81df649cd0260e30249a586d4129e",
-                "reference": "db63be1159c81df649cd0260e30249a586d4129e",
-                "shasum": ""
-            },
-            "require": {
-                "ext-tokenizer": "*",
-                "php": ">=5.3.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.2"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.4-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Wrapper around PHP's tokenizer extension.",
-            "homepage": "https://github.com/sebastianbergmann/php-token-stream/",
-            "keywords": [
-                "tokenizer"
-            ],
-            "time": "2015-06-12T07:34:24+00:00"
-        },
-        {
-            "name": "phpunit/phpunit",
-            "version": "6.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "9d0c024d2099531442d862b66b0ad7cf35ed8e78"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/9d0c024d2099531442d862b66b0ad7cf35ed8e78",
-                "reference": "9d0c024d2099531442d862b66b0ad7cf35ed8e78",
-                "shasum": ""
-            },
-            "require": {
-                "ext-dom": "*",
-                "ext-json": "*",
-                "ext-libxml": "*",
-                "ext-mbstring": "*",
-                "ext-xml": "*",
-                "myclabs/deep-copy": "^1.3",
-                "php": "^7.0",
-                "phpspec/prophecy": "^1.6.2",
-                "phpunit/php-code-coverage": "^5.0",
-                "phpunit/php-file-iterator": "^1.4",
-                "phpunit/php-text-template": "^1.2",
-                "phpunit/php-timer": "^1.0.6",
-                "phpunit/phpunit-mock-objects": "^4.0",
-                "sebastian/comparator": "^1.2.4",
-                "sebastian/diff": "^1.2",
-                "sebastian/environment": "^2.0",
-                "sebastian/exporter": "^2.0",
-                "sebastian/global-state": "^1.1",
-                "sebastian/object-enumerator": "^2.0",
-                "sebastian/resource-operations": "^1.0",
-                "sebastian/version": "^2.0"
-            },
-            "conflict": {
-                "phpdocumentor/reflection-docblock": "3.0.2",
-                "phpunit/dbunit": "<3.0"
-            },
-            "require-dev": {
-                "ext-pdo": "*"
-            },
-            "suggest": {
-                "ext-xdebug": "*",
-                "phpunit/php-invoker": "^1.1"
-            },
-            "bin": [
-                "phpunit"
-            ],
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "6.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "The PHP Unit Testing framework.",
-            "homepage": "https://phpunit.de/",
-            "keywords": [
-                "phpunit",
-                "testing",
-                "xunit"
-            ],
-            "time": "2017-02-03T05:22:46+00:00"
-        },
-        {
-            "name": "phpunit/phpunit-mock-objects",
-            "version": "4.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/phpunit-mock-objects.git",
-                "reference": "3819745c44f3aff9518fd655f320c4535d541af7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit-mock-objects/zipball/3819745c44f3aff9518fd655f320c4535d541af7",
-                "reference": "3819745c44f3aff9518fd655f320c4535d541af7",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/instantiator": "^1.0.2",
-                "php": "^7.0",
-                "phpunit/php-text-template": "^1.2",
-                "sebastian/exporter": "^2.0"
-            },
-            "conflict": {
-                "phpunit/phpunit": "<6.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^6.0"
-            },
-            "suggest": {
-                "ext-soap": "*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sb@sebastian-bergmann.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Mock Object library for PHPUnit",
-            "homepage": "https://github.com/sebastianbergmann/phpunit-mock-objects/",
-            "keywords": [
-                "mock",
-                "xunit"
-            ],
-            "time": "2017-02-02T10:36:38+00:00"
-        },
-        {
-            "name": "sebastian/code-unit-reverse-lookup",
-            "version": "1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/code-unit-reverse-lookup.git",
-                "reference": "c36f5e7cfce482fde5bf8d10d41a53591e0198fe"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/code-unit-reverse-lookup/zipball/c36f5e7cfce482fde5bf8d10d41a53591e0198fe",
-                "reference": "c36f5e7cfce482fde5bf8d10d41a53591e0198fe",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~5"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Looks up which function or method a line of code belongs to",
-            "homepage": "https://github.com/sebastianbergmann/code-unit-reverse-lookup/",
-            "time": "2016-02-13T06:45:14+00:00"
-        },
-        {
-            "name": "sebastian/comparator",
-            "version": "1.2.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/comparator.git",
-                "reference": "2b7424b55f5047b47ac6e5ccb20b2aea4011d9be"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/2b7424b55f5047b47ac6e5ccb20b2aea4011d9be",
-                "reference": "2b7424b55f5047b47ac6e5ccb20b2aea4011d9be",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3",
-                "sebastian/diff": "~1.2",
-                "sebastian/exporter": "~1.2 || ~2.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.4"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.2.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Jeff Welch",
-                    "email": "whatthejeff@gmail.com"
-                },
-                {
-                    "name": "Volker Dusch",
-                    "email": "github@wallbash.com"
-                },
-                {
-                    "name": "Bernhard Schussek",
-                    "email": "bschussek@2bepublished.at"
-                },
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Provides the functionality to compare PHP values for equality",
-            "homepage": "http://www.github.com/sebastianbergmann/comparator",
-            "keywords": [
-                "comparator",
-                "compare",
-                "equality"
-            ],
-            "time": "2017-01-29T09:50:25+00:00"
-        },
-        {
-            "name": "sebastian/diff",
-            "version": "1.2.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/diff.git",
-                "reference": "5843509fed39dee4b356a306401e9dd1a931fec7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/diff/zipball/5843509fed39dee4b356a306401e9dd1a931fec7",
-                "reference": "5843509fed39dee4b356a306401e9dd1a931fec7",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.2"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.2-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Kore Nordmann",
-                    "email": "mail@kore-nordmann.de"
-                },
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Diff implementation",
-            "homepage": "http://www.github.com/sebastianbergmann/diff",
-            "keywords": [
-                "diff"
-            ],
-            "time": "2014-08-15T10:29:00+00:00"
-        },
-        {
-            "name": "sebastian/environment",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/environment.git",
-                "reference": "5795ffe5dc5b02460c3e34222fee8cbe245d8fac"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/5795ffe5dc5b02460c3e34222fee8cbe245d8fac",
-                "reference": "5795ffe5dc5b02460c3e34222fee8cbe245d8fac",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^5.6 || ^7.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^5.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Provides functionality to handle HHVM/PHP environments",
-            "homepage": "http://www.github.com/sebastianbergmann/environment",
-            "keywords": [
-                "Xdebug",
-                "environment",
-                "hhvm"
-            ],
-            "time": "2016-11-26T07:53:53+00:00"
-        },
-        {
-            "name": "sebastian/exporter",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/exporter.git",
-                "reference": "ce474bdd1a34744d7ac5d6aad3a46d48d9bac4c4"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/exporter/zipball/ce474bdd1a34744d7ac5d6aad3a46d48d9bac4c4",
-                "reference": "ce474bdd1a34744d7ac5d6aad3a46d48d9bac4c4",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3",
-                "sebastian/recursion-context": "~2.0"
-            },
-            "require-dev": {
-                "ext-mbstring": "*",
-                "phpunit/phpunit": "~4.4"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Jeff Welch",
-                    "email": "whatthejeff@gmail.com"
-                },
-                {
-                    "name": "Volker Dusch",
-                    "email": "github@wallbash.com"
-                },
-                {
-                    "name": "Bernhard Schussek",
-                    "email": "bschussek@2bepublished.at"
-                },
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                },
-                {
-                    "name": "Adam Harvey",
-                    "email": "aharvey@php.net"
-                }
-            ],
-            "description": "Provides the functionality to export PHP variables for visualization",
-            "homepage": "http://www.github.com/sebastianbergmann/exporter",
-            "keywords": [
-                "export",
-                "exporter"
-            ],
-            "time": "2016-11-19T08:54:04+00:00"
-        },
-        {
-            "name": "sebastian/global-state",
-            "version": "1.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/global-state.git",
-                "reference": "23af31f402993cfd94e99cbc4b782e9a78eb0e97"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/global-state/zipball/23af31f402993cfd94e99cbc4b782e9a78eb0e97",
-                "reference": "23af31f402993cfd94e99cbc4b782e9a78eb0e97",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.2"
-            },
-            "suggest": {
-                "ext-uopz": "*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Snapshotting of global state",
-            "homepage": "http://www.github.com/sebastianbergmann/global-state",
-            "keywords": [
-                "global state"
-            ],
-            "time": "2015-06-21T15:11:22+00:00"
-        },
-        {
-            "name": "sebastian/object-enumerator",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/object-enumerator.git",
-                "reference": "96f8a3f257b69e8128ad74d3a7fd464bcbaa3b35"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/object-enumerator/zipball/96f8a3f257b69e8128ad74d3a7fd464bcbaa3b35",
-                "reference": "96f8a3f257b69e8128ad74d3a7fd464bcbaa3b35",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6",
-                "sebastian/recursion-context": "~2.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~5"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Traverses array structures and object graphs to enumerate all referenced objects",
-            "homepage": "https://github.com/sebastianbergmann/object-enumerator/",
-            "time": "2016-11-19T07:35:10+00:00"
-        },
-        {
-            "name": "sebastian/recursion-context",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/recursion-context.git",
-                "reference": "2c3ba150cbec723aa057506e73a8d33bdb286c9a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/2c3ba150cbec723aa057506e73a8d33bdb286c9a",
-                "reference": "2c3ba150cbec723aa057506e73a8d33bdb286c9a",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.4"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Jeff Welch",
-                    "email": "whatthejeff@gmail.com"
-                },
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                },
-                {
-                    "name": "Adam Harvey",
-                    "email": "aharvey@php.net"
-                }
-            ],
-            "description": "Provides functionality to recursively process PHP variables",
-            "homepage": "http://www.github.com/sebastianbergmann/recursion-context",
-            "time": "2016-11-19T07:33:16+00:00"
-        },
-        {
-            "name": "sebastian/resource-operations",
-            "version": "1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/resource-operations.git",
-                "reference": "ce990bb21759f94aeafd30209e8cfcdfa8bc3f52"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/resource-operations/zipball/ce990bb21759f94aeafd30209e8cfcdfa8bc3f52",
-                "reference": "ce990bb21759f94aeafd30209e8cfcdfa8bc3f52",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de"
-                }
-            ],
-            "description": "Provides a list of PHP built-in functions that operate on resources",
-            "homepage": "https://www.github.com/sebastianbergmann/resource-operations",
-            "time": "2015-07-28T20:34:47+00:00"
-        },
-        {
-            "name": "sebastian/version",
-            "version": "2.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/sebastianbergmann/version.git",
-                "reference": "c829badbd8fdf16a0bad8aa7fa7971c029f1b9c5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/version/zipball/c829badbd8fdf16a0bad8aa7fa7971c029f1b9c5",
-                "reference": "c829badbd8fdf16a0bad8aa7fa7971c029f1b9c5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.6"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0.x-dev"
-                }
-            },
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastian Bergmann",
-                    "email": "sebastian@phpunit.de",
-                    "role": "lead"
-                }
-            ],
-            "description": "Library that helps with managing the version number of Git-hosted PHP projects",
-            "homepage": "https://github.com/sebastianbergmann/version",
-            "time": "2016-02-04T12:56:52+00:00"
-        }
-    ],
-    "aliases": [],
-    "minimum-stability": "stable",
-    "stability-flags": [],
-    "prefer-stable": false,
-    "prefer-lowest": true,
-    "platform": {
-        "php": ">=7.1"
-    },
-    "platform-dev": []
+    return TestCase::any();
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsAnything matcher object.
+ *
+ * @return IsAnything
+ */
+function anything()
+{
+    return Assert::anything();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_ArrayHasKey matcher object.
+ *
+ * @param mixed $key
+ *
+ * @return ArrayHasKey
+ */
+function arrayHasKey($key)
+{
+    return Assert::arrayHasKey(...\func_get_args());
+}
+
+/**
+ * Asserts that an array has a specified key.
+ *
+ * @param mixed             $key
+ * @param array|ArrayAccess $array
+ * @param string            $message
+ */
+function assertArrayHasKey($key, $array, $message = '')
+{
+    return Assert::assertArrayHasKey(...\func_get_args());
+}
+
+/**
+ * Asserts that an array has a specified subset.
+ *
+ * @param array|ArrayAccess $subset
+ * @param array|ArrayAccess $array
+ * @param bool              $strict  Check for object identity
+ * @param string            $message
+ */
+function assertArraySubset($subset, $array, $strict = false, $message = '')
+{
+    return Assert::assertArraySubset(...\func_get_args());
+}
+
+/**
+ * Asserts that an array does not have a specified key.
+ *
+ * @param mixed             $key
+ * @param array|ArrayAccess $array
+ * @param string            $message
+ */
+function assertArrayNotHasKey($key, $array, $message = '')
+{
+    return Assert::assertArrayNotHasKey(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack that is stored in a static attribute of a class
+ * or an attribute of an object contains a needle.
+ *
+ * @param mixed  $needle
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param string $message
+ * @param bool   $ignoreCase
+ * @param bool   $checkForObjectIdentity
+ * @param bool   $checkForNonObjectIdentity
+ */
+function assertAttributeContains($needle, $haystackAttributeName, $haystackClassOrObject, $message = '', $ignoreCase = false, $checkForObjectIdentity = true, $checkForNonObjectIdentity = false)
+{
+    return Assert::assertAttributeContains(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack that is stored in a static attribute of a class
+ * or an attribute of an object contains only values of a given type.
+ *
+ * @param string $type
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param bool   $isNativeType
+ * @param string $message
+ */
+function assertAttributeContainsOnly($type, $haystackAttributeName, $haystackClassOrObject, $isNativeType = null, $message = '')
+{
+    return Assert::assertAttributeContainsOnly(...\func_get_args());
+}
+
+/**
+ * Asserts the number of elements of an array, Countable or Traversable
+ * that is stored in an attribute.
+ *
+ * @param int    $expectedCount
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param string $message
+ */
+function assertAttributeCount($expectedCount, $haystackAttributeName, $haystackClassOrObject, $message = '')
+{
+    return Assert::assertAttributeCount(...\func_get_args());
+}
+
+/**
+ * Asserts that a static attribute of a class or an attribute of an object
+ * is empty.
+ *
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param string $message
+ */
+function assertAttributeEmpty($haystackAttributeName, $haystackClassOrObject, $message = '')
+{
+    return Assert::assertAttributeEmpty(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is equal to an attribute of an object.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param string $actualClassOrObject
+ * @param string $message
+ * @param float  $delta
+ * @param int    $maxDepth
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertAttributeEquals($expected, $actualAttributeName, $actualClassOrObject, $message = '', $delta = 0.0, $maxDepth = 10, $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertAttributeEquals(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is greater than another value.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param string $actualClassOrObject
+ * @param string $message
+ */
+function assertAttributeGreaterThan($expected, $actualAttributeName, $actualClassOrObject, $message = '')
+{
+    return Assert::assertAttributeGreaterThan(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is greater than or equal to another value.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param string $actualClassOrObject
+ * @param string $message
+ */
+function assertAttributeGreaterThanOrEqual($expected, $actualAttributeName, $actualClassOrObject, $message = '')
+{
+    return Assert::assertAttributeGreaterThanOrEqual(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is of a given type.
+ *
+ * @param string $expected
+ * @param string $attributeName
+ * @param mixed  $classOrObject
+ * @param string $message
+ */
+function assertAttributeInstanceOf($expected, $attributeName, $classOrObject, $message = '')
+{
+    return Assert::assertAttributeInstanceOf(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is of a given type.
+ *
+ * @param string $expected
+ * @param string $attributeName
+ * @param mixed  $classOrObject
+ * @param string $message
+ */
+function assertAttributeInternalType($expected, $attributeName, $classOrObject, $message = '')
+{
+    return Assert::assertAttributeInternalType(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is smaller than another value.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param string $actualClassOrObject
+ * @param string $message
+ */
+function assertAttributeLessThan($expected, $actualAttributeName, $actualClassOrObject, $message = '')
+{
+    return Assert::assertAttributeLessThan(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is smaller than or equal to another value.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param string $actualClassOrObject
+ * @param string $message
+ */
+function assertAttributeLessThanOrEqual($expected, $actualAttributeName, $actualClassOrObject, $message = '')
+{
+    return Assert::assertAttributeLessThanOrEqual(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack that is stored in a static attribute of a class
+ * or an attribute of an object does not contain a needle.
+ *
+ * @param mixed  $needle
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param string $message
+ * @param bool   $ignoreCase
+ * @param bool   $checkForObjectIdentity
+ * @param bool   $checkForNonObjectIdentity
+ */
+function assertAttributeNotContains($needle, $haystackAttributeName, $haystackClassOrObject, $message = '', $ignoreCase = false, $checkForObjectIdentity = true, $checkForNonObjectIdentity = false)
+{
+    return Assert::assertAttributeNotContains(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack that is stored in a static attribute of a class
+ * or an attribute of an object does not contain only values of a given
+ * type.
+ *
+ * @param string $type
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param bool   $isNativeType
+ * @param string $message
+ */
+function assertAttributeNotContainsOnly($type, $haystackAttributeName, $haystackClassOrObject, $isNativeType = null, $message = '')
+{
+    return Assert::assertAttributeNotContainsOnly(...\func_get_args());
+}
+
+/**
+ * Asserts the number of elements of an array, Countable or Traversable
+ * that is stored in an attribute.
+ *
+ * @param int    $expectedCount
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param string $message
+ */
+function assertAttributeNotCount($expectedCount, $haystackAttributeName, $haystackClassOrObject, $message = '')
+{
+    return Assert::assertAttributeNotCount(...\func_get_args());
+}
+
+/**
+ * Asserts that a static attribute of a class or an attribute of an object
+ * is not empty.
+ *
+ * @param string $haystackAttributeName
+ * @param mixed  $haystackClassOrObject
+ * @param string $message
+ */
+function assertAttributeNotEmpty($haystackAttributeName, $haystackClassOrObject, $message = '')
+{
+    return Assert::assertAttributeNotEmpty(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is not equal to an attribute of an object.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param string $actualClassOrObject
+ * @param string $message
+ * @param float  $delta
+ * @param int    $maxDepth
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertAttributeNotEquals($expected, $actualAttributeName, $actualClassOrObject, $message = '', $delta = 0.0, $maxDepth = 10, $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertAttributeNotEquals(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is of a given type.
+ *
+ * @param string $expected
+ * @param string $attributeName
+ * @param mixed  $classOrObject
+ * @param string $message
+ */
+function assertAttributeNotInstanceOf($expected, $attributeName, $classOrObject, $message = '')
+{
+    return Assert::assertAttributeNotInstanceOf(...\func_get_args());
+}
+
+/**
+ * Asserts that an attribute is of a given type.
+ *
+ * @param string $expected
+ * @param string $attributeName
+ * @param mixed  $classOrObject
+ * @param string $message
+ */
+function assertAttributeNotInternalType($expected, $attributeName, $classOrObject, $message = '')
+{
+    return Assert::assertAttributeNotInternalType(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable and an attribute of an object do not have the
+ * same type and value.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param object $actualClassOrObject
+ * @param string $message
+ */
+function assertAttributeNotSame($expected, $actualAttributeName, $actualClassOrObject, $message = '')
+{
+    return Assert::assertAttributeNotSame(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable and an attribute of an object have the same type
+ * and value.
+ *
+ * @param mixed  $expected
+ * @param string $actualAttributeName
+ * @param object $actualClassOrObject
+ * @param string $message
+ */
+function assertAttributeSame($expected, $actualAttributeName, $actualClassOrObject, $message = '')
+{
+    return Assert::assertAttributeSame(...\func_get_args());
+}
+
+/**
+ * Asserts that a class has a specified attribute.
+ *
+ * @param string $attributeName
+ * @param string $className
+ * @param string $message
+ */
+function assertClassHasAttribute($attributeName, $className, $message = '')
+{
+    return Assert::assertClassHasAttribute(...\func_get_args());
+}
+
+/**
+ * Asserts that a class has a specified static attribute.
+ *
+ * @param string $attributeName
+ * @param string $className
+ * @param string $message
+ */
+function assertClassHasStaticAttribute($attributeName, $className, $message = '')
+{
+    return Assert::assertClassHasStaticAttribute(...\func_get_args());
+}
+
+/**
+ * Asserts that a class does not have a specified attribute.
+ *
+ * @param string $attributeName
+ * @param string $className
+ * @param string $message
+ */
+function assertClassNotHasAttribute($attributeName, $className, $message = '')
+{
+    return Assert::assertClassNotHasAttribute(...\func_get_args());
+}
+
+/**
+ * Asserts that a class does not have a specified static attribute.
+ *
+ * @param string $attributeName
+ * @param string $className
+ * @param string $message
+ */
+function assertClassNotHasStaticAttribute($attributeName, $className, $message = '')
+{
+    return Assert::assertClassNotHasStaticAttribute(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack contains a needle.
+ *
+ * @param mixed  $needle
+ * @param mixed  $haystack
+ * @param string $message
+ * @param bool   $ignoreCase
+ * @param bool   $checkForObjectIdentity
+ * @param bool   $checkForNonObjectIdentity
+ */
+function assertContains($needle, $haystack, $message = '', $ignoreCase = false, $checkForObjectIdentity = true, $checkForNonObjectIdentity = false)
+{
+    return Assert::assertContains(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack contains only values of a given type.
+ *
+ * @param string $type
+ * @param mixed  $haystack
+ * @param bool   $isNativeType
+ * @param string $message
+ */
+function assertContainsOnly($type, $haystack, $isNativeType = null, $message = '')
+{
+    return Assert::assertContainsOnly(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack contains only instances of a given classname
+ *
+ * @param string            $classname
+ * @param array|Traversable $haystack
+ * @param string            $message
+ */
+function assertContainsOnlyInstancesOf($classname, $haystack, $message = '')
+{
+    return Assert::assertContainsOnlyInstancesOf(...\func_get_args());
+}
+
+/**
+ * Asserts the number of elements of an array, Countable or Traversable.
+ *
+ * @param int    $expectedCount
+ * @param mixed  $haystack
+ * @param string $message
+ */
+function assertCount($expectedCount, $haystack, $message = '')
+{
+    return Assert::assertCount(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is empty.
+ *
+ * @param mixed  $actual
+ * @param string $message
+ *
+ * @throws AssertionFailedError
+ */
+function assertEmpty($actual, $message = '')
+{
+    return Assert::assertEmpty(...\func_get_args());
+}
+
+/**
+ * Asserts that a hierarchy of DOMElements matches.
+ *
+ * @param DOMElement $expectedElement
+ * @param DOMElement $actualElement
+ * @param bool       $checkAttributes
+ * @param string     $message
+ */
+function assertEqualXMLStructure(DOMElement $expectedElement, DOMElement $actualElement, $checkAttributes = false, $message = '')
+{
+    return Assert::assertEqualXMLStructure(...\func_get_args());
+}
+
+/**
+ * Asserts that two variables are equal.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ * @param float  $delta
+ * @param int    $maxDepth
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertEquals($expected, $actual, $message = '', $delta = 0.0, $maxDepth = 10, $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertEquals(...\func_get_args());
+}
+
+/**
+ * Asserts that a condition is not true.
+ *
+ * @param bool   $condition
+ * @param string $message
+ *
+ * @throws AssertionFailedError
+ */
+function assertNotTrue($condition, $message = '')
+{
+    return Assert::assertNotTrue(...\func_get_args());
+}
+
+/**
+ * Asserts that a condition is false.
+ *
+ * @param bool   $condition
+ * @param string $message
+ *
+ * @throws AssertionFailedError
+ */
+function assertFalse($condition, $message = '')
+{
+    return Assert::assertFalse(...\func_get_args());
+}
+
+/**
+ * Asserts that the contents of one file is equal to the contents of another
+ * file.
+ *
+ * @param string $expected
+ * @param string $actual
+ * @param string $message
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertFileEquals($expected, $actual, $message = '', $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertFileEquals(...\func_get_args());
+}
+
+/**
+ * Asserts that a file exists.
+ *
+ * @param string $filename
+ * @param string $message
+ */
+function assertFileExists($filename, $message = '')
+{
+    return Assert::assertFileExists(...\func_get_args());
+}
+
+/**
+ * Asserts that the contents of one file is not equal to the contents of
+ * another file.
+ *
+ * @param string $expected
+ * @param string $actual
+ * @param string $message
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertFileNotEquals($expected, $actual, $message = '', $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertFileNotEquals(...\func_get_args());
+}
+
+/**
+ * Asserts that a file does not exist.
+ *
+ * @param string $filename
+ * @param string $message
+ */
+function assertFileNotExists($filename, $message = '')
+{
+    return Assert::assertFileNotExists(...\func_get_args());
+}
+
+/**
+ * Asserts that a value is greater than another value.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertGreaterThan($expected, $actual, $message = '')
+{
+    return Assert::assertGreaterThan(...\func_get_args());
+}
+
+/**
+ * Asserts that a value is greater than or equal to another value.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertGreaterThanOrEqual($expected, $actual, $message = '')
+{
+    return Assert::assertGreaterThanOrEqual(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is of a given type.
+ *
+ * @param string $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertInstanceOf($expected, $actual, $message = '')
+{
+    return Assert::assertInstanceOf(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is of a given type.
+ *
+ * @param string $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertInternalType($expected, $actual, $message = '')
+{
+    return Assert::assertInternalType(...\func_get_args());
+}
+
+/**
+ * Asserts that a string is a valid JSON string.
+ *
+ * @param string $actualJson
+ * @param string $message
+ */
+function assertJson($actualJson, $message = '')
+{
+    return Assert::assertJson(...\func_get_args());
+}
+
+/**
+ * Asserts that two JSON files are equal.
+ *
+ * @param string $expectedFile
+ * @param string $actualFile
+ * @param string $message
+ */
+function assertJsonFileEqualsJsonFile($expectedFile, $actualFile, $message = '')
+{
+    return Assert::assertJsonFileEqualsJsonFile(...\func_get_args());
+}
+
+/**
+ * Asserts that two JSON files are not equal.
+ *
+ * @param string $expectedFile
+ * @param string $actualFile
+ * @param string $message
+ */
+function assertJsonFileNotEqualsJsonFile($expectedFile, $actualFile, $message = '')
+{
+    return Assert::assertJsonFileNotEqualsJsonFile(...\func_get_args());
+}
+
+/**
+ * Asserts that the generated JSON encoded object and the content of the given file are equal.
+ *
+ * @param string $expectedFile
+ * @param string $actualJson
+ * @param string $message
+ */
+function assertJsonStringEqualsJsonFile($expectedFile, $actualJson, $message = '')
+{
+    return Assert::assertJsonStringEqualsJsonFile(...\func_get_args());
+}
+
+/**
+ * Asserts that two given JSON encoded objects or arrays are equal.
+ *
+ * @param string $expectedJson
+ * @param string $actualJson
+ * @param string $message
+ */
+function assertJsonStringEqualsJsonString($expectedJson, $actualJson, $message = '')
+{
+    return Assert::assertJsonStringEqualsJsonString(...\func_get_args());
+}
+
+/**
+ * Asserts that the generated JSON encoded object and the content of the given file are not equal.
+ *
+ * @param string $expectedFile
+ * @param string $actualJson
+ * @param string $message
+ */
+function assertJsonStringNotEqualsJsonFile($expectedFile, $actualJson, $message = '')
+{
+    return Assert::assertJsonStringNotEqualsJsonFile(...\func_get_args());
+}
+
+/**
+ * Asserts that two given JSON encoded objects or arrays are not equal.
+ *
+ * @param string $expectedJson
+ * @param string $actualJson
+ * @param string $message
+ */
+function assertJsonStringNotEqualsJsonString($expectedJson, $actualJson, $message = '')
+{
+    return Assert::assertJsonStringNotEqualsJsonString(...\func_get_args());
+}
+
+/**
+ * Asserts that a value is smaller than another value.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertLessThan($expected, $actual, $message = '')
+{
+    return Assert::assertLessThan(...\func_get_args());
+}
+
+/**
+ * Asserts that a value is smaller than or equal to another value.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertLessThanOrEqual($expected, $actual, $message = '')
+{
+    return Assert::assertLessThanOrEqual(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is finite.
+ *
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertFinite($actual, $message = '')
+{
+    return Assert::assertFinite(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is infinite.
+ *
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertInfinite($actual, $message = '')
+{
+    return Assert::assertInfinite(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is nan.
+ *
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertNan($actual, $message = '')
+{
+    return Assert::assertNan(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack does not contain a needle.
+ *
+ * @param mixed  $needle
+ * @param mixed  $haystack
+ * @param string $message
+ * @param bool   $ignoreCase
+ * @param bool   $checkForObjectIdentity
+ * @param bool   $checkForNonObjectIdentity
+ */
+function assertNotContains($needle, $haystack, $message = '', $ignoreCase = false, $checkForObjectIdentity = true, $checkForNonObjectIdentity = false)
+{
+    return Assert::assertNotContains(...\func_get_args());
+}
+
+/**
+ * Asserts that a haystack does not contain only values of a given type.
+ *
+ * @param string $type
+ * @param mixed  $haystack
+ * @param bool   $isNativeType
+ * @param string $message
+ */
+function assertNotContainsOnly($type, $haystack, $isNativeType = null, $message = '')
+{
+    return Assert::assertNotContainsOnly(...\func_get_args());
+}
+
+/**
+ * Asserts the number of elements of an array, Countable or Traversable.
+ *
+ * @param int    $expectedCount
+ * @param mixed  $haystack
+ * @param string $message
+ */
+function assertNotCount($expectedCount, $haystack, $message = '')
+{
+    return Assert::assertNotCount(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is not empty.
+ *
+ * @param mixed  $actual
+ * @param string $message
+ *
+ * @throws AssertionFailedError
+ */
+function assertNotEmpty($actual, $message = '')
+{
+    return Assert::assertNotEmpty(...\func_get_args());
+}
+
+/**
+ * Asserts that two variables are not equal.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ * @param float  $delta
+ * @param int    $maxDepth
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertNotEquals($expected, $actual, $message = '', $delta = 0.0, $maxDepth = 10, $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertNotEquals(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is not of a given type.
+ *
+ * @param string $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertNotInstanceOf($expected, $actual, $message = '')
+{
+    return Assert::assertNotInstanceOf(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is not of a given type.
+ *
+ * @param string $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertNotInternalType($expected, $actual, $message = '')
+{
+    return Assert::assertNotInternalType(...\func_get_args());
+}
+
+/**
+ * Asserts that a condition is not false.
+ *
+ * @param bool   $condition
+ * @param string $message
+ *
+ * @throws AssertionFailedError
+ */
+function assertNotFalse($condition, $message = '')
+{
+    return Assert::assertNotFalse(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is not null.
+ *
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertNotNull($actual, $message = '')
+{
+    return Assert::assertNotNull(...\func_get_args());
+}
+
+/**
+ * Asserts that a string does not match a given regular expression.
+ *
+ * @param string $pattern
+ * @param string $string
+ * @param string $message
+ */
+function assertNotRegExp($pattern, $string, $message = '')
+{
+    return Assert::assertNotRegExp(...\func_get_args());
+}
+
+/**
+ * Asserts that two variables do not have the same type and value.
+ * Used on objects, it asserts that two variables do not reference
+ * the same object.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertNotSame($expected, $actual, $message = '')
+{
+    return Assert::assertNotSame(...\func_get_args());
+}
+
+/**
+ * Assert that the size of two arrays (or `Countable` or `Traversable` objects)
+ * is not the same.
+ *
+ * @param array|Countable|Traversable $expected
+ * @param array|Countable|Traversable $actual
+ * @param string                      $message
+ */
+function assertNotSameSize($expected, $actual, $message = '')
+{
+    return Assert::assertNotSameSize(...\func_get_args());
+}
+
+/**
+ * Asserts that a variable is null.
+ *
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertNull($actual, $message = '')
+{
+    return Assert::assertNull(...\func_get_args());
+}
+
+/**
+ * Asserts that an object has a specified attribute.
+ *
+ * @param string $attributeName
+ * @param object $object
+ * @param string $message
+ */
+function assertObjectHasAttribute($attributeName, $object, $message = '')
+{
+    return Assert::assertObjectHasAttribute(...\func_get_args());
+}
+
+/**
+ * Asserts that an object does not have a specified attribute.
+ *
+ * @param string $attributeName
+ * @param object $object
+ * @param string $message
+ */
+function assertObjectNotHasAttribute($attributeName, $object, $message = '')
+{
+    return Assert::assertObjectNotHasAttribute(...\func_get_args());
+}
+
+/**
+ * Asserts that a string matches a given regular expression.
+ *
+ * @param string $pattern
+ * @param string $string
+ * @param string $message
+ */
+function assertRegExp($pattern, $string, $message = '')
+{
+    return Assert::assertRegExp(...\func_get_args());
+}
+
+/**
+ * Asserts that two variables have the same type and value.
+ * Used on objects, it asserts that two variables reference
+ * the same object.
+ *
+ * @param mixed  $expected
+ * @param mixed  $actual
+ * @param string $message
+ */
+function assertSame($expected, $actual, $message = '')
+{
+    return Assert::assertSame(...\func_get_args());
+}
+
+/**
+ * Assert that the size of two arrays (or `Countable` or `Traversable` objects)
+ * is the same.
+ *
+ * @param array|Countable|Traversable $expected
+ * @param array|Countable|Traversable $actual
+ * @param string                      $message
+ */
+function assertSameSize($expected, $actual, $message = '')
+{
+    return Assert::assertSameSize(...\func_get_args());
+}
+
+/**
+ * Asserts that a string ends not with a given prefix.
+ *
+ * @param string $suffix
+ * @param string $string
+ * @param string $message
+ */
+function assertStringEndsNotWith($suffix, $string, $message = '')
+{
+    return Assert::assertStringEndsNotWith(...\func_get_args());
+}
+
+/**
+ * Asserts that a string ends with a given prefix.
+ *
+ * @param string $suffix
+ * @param string $string
+ * @param string $message
+ */
+function assertStringEndsWith($suffix, $string, $message = '')
+{
+    return Assert::assertStringEndsWith(...\func_get_args());
+}
+
+/**
+ * Asserts that the contents of a string is equal
+ * to the contents of a file.
+ *
+ * @param string $expectedFile
+ * @param string $actualString
+ * @param string $message
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertStringEqualsFile($expectedFile, $actualString, $message = '', $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertStringEqualsFile(...\func_get_args());
+}
+
+/**
+ * Asserts that a string matches a given format string.
+ *
+ * @param string $format
+ * @param string $string
+ * @param string $message
+ */
+function assertStringMatchesFormat($format, $string, $message = '')
+{
+    return Assert::assertStringMatchesFormat(...\func_get_args());
+}
+
+/**
+ * Asserts that a string matches a given format file.
+ *
+ * @param string $formatFile
+ * @param string $string
+ * @param string $message
+ */
+function assertStringMatchesFormatFile($formatFile, $string, $message = '')
+{
+    return Assert::assertStringMatchesFormatFile(...\func_get_args());
+}
+
+/**
+ * Asserts that the contents of a string is not equal
+ * to the contents of a file.
+ *
+ * @param string $expectedFile
+ * @param string $actualString
+ * @param string $message
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ */
+function assertStringNotEqualsFile($expectedFile, $actualString, $message = '', $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::assertStringNotEqualsFile(...\func_get_args());
+}
+
+/**
+ * Asserts that a string does not match a given format string.
+ *
+ * @param string $format
+ * @param string $string
+ * @param string $message
+ */
+function assertStringNotMatchesFormat($format, $string, $message = '')
+{
+    return Assert::assertStringNotMatchesFormat(...\func_get_args());
+}
+
+/**
+ * Asserts that a string does not match a given format string.
+ *
+ * @param string $formatFile
+ * @param string $string
+ * @param string $message
+ */
+function assertStringNotMatchesFormatFile($formatFile, $string, $message = '')
+{
+    return Assert::assertStringNotMatchesFormatFile(...\func_get_args());
+}
+
+/**
+ * Asserts that a string starts not with a given prefix.
+ *
+ * @param string $prefix
+ * @param string $string
+ * @param string $message
+ */
+function assertStringStartsNotWith($prefix, $string, $message = '')
+{
+    return Assert::assertStringStartsNotWith(...\func_get_args());
+}
+
+/**
+ * Asserts that a string starts with a given prefix.
+ *
+ * @param string $prefix
+ * @param string $string
+ * @param string $message
+ */
+function assertStringStartsWith($prefix, $string, $message = '')
+{
+    return Assert::assertStringStartsWith(...\func_get_args());
+}
+
+/**
+ * Evaluates a PHPUnit_Framework_Constraint matcher object.
+ *
+ * @param mixed      $value
+ * @param Constraint $constraint
+ * @param string     $message
+ */
+function assertThat($value, Constraint $constraint, $message = '')
+{
+    return Assert::assertThat(...\func_get_args());
+}
+
+/**
+ * Asserts that a condition is true.
+ *
+ * @param bool   $condition
+ * @param string $message
+ *
+ * @throws AssertionFailedError
+ */
+function assertTrue($condition, $message = '')
+{
+    return Assert::assertTrue(...\func_get_args());
+}
+
+/**
+ * Asserts that two XML files are equal.
+ *
+ * @param string $expectedFile
+ * @param string $actualFile
+ * @param string $message
+ */
+function assertXmlFileEqualsXmlFile($expectedFile, $actualFile, $message = '')
+{
+    return Assert::assertXmlFileEqualsXmlFile(...\func_get_args());
+}
+
+/**
+ * Asserts that two XML files are not equal.
+ *
+ * @param string $expectedFile
+ * @param string $actualFile
+ * @param string $message
+ */
+function assertXmlFileNotEqualsXmlFile($expectedFile, $actualFile, $message = '')
+{
+    return Assert::assertXmlFileNotEqualsXmlFile(...\func_get_args());
+}
+
+/**
+ * Asserts that two XML documents are equal.
+ *
+ * @param string             $expectedFile
+ * @param string|DOMDocument $actualXml
+ * @param string             $message
+ */
+function assertXmlStringEqualsXmlFile($expectedFile, $actualXml, $message = '')
+{
+    return Assert::assertXmlStringEqualsXmlFile(...\func_get_args());
+}
+
+/**
+ * Asserts that two XML documents are equal.
+ *
+ * @param string|DOMDocument $expectedXml
+ * @param string|DOMDocument $actualXml
+ * @param string             $message
+ */
+function assertXmlStringEqualsXmlString($expectedXml, $actualXml, $message = '')
+{
+    return Assert::assertXmlStringEqualsXmlString(...\func_get_args());
+}
+
+/**
+ * Asserts that two XML documents are not equal.
+ *
+ * @param string             $expectedFile
+ * @param string|DOMDocument $actualXml
+ * @param string             $message
+ */
+function assertXmlStringNotEqualsXmlFile($expectedFile, $actualXml, $message = '')
+{
+    return Assert::assertXmlStringNotEqualsXmlFile(...\func_get_args());
+}
+
+/**
+ * Asserts that two XML documents are not equal.
+ *
+ * @param string|DOMDocument $expectedXml
+ * @param string|DOMDocument $actualXml
+ * @param string             $message
+ */
+function assertXmlStringNotEqualsXmlString($expectedXml, $actualXml, $message = '')
+{
+    return Assert::assertXmlStringNotEqualsXmlString(...\func_get_args());
+}
+
+/**
+ * Returns a matcher that matches when the method is executed
+ * at the given $index.
+ *
+ * @param int $index
+ *
+ * @return PHPUnit_Framework_MockObject_Matcher_InvokedAtIndex
+ */
+function at($index)
+{
+    return TestCase::at(...\func_get_args());
+}
+
+/**
+ * Returns a matcher that matches when the method is executed at least once.
+ *
+ * @return PHPUnit_Framework_MockObject_Matcher_InvokedAtLeastOnce
+ */
+function atLeastOnce()
+{
+    return TestCase::atLeastOnce();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Attribute matcher object.
+ *
+ * @param Constraint $constraint
+ * @param string     $attributeName
+ *
+ * @return Attribute
+ */
+function attribute(Constraint $constraint, $attributeName)
+{
+    return Assert::attribute(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsEqual matcher object
+ * that is wrapped in a PHPUnit_Framework_Constraint_Attribute matcher
+ * object.
+ *
+ * @param string $attributeName
+ * @param mixed  $value
+ * @param float  $delta
+ * @param int    $maxDepth
+ * @param bool   $canonicalize
+ * @param bool   $ignoreCase
+ *
+ * @return Attribute
+ */
+function attributeEqualTo($attributeName, $value, $delta = 0.0, $maxDepth = 10, $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::attributeEqualTo(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Callback matcher object.
+ *
+ * @param callable $callback
+ *
+ * @return Callback
+ */
+function callback($callback)
+{
+    return Assert::callback(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_ClassHasAttribute matcher object.
+ *
+ * @param string $attributeName
+ *
+ * @return ClassHasAttribute
+ */
+function classHasAttribute($attributeName)
+{
+    return Assert::classHasAttribute(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_ClassHasStaticAttribute matcher
+ * object.
+ *
+ * @param string $attributeName
+ *
+ * @return ClassHasStaticAttribute
+ */
+function classHasStaticAttribute($attributeName)
+{
+    return Assert::classHasStaticAttribute(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_TraversableContains matcher
+ * object.
+ *
+ * @param mixed $value
+ * @param bool  $checkForObjectIdentity
+ * @param bool  $checkForNonObjectIdentity
+ *
+ * @return TraversableContains
+ */
+function contains($value, $checkForObjectIdentity = true, $checkForNonObjectIdentity = false)
+{
+    return Assert::contains(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_TraversableContainsOnly matcher
+ * object.
+ *
+ * @param string $type
+ *
+ * @return TraversableContainsOnly
+ */
+function containsOnly($type)
+{
+    return Assert::containsOnly(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_TraversableContainsOnly matcher
+ * object.
+ *
+ * @param string $classname
+ *
+ * @return TraversableContainsOnly
+ */
+function containsOnlyInstancesOf($classname)
+{
+    return Assert::containsOnlyInstancesOf(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Count matcher object.
+ *
+ * @param int $count
+ *
+ * @return Count
+ */
+function countOf($count)
+{
+    return Assert::countOf(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_DirectoryExists matcher object.
+ *
+ * @return DirectoryExists
+ */
+function directoryExists()
+{
+    return Assert::directoryExists();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsEqual matcher object.
+ *
+ * @param mixed $value
+ * @param float $delta
+ * @param int   $maxDepth
+ * @param bool  $canonicalize
+ * @param bool  $ignoreCase
+ *
+ * @return IsEqual
+ */
+function equalTo($value, $delta = 0.0, $maxDepth = 10, $canonicalize = false, $ignoreCase = false)
+{
+    return Assert::equalTo(...\func_get_args());
+}
+
+/**
+ * Returns a matcher that matches when the method is executed
+ * exactly $count times.
+ *
+ * @param int $count
+ *
+ * @return PHPUnit_Framework_MockObject_Matcher_InvokedCount
+ */
+function exactly($count)
+{
+    return TestCase::exactly(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_FileExists matcher object.
+ *
+ * @return FileExists
+ */
+function fileExists()
+{
+    return Assert::fileExists();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_GreaterThan matcher object.
+ *
+ * @param mixed $value
+ *
+ * @return GreaterThan
+ */
+function greaterThan($value)
+{
+    return Assert::greaterThan(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Or matcher object that wraps
+ * a PHPUnit_Framework_Constraint_IsEqual and a
+ * PHPUnit_Framework_Constraint_GreaterThan matcher object.
+ *
+ * @param mixed $value
+ *
+ * @return LogicalOr
+ */
+function greaterThanOrEqual($value)
+{
+    return Assert::greaterThanOrEqual(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsIdentical matcher object.
+ *
+ * @param mixed $value
+ *
+ * @return IsIdentical
+ */
+function identicalTo($value)
+{
+    return Assert::identicalTo(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsEmpty matcher object.
+ *
+ * @return IsEmpty
+ */
+function isEmpty()
+{
+    return Assert::isEmpty();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsFalse matcher object.
+ *
+ * @return IsFalse
+ */
+function isFalse()
+{
+    return Assert::isFalse();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsInfinite matcher object.
+ *
+ * @return IsInfinite
+ */
+function isInfinite()
+{
+    return Assert::isInfinite();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsInstanceOf matcher object.
+ *
+ * @param string $className
+ *
+ * @return IsInstanceOf
+ */
+function isInstanceOf($className)
+{
+    return Assert::isInstanceOf(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsJson matcher object.
+ *
+ * @return IsJson
+ */
+function isJson()
+{
+    return Assert::isJson();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsNan matcher object.
+ *
+ * @return IsNan
+ */
+function isNan()
+{
+    return Assert::isNan();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsNull matcher object.
+ *
+ * @return IsNull
+ */
+function isNull()
+{
+    return Assert::isNull();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsReadable matcher object.
+ *
+ * @return IsReadable
+ */
+function isReadable()
+{
+    return Assert::isReadable();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsTrue matcher object.
+ *
+ * @return IsTrue
+ */
+function isTrue()
+{
+    return Assert::isTrue();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsType matcher object.
+ *
+ * @param string $type
+ *
+ * @return IsType
+ */
+function isType($type)
+{
+    return Assert::isType(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_IsWritable matcher object.
+ *
+ * @return IsWritable
+ */
+function isWritable()
+{
+    return Assert::isWritable();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_LessThan matcher object.
+ *
+ * @param mixed $value
+ *
+ * @return LessThan
+ */
+function lessThan($value)
+{
+    return Assert::lessThan(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Or matcher object that wraps
+ * a PHPUnit_Framework_Constraint_IsEqual and a
+ * PHPUnit_Framework_Constraint_LessThan matcher object.
+ *
+ * @param mixed $value
+ *
+ * @return LogicalOr
+ */
+function lessThanOrEqual($value)
+{
+    return Assert::lessThanOrEqual(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_And matcher object.
+ *
+ * @return LogicalAnd
+ */
+function logicalAnd()
+{
+    return Assert::logicalAnd(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Not matcher object.
+ *
+ * @param Constraint $constraint
+ *
+ * @return LogicalNot
+ */
+function logicalNot(Constraint $constraint)
+{
+    return Assert::logicalNot(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Or matcher object.
+ *
+ * @return LogicalOr
+ */
+function logicalOr()
+{
+    return Assert::logicalOr(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_Xor matcher object.
+ *
+ * @return LogicalXor
+ */
+function logicalXor()
+{
+    return Assert::logicalXor(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_StringMatches matcher object.
+ *
+ * @param string $string
+ *
+ * @return StringMatchesFormatDescription
+ */
+function matches($string)
+{
+    return Assert::matches(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_PCREMatch matcher object.
+ *
+ * @param string $pattern
+ *
+ * @return RegularExpression
+ */
+function matchesRegularExpression($pattern)
+{
+    return Assert::matchesRegularExpression(...\func_get_args());
+}
+
+/**
+ * Returns a matcher that matches when the method is never executed.
+ *
+ * @return PHPUnit_Framework_MockObject_Matcher_InvokedCount
+ */
+function never()
+{
+    return TestCase::never();
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_ObjectHasAttribute matcher object.
+ *
+ * @param string $attributeName
+ *
+ * @return ObjectHasAttribute
+ */
+function objectHasAttribute($attributeName)
+{
+    return Assert::objectHasAttribute(...\func_get_args());
+}
+
+/**
+ * @param mixed $value, ...
+ *
+ * @return PHPUnit_Framework_MockObject_Stub_ConsecutiveCalls
+ */
+function onConsecutiveCalls()
+{
+    return TestCase::onConsecutiveCalls(...\func_get_args());
+}
+
+/**
+ * Returns a matcher that matches when the method is executed exactly once.
+ *
+ * @return PHPUnit_Framework_MockObject_Matcher_InvokedCount
+ */
+function once()
+{
+    return TestCase::once();
+}
+
+/**
+ * @param int $argumentIndex
+ *
+ * @return PHPUnit_Framework_MockObject_Stub_ReturnArgument
+ */
+function returnArgument($argumentIndex)
+{
+    return TestCase::returnArgument(...\func_get_args());
+}
+
+/**
+ * @param mixed $callback
+ *
+ * @return PHPUnit_Framework_MockObject_Stub_ReturnCallback
+ */
+function returnCallback($callback)
+{
+    return TestCase::returnCallback(...\func_get_args());
+}
+
+/**
+ * Returns the current object.
+ *
+ * This method is useful when mocking a fluent interface.
+ *
+ * @return PHPUnit_Framework_MockObject_Stub_ReturnSelf
+ */
+function returnSelf()
+{
+    return TestCase::returnSelf();
+}
+
+/**
+ * @param mixed $value
+ *
+ * @return PHPUnit_Framework_MockObject_Stub_Return
+ */
+function returnValue($value)
+{
+    return TestCase::returnValue(...\func_get_args());
+}
+
+/**
+ * @param array $valueMap
+ *
+ * @return PHPUnit_Framework_MockObject_Stub_ReturnValueMap
+ */
+function returnValueMap(array $valueMap)
+{
+    return TestCase::returnValueMap(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_StringContains matcher object.
+ *
+ * @param string $string
+ * @param bool   $case
+ *
+ * @return StringContains
+ */
+function stringContains($string, $case = true)
+{
+    return Assert::stringContains(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_StringEndsWith matcher object.
+ *
+ * @param mixed $suffix
+ *
+ * @return StringEndsWith
+ */
+function stringEndsWith($suffix)
+{
+    return Assert::stringEndsWith(...\func_get_args());
+}
+
+/**
+ * Returns a PHPUnit_Framework_Constraint_StringStartsWith matcher object.
+ *
+ * @param mixed $prefix
+ *
+ * @return StringStartsWith
+ */
+function stringStartsWith($prefix)
+{
+    return Assert::stringStartsWith(...\func_get_args());
+}
+
+/**
+ * @param Exception $exception
+ *
+ * @return PHPUnit_Framework_MockObject_Stub_Exception
+ */
+function throwException(Exception $exception)
+{
+    return TestCase::throwException(...\func_get_args());
+}

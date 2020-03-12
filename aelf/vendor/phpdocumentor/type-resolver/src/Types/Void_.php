@@ -1,20 +1,33 @@
-s("0011", $a->slice(2, 4)->getHex());
+<?php
 
-        $b = Buffer::hex("00111100");
-        $this->assertEquals("0011", $b->slice(0, 2)->getHex());
-        $this->assertEquals("1100", $b->slice(2, 4)->getHex());
+declare(strict_types=1);
 
-        $c = Buffer::hex("111100", 4);
-        $this->assertEquals("0011", $c->slice(0, 2)->getHex());
-        $this->assertEquals("1100", $c->slice(2, 4)->getHex());
-    }
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
 
-    public function testEquals()
+namespace phpDocumentor\Reflection\Types;
+
+use phpDocumentor\Reflection\Type;
+
+/**
+ * Value Object representing the pseudo-type 'void'.
+ *
+ * Void is generally only used when working with return types as it signifies that the method intentionally does not
+ * return any value.
+ */
+final class Void_ implements Type
+{
+    /**
+     * Returns a rendered output of the Type as it would be used in a DocBlock.
+     */
+    public function __toString() : string
     {
-        $first = Buffer::hex('ab');
-        $second = Buffer::hex('ab');
-        $firstExtraLong = Buffer::hex('ab', 10);
-        $firstShort = new Buffer('', 0);
-        $this->assertTrue($first->equals($second));
-        $this->assertFalse($first->equals($firstExtraLong));
-        $this->assertFalse($first->equals($
+        return 'void';
+    }
+}

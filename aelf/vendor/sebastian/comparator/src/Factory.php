@@ -1,144 +1,139 @@
 <?php
-
-namespace BitWasp\Bech32;
-
-use BitWasp\Bech32\Exception\Bech32Exception;
-
-const GENERATOR = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
-const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-const CHARKEY_KEY = [
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    15, -1, 10, 17, 21, 20, 26, 30,  7,  5, -1, -1, -1, -1, -1, -1,
-    -1, 29, -1, 24, 13, 25,  9,  8, 23, -1, 18, 22, 31, 27, 19, -1,
-    1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1,
-    -1, 29, -1, 24, 13, 25,  9,  8, 23, -1, 18, 22, 31, 27, 19, -1,
-    1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1
-];
-
-/**
- * @param int[] $values
- * @param int $numValues
- * @return int
- */
-function polyMod(array $values, $numValues)
-{
-    $chk = 1;
-    for ($i = 0; $i < $numValues; $i++) {
-        $top = $chk >> 25;
-        $chk = ($chk & 0x1ffffff) << 5 ^ $values[$i];
-
-        for ($j = 0; $j < 5; $j++) {
-            $value = (($top >> $j) & 1) ? GENERATOR[$j] : 0;
-            $chk ^= $value;
-        }
-    }
-
-    return $chk;
-}
-
-/**
- * Expands the human readable part into a character array for checksumming.
- * @param string $hrp
- * @param int $hrpLen
- * @return int[]
- */
-function hrpExpand($hrp, $hrpLen)
-{
-    $expand1 = [];
-    $expand2 = [];
-    for ($i = 0; $i < $hrpLen; $i++) {
-        $o = ord($hrp[$i]);
-        $expand1[] = $o >> 5;
-        $expand2[] = $o & 31;
-    }
-
-    return array_merge($expand1, [0], $expand2);
-}
-
-/**
- * Converts words of $fromBits bits to $toBits bits in size.
+/*
+ * This file is part of sebastian/comparator.
  *
- * @param int[] $data - character array of data to convert
- * @param int $inLen - number of elements in array
- * @param int $fromBits - word (bit count) size of provided data
- * @param int $toBits - requested word size (bit count)
- * @param bool $pad - whether to pad (only when encoding)
- * @return int[]
- * @throws Bech32Exception
- */
-function convertBits(array $data, $inLen, $fromBits, $toBits, $pad = true)
-{
-    $acc = 0;
-    $bits = 0;
-    $ret = [];
-    $maxv = (1 << $toBits) - 1;
-    $maxacc = (1 << ($fromBits + $toBits - 1)) - 1;
-
-    for ($i = 0; $i < $inLen; $i++) {
-        $value = $data[$i];
-        if ($value < 0 || $value >> $fromBits) {
-            throw new Bech32Exception('Invalid value for convert bits');
-        }
-
-        $acc = (($acc << $fromBits) | $value) & $maxacc;
-        $bits += $fromBits;
-
-        while ($bits >= $toBits) {
-            $bits -= $toBits;
-            $ret[] = (($acc >> $bits) & $maxv);
-        }
-    }
-
-    if ($pad) {
-        if ($bits) {
-            $ret[] = ($acc << $toBits - $bits) & $maxv;
-        }
-    } else if ($bits >= $fromBits || ((($acc << ($toBits - $bits))) & $maxv)) {
-        throw new Bech32Exception('Invalid data');
-    }
-
-    return $ret;
-}
-
-/**
- * @param string $hrp
- * @param int[] $convertedDataChars
- * @return int[]
- */
-function createChecksum($hrp, array $convertedDataChars)
-{
-    $values = array_merge(hrpExpand($hrp, strlen($hrp)), $convertedDataChars);
-    $polyMod = polyMod(array_merge($values, [0, 0, 0, 0, 0, 0]), count($values) + 6) ^ 1;
-    $results = [];
-    for ($i = 0; $i < 6; $i++) {
-        $results[$i] = ($polyMod >> 5 * (5 - $i)) & 31;
-    }
-
-    return $results;
-}
-
-/**
- * Verifies the checksum given $hrp and $convertedDataChars.
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
- * @param string $hrp
- * @param int[] $convertedDataChars
- * @return bool
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
-function verifyChecksum($hrp, array $convertedDataChars)
-{
-    $expandHrp = hrpExpand($hrp, strlen($hrp));
-    $r = array_merge($expandHrp, $convertedDataChars);
-    $poly = polyMod($r, count($r));
-    return $poly === 1;
-}
+
+namespace SebastianBergmann\Comparator;
 
 /**
- * @param string $hrp
- * @param array $combinedDataChars
- * @return string
+ * Factory for comparators which compare values for equality.
  */
-function encode($hrp, array $combinedDataChars)
+class Factory
 {
-    $checksum = create
+    /**
+     * @var Comparator[]
+     */
+    private $customComparators = [];
+
+    /**
+     * @var Comparator[]
+     */
+    private $defaultComparators = [];
+
+    /**
+     * @var Factory
+     */
+    private static $instance;
+
+    /**
+     * @return Factory
+     */
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self;
+        }
+
+        return self::$instance;
+    }
+
+    /**
+     * Constructs a new factory.
+     */
+    public function __construct()
+    {
+        $this->registerDefaultComparators();
+    }
+
+    /**
+     * Returns the correct comparator for comparing two values.
+     *
+     * @param mixed $expected The first value to compare
+     * @param mixed $actual   The second value to compare
+     *
+     * @return Comparator
+     */
+    public function getComparatorFor($expected, $actual)
+    {
+        foreach ($this->customComparators as $comparator) {
+            if ($comparator->accepts($expected, $actual)) {
+                return $comparator;
+            }
+        }
+
+        foreach ($this->defaultComparators as $comparator) {
+            if ($comparator->accepts($expected, $actual)) {
+                return $comparator;
+            }
+        }
+    }
+
+    /**
+     * Registers a new comparator.
+     *
+     * This comparator will be returned by getComparatorFor() if its accept() method
+     * returns TRUE for the compared values. It has higher priority than the
+     * existing comparators, meaning that its accept() method will be invoked
+     * before those of the other comparators.
+     *
+     * @param Comparator $comparator The comparator to be registered
+     */
+    public function register(Comparator $comparator)
+    {
+        \array_unshift($this->customComparators, $comparator);
+
+        $comparator->setFactory($this);
+    }
+
+    /**
+     * Unregisters a comparator.
+     *
+     * This comparator will no longer be considered by getComparatorFor().
+     *
+     * @param Comparator $comparator The comparator to be unregistered
+     */
+    public function unregister(Comparator $comparator)
+    {
+        foreach ($this->customComparators as $key => $_comparator) {
+            if ($comparator === $_comparator) {
+                unset($this->customComparators[$key]);
+            }
+        }
+    }
+
+    /**
+     * Unregisters all non-default comparators.
+     */
+    public function reset()
+    {
+        $this->customComparators = [];
+    }
+
+    private function registerDefaultComparators()
+    {
+        $this->registerDefaultComparator(new TypeComparator);
+        $this->registerDefaultComparator(new ScalarComparator);
+        $this->registerDefaultComparator(new NumericComparator);
+        $this->registerDefaultComparator(new DoubleComparator);
+        $this->registerDefaultComparator(new ArrayComparator);
+        $this->registerDefaultComparator(new ResourceComparator);
+        $this->registerDefaultComparator(new ObjectComparator);
+        $this->registerDefaultComparator(new ExceptionComparator);
+        $this->registerDefaultComparator(new SplObjectStorageComparator);
+        $this->registerDefaultComparator(new DOMNodeComparator);
+        $this->registerDefaultComparator(new MockObjectComparator);
+        $this->registerDefaultComparator(new DateTimeComparator);
+    }
+
+    private function registerDefaultComparator(Comparator $comparator)
+    {
+        \array_unshift($this->defaultComparators, $comparator);
+
+        $comparator->setFactory($this);
+    }
+}

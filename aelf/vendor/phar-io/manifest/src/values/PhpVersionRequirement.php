@@ -1,21 +1,31 @@
-', '$1', $comment);
-        Assert::string($comment);
-        $comment = trim($comment);
+<?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-        // reg ex above is not able to remove */ from a single line docblock
-        if (substr($comment, -2) === '*/') {
-            $comment = trim(substr($comment, 0, -2));
-        }
+namespace PharIo\Manifest;
 
-        return str_replace(["\r\n", "\r"], "\n", $comment);
+use PharIo\Version\VersionConstraint;
+
+class PhpVersionRequirement implements Requirement {
+    /**
+     * @var VersionConstraint
+     */
+    private $versionConstraint;
+
+    public function __construct(VersionConstraint $versionConstraint) {
+        $this->versionConstraint = $versionConstraint;
     }
 
-    // phpcs:disable
     /**
-     * Splits the DocBlock into a template marker, summary, description and block of tags.
-     *
-     * @param string $comment Comment to split into the sub-parts.
-     *
-     * @return string[] containing the template marker (if any), summary, description and a string containing the tags.
-     *
-     * @author Mike van Riel <me@mikevanriel.com> for extending the regex with template marker sup
+     * @return VersionConstraint
+     */
+    public function getVersionConstraint() {
+        return $this->versionConstraint;
+    }
+}

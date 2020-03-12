@@ -1,1 +1,21 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"2":"2 C d","4097":"M H I","4290":"J"},C:{"1":"3 4 7 8 9 GB BB CB FB","2":"2 6 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w ZB YB","322":"0 1 x y z HB"},D:{"1":"3 4 8 9 GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"0 1 2 6 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB","194":"7"},E:{"1":"5 B C p aB","2":"F N K D G E A RB IB TB UB VB WB","3076":"XB"},F:{"1":"0 1 r s t u v w x y z","2":"5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L bB cB dB eB p AB gB","194":"q"},G:{"1":"rB sB tB uB","2":"G
+--TEST--
+phpunit --process-isolation --filter testBalanceIsInitiallyZero BankAccountTest ../_files/BankAccountTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--process-isolation';
+$_SERVER['argv'][3] = '--filter';
+$_SERVER['argv'][4] = 'testBalanceIsInitiallyZero';
+$_SERVER['argv'][5] = 'BankAccountTest';
+$_SERVER['argv'][6] = __DIR__ . '/../_files/BankAccountTest.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+.                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+OK (1 test, 1 assertion)

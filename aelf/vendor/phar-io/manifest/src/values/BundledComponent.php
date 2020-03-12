@@ -1,31 +1,48 @@
 <?php
-
-
-require_once "BlockChainSdk.php";
-require_once "NetSdk.php";
-/**
+/*
+ * This file is part of PharIo\Manifest.
  *
- * @day2020022
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
-require_once "Bytes.php";
-require_once "Sha.php";
-require_once "pro/Aelf/Protobuf/Generated/Address.php";
-require_once "pro/Aelf/Protobuf/Generated/Transaction.php";
-require_once "pro/Aelf/Protobuf/Generated/TransferInput.php";
-require_once "pro/Aelf/Protobuf/Generated/StringInput.php";
-require_once "pro/Aelf/Protobuf/Generated/Hash.php";
-require_once "pro/GPBMetadata/Types.php";
-require_once "pro/GPBMetadata/Timestamp.php";
-use Aelf\Protobuf\Generated\Address;
-use Aelf\Protobuf\Generated\Transaction;
-use Aelf\Protobuf\Generated\TransferInput;
-use Aelf\Protobuf\Generated\StringInput;
-use Aelf\Protobuf\Generated\Hash;
-use GPBMetadata\Types;
-use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
-use StephenHill\Base58;
-use Bytes;
-use kornrunner\Secp256k1;
-use kornrunner\Serializer\HexSignatureSerializer;
-/**
- * AEL
+
+namespace PharIo\Manifest;
+
+use PharIo\Version\Version;
+
+class BundledComponent {
+    /**
+     * @var string
+     */
+    private $name;
+
+    /**
+     * @var Version
+     */
+    private $version;
+
+    /**
+     * @param string  $name
+     * @param Version $version
+     */
+    public function __construct($name, Version $version) {
+        $this->name    = $name;
+        $this->version = $version;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName() {
+        return $this->name;
+    }
+
+    /**
+     * @return Version
+     */
+    public function getVersion() {
+        return $this->version;
+    }
+}

@@ -1,1 +1,32 @@
-�ま','さんみ','さんらん','しあい','しあげ','しあさって','しあわせ','しいく','しいん','しうち','しえい','しおけ','しかい','しかく','じかん','しごと','しすう','じだい','したうけ','したぎ','したて','したみ','しちょう','しちりん','しっかり','しつじ','しつもん','してい','してき','してつ','じてん','じどう','しなぎれ','しなもの','しなん','しねま','しねん','しのぐ','しのぶ','しはい','しばかり','しはつ','しはらい','しはん','しひょう','しふく','じぶん','しへい','しほう','しほん','しまう','しまる','しみん','しむける','じむしょ',
+<?php
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PharIo\Version;
+
+abstract class AbstractVersionConstraint implements VersionConstraint {
+    /**
+     * @var string
+     */
+    private $originalValue = '';
+
+    /**
+     * @param string $originalValue
+     */
+    public function __construct($originalValue) {
+        $this->originalValue = $originalValue;
+    }
+
+    /**
+     * @return string
+     */
+    public function asString() {
+        return $this->originalValue;
+    }
+}

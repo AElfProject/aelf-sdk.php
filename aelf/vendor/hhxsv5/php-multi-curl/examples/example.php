@@ -1,71 +1,79 @@
 <?php
-/**
- * @copyright 2013 Matthew Nagi
- * @license http://opensource.org/licenses/BSD-2-Clause BSD 2-Clause License
- */
+require '../vendor/autoload.php';
 
-namespace Pleo\Merkle;
+use Hhxsv5\PhpMultiCurl\Curl;
+use Hhxsv5\PhpMultiCurl\MultiCurl;
 
-use PHPUnit_Framework_TestCase;
+$getUrl = 'http://www.weather.com.cn/data/cityinfo/101270101.html';
+$postUrl = 'https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=yourtoken';
 
-class OneChildDuplicateNodeTest extends PHPUnit_Framework_TestCase
-{
-    private $tcn;
-    private $node;
+//Single http request
+$options = [//The custom options of cURL
+    CURLOPT_TIMEOUT        => 10,
+    CURLOPT_CONNECTTIMEOUT => 5,
+    CURLOPT_USERAGENT      => 'Multi-cURL client v1.5.0',
+];
 
-    public function setUp()
-    {
-        $this->tcn = $this
-            ->getMockBuilder('\Pleo\Merkle\TwoChildrenNode')
-            ->disableOriginalConstructor()
-            ->getMock();
+$c = new Curl(null, $options);
+$c->makeGet($getUrl);
+$response = $c->exec();
+if ($response->hasError()) {
+    //Fail
+    var_dump($response->getError());
+} else {
+    //Success
+    var_dump($response->getBody());
+}
 
-        $this->node = new OneChildDuplicateNode($this->tcn);
-    }
+//Reuse $c
+$c->makePost($postUrl);
+$response = $c->exec();
+if ($response->hasError()) {
+    //Fail
+    var_dump($response->getError());
+} else {
+    //Success
+    var_dump($response->getBody());
+}
 
-    /**
-     * @covers Pleo\Merkle\OneChildDuplicateNode
-     */
-    public function testHashPassesThroughNullReturn()
-    {
-        $this->tcn
-            ->expects($this->once())
-            ->method('hash')
-            ->will($this->returnValue(null));
+echo PHP_EOL;
 
-        $this->assertNull($this->node->hash());
-    }
+//Multi http request
+$c2 = new Curl();
+$c2->makeGet($getUrl);
 
-    /**
-     * @covers Pleo\Merkle\OneChildDuplicateNode
-     */
-    public function testHashPassesThroughStringReturn()
-    {
-        $this->tcn
-            ->expects($this->once())
-            ->method('hash')
-            ->will($this->returnValue('hashstring'));
+$c3 = new Curl();
+$c3->makePost($postUrl);
 
-        $this->assertSame('hashstring', $this->node->hash());
-    }
+$mc = new MultiCurl();
 
-    /**
-     * @covers Pleo\Merkle\OneChildDuplicateNode
-     */
-    public function testDataDuplicatesStringInput()
-    {
-        $data = 'somedata';
-        $this->tcn
-            ->expects($this->once())
-            ->method('data')
-            ->with($this->equalTo($data), $this->equalTo($data));
+$mc->addCurls([$c2, $c3]);
+$allSuccess = $mc->exec();
+if ($allSuccess) {
+    //All success
+    var_dump($c2->getResponse()->getBody(), $c3->getResponse()->getBody());
+} else {
+    //Some curls failed
+    var_dump($c2->getResponse()->getError(), $c3->getResponse()->getError());
+}
 
-        $this->node->data($data);
-    }
+echo PHP_EOL;
 
-    /**
-     * @covers Pleo\Merkle\OneChildDuplicateNode
-     */
-    public function testDataPassesInSameReferenceTwiceOnITreeNodeInput()
-    {
-        $inputNode 
+//Reuse $mc
+$mc->reset();
+
+$c4 = new Curl();
+$c4->makeGet($getUrl);
+
+$c5 = new Curl();
+$c5->makePost($postUrl);
+
+$mc->addCurls([$c4, $c5]);
+$allSuccess = $mc->exec();
+if ($allSuccess) {
+    //All success
+    var_dump($c4->getResponse()->getBody(), $c5->getResponse()->getBody());
+} else {
+    //Some curls failed
+    var_dump($c4->getResponse()->getError(), $c5->getResponse()->getError());
+}

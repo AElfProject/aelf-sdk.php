@@ -1,35 +1,32 @@
 <?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Key\Factory;
-
-use BitWasp\Bitcoin\Bitcoin;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\KeyInterface;
-use BitWasp\Bitcoin\Key\Deterministic\ElectrumKey;
-use BitWasp\Bitcoin\Mnemonic\Electrum\ElectrumWordListInterface;
-use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class ElectrumKeyFactory
+/**
+ * Stubs a method by returning the current object.
+ */
+class PHPUnit_Framework_MockObject_Stub_ReturnSelf implements PHPUnit_Framework_MockObject_Stub
 {
-    /**
-     * @var EcAdapterInterface
-     */
-    private $adapter;
-
-    /**
-     * @var PrivateKeyFactory
-     */
-    private $privateFactory;
-
-    /**
-     * ElectrumKeyFactory constructor.
-     * @param EcAdapterInterface|null $ecAdapter
-     */
-    public function __construct(EcAdapterInterface $ecAdapter = null)
+    public function invoke(PHPUnit_Framework_MockObject_Invocation $invocation)
     {
-        $this->adapter = $ecAdapter ?: Bitcoin::getEcAdapter();
-        $this->privateFactory = new PrivateKeyFactory($ecA
+        if (!$invocation instanceof PHPUnit_Framework_MockObject_Invocation_Object) {
+            throw new PHPUnit_Framework_MockObject_RuntimeException(
+                'The current object can only be returned when mocking an ' .
+                'object, not a static class.'
+            );
+        }
+
+        return $invocation->object;
+    }
+
+    public function toString()
+    {
+        return 'return the current object';
+    }
+}

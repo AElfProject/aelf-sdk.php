@@ -1,1 +1,26 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"2":"2 C d J M H I"},C:{"2":"0 1 2 3 4 6 7 8 9 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB ZB YB"},D:{"1":"0 1 3 4 6 7 8 9 V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB","16":"2 F N K D G E A B C d J M H I O P Q R S T U"},E:{"1":"5 K D G E A B C TB UB VB WB XB p aB","2":"F RB IB","16":"N"},F:{"1":"0 1 5 6 C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z gB","16":"E B bB cB dB eB p AB"},G:{"1":"G lB mB nB oB pB qB rB sB tB uB","16":"IB hB EB jB KB"},H:{"16":"vB"},I:{"1":"4 F zB EB 0B 1B"
+--TEST--
+GH-322: group commandline option should override group/exclude setting in phpunit.xml
+--FILE--
+<?php
+
+$_SERVER['argv'][1] = '--configuration';
+$_SERVER['argv'][2] = __DIR__ . '/322/phpunit322.xml';
+$_SERVER['argv'][3] = '--debug';
+$_SERVER['argv'][4] = '--group';
+$_SERVER['argv'][5] = 'one';
+$_SERVER['argv'][6] = 'Issue322Test';
+$_SERVER['argv'][7] = __DIR__ . '/322/Issue322Test.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+?>
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+
+Starting test 'Issue322Test::testOne'.
+.                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+OK (1 test, 1 assertion)

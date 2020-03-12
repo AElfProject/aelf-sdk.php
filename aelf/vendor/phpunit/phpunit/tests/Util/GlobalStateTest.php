@@ -1,49 +1,36 @@
 <?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace Elliptic\Curve\BaseCurve;
+namespace PHPUnit\Util;
 
-use Elliptic\Utils;
+use PHPUnit\Framework\TestCase;
 
-abstract class Point
+class GlobalStateTest extends TestCase
 {
-    public $curve;
-    public $type;
-    public $precomputed;
-
-    function __construct($curve, $type)
+    public function testIncludedFilesAsStringSkipsVfsProtocols()
     {
-        $this->curve = $curve;
-        $this->type = $type;
-        $this->precomputed = null;
+        $dir   = __DIR__;
+        $files = [
+            'phpunit', // The 0 index is not used
+            $dir . '/ConfigurationTest.php',
+            $dir . '/GlobalStateTest.php',
+            'vfs://' . $dir . '/RegexTest.php',
+            'phpvfs53e46260465c7://' . $dir . '/TestTest.php',
+            'file://' . $dir . '/XmlTest.php'
+        ];
+
+        $this->assertEquals(
+            "require_once '" . $dir . "/ConfigurationTest.php';\n" .
+            "require_once '" . $dir . "/GlobalStateTest.php';\n" .
+            "require_once 'file://" . $dir . "/XmlTest.php';\n",
+            GlobalState::processIncludedFilesAsString($files)
+        );
     }
-
-    abstract public function eq($other);
-
-    public function validate() {
-        return $this->curve->validate($this);
-    }
-
-    public function encodeCompressed($enc) {
-        return $this->encode($enc, true);
-    }
-
-    public function encode($enc, $compact = false) {
-        return Utils::encode($this->_encode($compact), $enc);
-    }
-
-    protected function _encode($compact)
-    {
-        $len = $this->curve->p->byteLength();
-        $x = $this->getX()->toArray("be", $len);
-
-        if( $compact )
-        {
-            array_unshift($x, ($this->getY()->isEven() ? 0x02 : 0x03));
-            return $x;
-        }
-
-        return array_merge(array(0x04), $x, $this->getY()->toArray("be", $len));
-    }
-
-    public function precompute($power = null)
-   
+}

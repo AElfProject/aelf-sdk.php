@@ -1,32 +1,30 @@
-            else
-                    $acc = $acc->add($wnd[(-$z - 1) >> 1]->neg());
-            }
-        }
-        return $p->type == "affine" ? $acc->toP() : $acc;
-    }
+# Changes in PHP_CodeCoverage 3.1
 
-    public function _wnafMulAdd($defW, $points, $coeffs, $len, $jacobianResult = false)
-    {
-        $wndWidth = &$this->_wnafT1;
-        $wnd = &$this->_wnafT2;
-        $naf = &$this->_wnafT3;
+All notable changes of the PHP_CodeCoverage 3.1 release series are documented in this file using the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-        //Fill all arrays
-        $max = 0;
-        for($i = 0; $i < $len; $i++)
-        {
-            $p = $points[$i];
-            $nafPoints = $p->_getNAFPoints($defW);
-            $wndWidth[$i] = $nafPoints["wnd"];
-            $wnd[$i] = $nafPoints["points"];
-        }
-        //Comb all window NAFs
-        for($i = $len - 1; $i >= 1; $i -= 2)
-        {
-            $a = $i - 1;
-            $b = $i;
-            if( $wndWidth[$a] != 1 || $wndWidth[$b] != 1 )
-            {
-                $naf[$a] = Utils::getNAF($coeffs[$a], $wndWidth[$a]);
-                $naf[$b] = Utils::getNAF($coeffs[$b], $wndWidth[$b]);
-                $max
+## [3.1.1] - 2016-02-04
+
+### Changed
+
+* Allow version 2.0.x of `sebastian/version` dependency
+
+## [3.1.0] - 2016-01-11
+
+### Added
+
+* Implemented [#234](https://github.com/sebastianbergmann/php-code-coverage/issues/234): Optionally raise an exception when a specified unit of code is not executed
+
+### Changed
+
+* The Clover XML report now contains cyclomatic complexity information
+* The Clover XML report now contains method visibility information
+* Cleanup and refactoring of various areas of code
+* Added missing test cases
+
+### Removed
+
+* The functionality controlled by the `mapTestClassNameToCoveredClassName` setting has been removed
+
+[3.1.1]: https://github.com/sebastianbergmann/php-code-coverage/compare/3.1.0...3.1.1
+[3.1.0]: https://github.com/sebastianbergmann/php-code-coverage/compare/3.0...3.1.0
+

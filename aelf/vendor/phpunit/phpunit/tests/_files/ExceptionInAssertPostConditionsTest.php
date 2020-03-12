@@ -1,42 +1,37 @@
 <?php
-namespace Yurun\Swoole\CoPool;
+use PHPUnit\Framework\TestCase;
 
-use Swoole\Coroutine\Channel;
-
-/**
- * 协程批量执行器
- */
-class CoBatch
+class ExceptionInAssertPostConditionsTest extends TestCase
 {
-    /**
-     * 任务回调列表
-     *
-     * @var callable[]
-     */
-    private $taskCallables;
+    public $setUp                = false;
+    public $assertPreConditions  = false;
+    public $assertPostConditions = false;
+    public $tearDown             = false;
+    public $testSomething        = false;
 
-    /**
-     * 超时时间，为 -1 则不限时
-     *
-     * @var float|null
-     */
-    private $timeout;
-
-    /**
-     * 限制并发协程数量，为 -1 则不限制
-     *
-     * @var int|null
-     */
-    private $limit;
-
-    public function __construct(array $taskCallables, ?float $timeout = -1, ?int $limit = -1)
+    protected function setUp()
     {
-        $this->taskCallables = $taskCallables;
-        $this->timeout = $timeout;
-        $this->limit = $limit;
+        $this->setUp = true;
     }
 
-    /**
-     * 执行并获取执行结果
-     *
-     * @param float|null $timeout 超时时间，为 -1 则不�
+    protected function assertPreConditions()
+    {
+        $this->assertPreConditions = true;
+    }
+
+    public function testSomething()
+    {
+        $this->testSomething = true;
+    }
+
+    protected function assertPostConditions()
+    {
+        $this->assertPostConditions = true;
+        throw new Exception;
+    }
+
+    protected function tearDown()
+    {
+        $this->tearDown = true;
+    }
+}

@@ -1,48 +1,43 @@
 <?php
+/*
+ * This file is part of PharIo\Version.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace BitWasp\Bitcoin\Network\Networks;
+namespace PharIo\Version;
 
-use BitWasp\Bitcoin\Network\Network;
-use BitWasp\Bitcoin\Script\ScriptType;
-
-class BitcoinTestnet extends Network
-{
+class AndVersionConstraintGroup extends AbstractVersionConstraint {
     /**
-     * {@inheritdoc}
-     * @see Network::$base58PrefixMap
+     * @var VersionConstraint[]
      */
-    protected $base58PrefixMap = [
-        self::BASE58_ADDRESS_P2PKH => "6f",
-        self::BASE58_ADDRESS_P2SH => "c4",
-        self::BASE58_WIF => "ef",
-    ];
+    private $constraints = [];
 
     /**
-     * {@inheritdoc}
-     * @see Network::$bech32PrefixMap
+     * @param string              $originalValue
+     * @param VersionConstraint[] $constraints
      */
-    protected $bech32PrefixMap = [
-        self::BECH32_PREFIX_SEGWIT => "tb",
-    ];
+    public function __construct($originalValue, array $constraints) {
+        parent::__construct($originalValue);
+
+        $this->constraints = $constraints;
+    }
 
     /**
-     * {@inheritdoc}
-     * @see Network::$bip32PrefixMap
+     * @param Version $version
+     *
+     * @return bool
      */
-    protected $bip32PrefixMap = [
-        self::BIP32_PREFIX_XPUB => "043587cf",
-        self::BIP32_PREFIX_XPRV => "04358394",
-    ];
+    public function complies(Version $version) {
+        foreach ($this->constraints as $constraint) {
+            if (!$constraint->complies($version)) {
+                return false;
+            }
+        }
 
-    /**
-     * {@inheritdoc}
-     * @see Network::$bip32ScriptTypeMap
-     */
-    protected $bip32ScriptTypeMap = [
-        self::BIP32_PREFIX_XPUB => ScriptType::P2PKH,
-        self::BIP32_PREFIX_XPRV => ScriptType::P2PKH,
-    ];
-
-    /**
-     * {@inheritdoc}
-     * @see Network::$signedMessagePref
+        return true;
+    }
+}

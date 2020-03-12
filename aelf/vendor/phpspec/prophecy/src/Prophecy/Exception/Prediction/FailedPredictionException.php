@@ -1,34 +1,24 @@
 <?php
 
-declare(strict_types=1);
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace BitWasp\Buffertools\Types;
+namespace Prophecy\Exception\Prediction;
 
-use BitWasp\Buffertools\Parser;
+use RuntimeException;
 
-interface TypeInterface
+/**
+ * Basic failed prediction exception.
+ * Use it for custom prediction failures.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+class FailedPredictionException extends RuntimeException implements PredictionException
 {
-    /**
-     * Flip whatever bitstring is given to us
-     *
-     * @param  string $bitString
-     * @return string
-     */
-    public function flipBits(string $bitString): string;
-
-    /**
-     * @param mixed $integer
-     * @return string
-     */
-    public function write($integer): string;
-
-    /**
-     * @param Parser $parser
-     * @return mixed
-     */
-    public function read(Parser $parser);
-
-    /**
-     * @return int
-     */
-    public functi
+}

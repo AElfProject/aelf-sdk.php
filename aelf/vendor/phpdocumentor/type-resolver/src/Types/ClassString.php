@@ -1,58 +1,54 @@
 <?php
-namespace Yurun\Util\YurunHttp\Http\Psr7;
 
-use Yurun\Util\YurunHttp\Stream\FileStream;
-use Psr\Http\Message\UploadedFileInterface;
+declare(strict_types=1);
 
-class UploadedFile implements UploadedFileInterface
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\Types;
+
+use phpDocumentor\Reflection\Fqsen;
+use phpDocumentor\Reflection\Type;
+
+/**
+ * Value Object representing the type 'string'.
+ */
+final class ClassString implements Type
 {
-    /**
-     * 文件在客户端时的文件名
-     * @var string
-     */
-    protected $fileName;
+    /** @var Fqsen|null */
+    private $fqsen;
 
     /**
-     * 文件mime类型
-     * @var string
+     * Initializes this representation of a class string with the given Fqsen.
      */
-    protected $mediaType;
-
-    /**
-     * 临时文件名
-     * @var string
-     */
-    protected $tmpFileName;
-    
-    /**
-     * 文件大小，单位：字节
-     * @var int
-     */
-    protected $size;
-
-    /**
-     * 错误码
-     * @var int
-     */
-    protected $error;
-    
-    /**
-     * 文件流
-     * @var \Yurun\Util\YurunHttp\Stream\FileStream
-     */
-    protected $stream;
-    
-    /**
-     * 文件是否被移动过
-     * @var boolean
-     */
-    protected $isMoved = false;
-
-    public function __construct($fileName, $mediaType, $tmpFileName, $size = null, $error = 0)
+    public function __construct(?Fqsen $fqsen = null)
     {
-        $this->fileName = $fileName;
-        $this->mediaType = $mediaType;
-        $this->tmpFileName = $tmpFileName;
-        if(null === $size)
-        {
-            $this->size = filesize($tmp
+        $this->fqsen = $fqsen;
+    }
+
+    /**
+     * Returns the FQSEN associated with this object.
+     */
+    public function getFqsen() : ?Fqsen
+    {
+        return $this->fqsen;
+    }
+
+    /**
+     * Returns a rendered output of the Type as it would be used in a DocBlock.
+     */
+    public function __toString() : string
+    {
+        if ($this->fqsen === null) {
+            return 'class-string';
+        }
+
+        return 'class-string<' . (string) $this->fqsen . '>';
+    }
+}

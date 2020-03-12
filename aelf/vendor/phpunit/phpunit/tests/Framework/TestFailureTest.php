@@ -1,46 +1,41 @@
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace PHPUnit\Framework;
+
+class TestFailureTest extends TestCase
 {
-    "name": "composer/semver",
-    "description": "Semver library that offers utilities, version constraint parsing and validation.",
-    "type": "library",
-    "license": "MIT",
-    "keywords": [
-        "semver",
-        "semantic",
-        "versioning",
-        "validation"
-    ],
-    "authors": [
-        {
-            "name": "Nils Adermann",
-            "email": "naderman@naderman.de",
-            "homepage": "http://www.naderman.de"
-        },
-        {
-            "name": "Jordi Boggiano",
-            "email": "j.boggiano@seld.be",
-            "homepage": "http://seld.be"
-        },
-        {
-            "name": "Rob Bast",
-            "email": "rob.bast@gmail.com",
-            "homepage": "http://robbast.nl"
-        }
-    ],
-    "support": {
-        "irc": "irc://irc.freenode.org/composer",
-        "issues": "https://github.com/composer/semver/issues"
-    },
-    "require": {
-        "php": "^5.3.2 || ^7.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^4.5 || ^5.0.5"
-    },
-    "autoload": {
-        "psr-4": {
-            "Composer\\Semver\\": "src"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-  
+    public function testToString()
+    {
+        $test      = new self(__FUNCTION__);
+        $exception = new Exception('message');
+        $failure   = new TestFailure($test, $exception);
+
+        $this->assertEquals(__METHOD__ . ': message', $failure->toString());
+    }
+
+    public function testToStringForError()
+    {
+        $test      = new self(__FUNCTION__);
+        $exception = new \Error('message');
+        $failure   = new TestFailure($test, $exception);
+
+        $this->assertEquals(__METHOD__ . ': message', $failure->toString());
+    }
+
+    public function testgetExceptionAsString()
+    {
+        $test      = new self(__FUNCTION__);
+        $exception = new \Error('message');
+        $failure   = new TestFailure($test, $exception);
+
+        $this->assertEquals("Error: message\n", $failure->getExceptionAsString());
+    }
+}

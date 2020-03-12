@@ -1,249 +1,201 @@
-<?php
+<?php declare(strict_types=1);
+/*
+ * This file is part of sebastian/diff.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace Mdanter\Ecc\Math;
+namespace SebastianBergmann\Diff;
 
-use Mdanter\Ecc\Util\BinaryString;
-use Mdanter\Ecc\Util\NumberSize;
+use PHPUnit\Framework\TestCase;
 
-class GmpMath implements GmpMathInterface
+/**
+ * @coversNothing
+ */
+abstract class LongestCommonSubsequenceTest extends TestCase
 {
     /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::cmp()
+     * @var LongestCommonSubsequenceCalculator
      */
-    public function cmp(\GMP $first, \GMP $other): int
+    private $implementation;
+
+    /**
+     * @var string
+     */
+    private $memoryLimit;
+
+    /**
+     * @var int[]
+     */
+    private $stress_sizes = [1, 2, 3, 100, 500, 1000, 2000];
+
+    protected function setUp()
     {
-        return gmp_cmp($first, $other);
+        $this->memoryLimit = \ini_get('memory_limit');
+        \ini_set('memory_limit', '256M');
+
+        $this->implementation = $this->createImplementation();
     }
 
     /**
-     * @param \GMP $first
-     * @param \GMP $other
-     * @return bool
+     * @return LongestCommonSubsequenceCalculator
      */
-    public function equals(\GMP $first, \GMP $other): bool
+    abstract protected function createImplementation();
+
+    protected function tearDown()
     {
-        return gmp_cmp($first, $other) === 0;
-    }
-    
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::mod()
-     */
-    public function mod(\GMP $number, \GMP $modulus): \GMP
-    {
-        return gmp_mod($number, $modulus);
+        \ini_set('memory_limit', $this->memoryLimit);
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::add()
-     */
-    public function add(\GMP $augend, \GMP $addend): \GMP
+    public function testBothEmpty()
     {
-        return gmp_add($augend, $addend);
+        $from   = [];
+        $to     = [];
+        $common = $this->implementation->calculate($from, $to);
+
+        $this->assertSame([], $common);
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::sub()
-     */
-    public function sub(\GMP $minuend, \GMP $subtrahend): \GMP
+    public function testIsStrictComparison()
     {
-        return gmp_sub($minuend, $subtrahend);
+        $from = [
+            false, 0, 0.0, '', null, [],
+            true, 1, 1.0, 'foo', ['foo', 'bar'], ['foo' => 'bar']
+        ];
+        $to     = $from;
+        $common = $this->implementation->calculate($from, $to);
+
+        $this->assertSame($from, $common);
+
+        $to = [
+            false, false, false, false, false, false,
+            true, true, true, true, true, true
+        ];
+
+        $expected = [
+            false,
+            true,
+        ];
+
+        $common = $this->implementation->calculate($from, $to);
+
+        $this->assertSame($expected, $common);
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::mul()
-     */
-    public function mul(\GMP $multiplier, \GMP $multiplicand): \GMP
+    public function testEqualSequences()
     {
-        return gmp_mul($multiplier, $multiplicand);
-    }
+        foreach ($this->stress_sizes as $size) {
+            $range  = \range(1, $size);
+            $from   = $range;
+            $to     = $range;
+            $common = $this->implementation->calculate($from, $to);
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::div()
-     */
-    public function div(\GMP $dividend, \GMP $divisor): \GMP
-    {
-        return gmp_div($dividend, $divisor);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::pow()
-     */
-    public function pow(\GMP $base, int $exponent): \GMP
-    {
-        return gmp_pow($base, $exponent);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::bitwiseAnd()
-     */
-    public function bitwiseAnd(\GMP $first, \GMP $other): \GMP
-    {
-        return gmp_and($first, $other);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::rightShift()
-     */
-    public function rightShift(\GMP $number, int $positions): \GMP
-    {
-        // Shift 1 right = div / 2
-        return gmp_div($number, gmp_pow(gmp_init(2, 10), $positions));
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::bitwiseXor()
-     */
-    public function bitwiseXor(\GMP $first, \GMP $other): \GMP
-    {
-        return gmp_xor($first, $other);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::leftShift()
-     */
-    public function leftShift(\GMP $number, int $positions): \GMP
-    {
-        // Shift 1 left = mul by 2
-        return gmp_mul($number, gmp_pow(2, $positions));
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::toString()
-     */
-    public function toString(\GMP $value): string
-    {
-        return gmp_strval($value);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::hexDec()
-     */
-    public function hexDec(string $hex): string
-    {
-        return gmp_strval(gmp_init($hex, 16), 10);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::decHex()
-     */
-    public function decHex(string $dec): string
-    {
-        $dec = gmp_init($dec, 10);
-
-        if (gmp_cmp($dec, 0) < 0) {
-            throw new \InvalidArgumentException('Unable to convert negative integer to string');
+            $this->assertSame($range, $common);
         }
-
-        $hex = gmp_strval($dec, 16);
-
-        if (BinaryString::length($hex) % 2 != 0) {
-            $hex = '0'.$hex;
-        }
-
-        return $hex;
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::powmod()
-     */
-    public function powmod(\GMP $base, \GMP $exponent, \GMP $modulus): \GMP
+    public function testDistinctSequences()
     {
-        if ($this->cmp($exponent, gmp_init(0, 10)) < 0) {
-            throw new \InvalidArgumentException("Negative exponents (" . $this->toString($exponent) . ") not allowed.");
-        }
+        $from   = ['A'];
+        $to     = ['B'];
+        $common = $this->implementation->calculate($from, $to);
+        $this->assertSame([], $common);
 
-        return gmp_powm($base, $exponent, $modulus);
+        $from   = ['A', 'B', 'C'];
+        $to     = ['D', 'E', 'F'];
+        $common = $this->implementation->calculate($from, $to);
+        $this->assertSame([], $common);
+
+        foreach ($this->stress_sizes as $size) {
+            $from   = \range(1, $size);
+            $to     = \range($size + 1, $size * 2);
+            $common = $this->implementation->calculate($from, $to);
+            $this->assertSame([], $common);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::isPrime()
-     */
-    public function isPrime(\GMP $n): bool
+    public function testCommonSubsequence()
     {
-        $prob = gmp_prob_prime($n);
+        $from     = ['A',      'C',      'E', 'F', 'G'];
+        $to       = ['A', 'B',      'D', 'E',           'H'];
+        $expected = ['A',                'E'];
+        $common   = $this->implementation->calculate($from, $to);
+        $this->assertSame($expected, $common);
 
-        if ($prob > 0) {
-            return true;
+        $from     = ['A',      'C',      'E', 'F', 'G'];
+        $to       = ['B', 'C', 'D', 'E', 'F',      'H'];
+        $expected = ['C',                'E', 'F'];
+        $common   = $this->implementation->calculate($from, $to);
+        $this->assertSame($expected, $common);
+
+        foreach ($this->stress_sizes as $size) {
+            $from     = $size < 2 ? [1] : \range(1, $size + 1, 2);
+            $to       = $size < 3 ? [1] : \range(1, $size + 1, 3);
+            $expected = $size < 6 ? [1] : \range(1, $size + 1, 6);
+            $common   = $this->implementation->calculate($from, $to);
+
+            $this->assertSame($expected, $common);
         }
-
-        return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::nextPrime()
-     */
-    public function nextPrime(\GMP $starting_value): \GMP
+    public function testSingleElementSubsequenceAtStart()
     {
-        return gmp_nextprime($starting_value);
+        foreach ($this->stress_sizes as $size) {
+            $from   = \range(1, $size);
+            $to     = \array_slice($from, 0, 1);
+            $common = $this->implementation->calculate($from, $to);
+
+            $this->assertSame($to, $common);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::inverseMod()
-     */
-    public function inverseMod(\GMP $a, \GMP $m): \GMP
+    public function testSingleElementSubsequenceAtMiddle()
     {
-        return gmp_invert($a, $m);
+        foreach ($this->stress_sizes as $size) {
+            $from   = \range(1, $size);
+            $to     = \array_slice($from, (int) ($size / 2), 1);
+            $common = $this->implementation->calculate($from, $to);
+
+            $this->assertSame($to, $common);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     * @see GmpMathInterface::jacobi()
-     */
-    public function jacobi(\GMP $a, \GMP $n): int
+    public function testSingleElementSubsequenceAtEnd()
     {
-        return gmp_jacobi($a, $n);
+        foreach ($this->stress_sizes as $size) {
+            $from   = \range(1, $size);
+            $to     = \array_slice($from, $size - 1, 1);
+            $common = $this->implementation->calculate($from, $to);
+
+            $this->assertSame($to, $common);
+        }
     }
 
-    /**
-     * @param \GMP $x
-     * @param int $byteSize
-     * @return string
-     */
-    public function intToFixedSizeString(\GMP $x, int $byteSize): string
+    public function testReversedSequences()
     {
-        if ($byteSize < 0) {
-            throw new \RuntimeException("Byte size cannot be negative");
+        $from     = ['A', 'B'];
+        $to       = ['B', 'A'];
+        $expected = ['A'];
+        $common   = $this->implementation->calculate($from, $to);
+        $this->assertSame($expected, $common);
+
+        foreach ($this->stress_sizes as $size) {
+            $from   = \range(1, $size);
+            $to     = \array_reverse($from);
+            $common = $this->implementation->calculate($from, $to);
+
+            $this->assertSame([1], $common);
         }
-
-        if (gmp_cmp($x, 0) < 0) {
-            throw new \RuntimeException("x was negative - not yet supported");
-        }
-
-        $two = gmp_init(2);
-        $range = gmp_pow($two, $byteSize * 8);
-        if (NumberSize::bnNumBits($this, $x) >= NumberSize::bnNumBits($this, $range)) {
-            throw new \RuntimeException("Number overflows byte size");
-        }
-
-        $maskShift = gmp_pow($two, 8);
-        $mask = gmp_mul(gmp_init(255), $range);
-
-        $binary = '';
-        for ($i = $byteSize - 1; $i >= 0; $i--) {
-            $mask = gmp_div($mask, $maskShift);
-            $binary .= pack('C', gmp_strval(gmp_div(gmp_and($x, $mask), gmp_pow($two, $i * 8)), 10));
-        }
-
-        return $binary;
     }
 
-    /**
-     * {@inherit
+    public function testStrictTypeCalculate()
+    {
+        $diff = $this->implementation->calculate(['5'], ['05']);
+
+        $this->assertInternalType('array', $diff);
+        $this->assertCount(0, $diff);
+    }
+}

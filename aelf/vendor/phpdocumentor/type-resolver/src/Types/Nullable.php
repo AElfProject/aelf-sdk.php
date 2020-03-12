@@ -1,30 +1,49 @@
-d .google.protobuf.DescriptorProto.ExtensionRange extension_range = 5;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+<?php
+
+declare(strict_types=1);
+
+/**
+ * This file is part of phpDocumentor.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @link      http://phpdoc.org
+ */
+
+namespace phpDocumentor\Reflection\Types;
+
+use phpDocumentor\Reflection\Type;
+
+/**
+ * Value Object representing a nullable type. The real type is wrapped.
+ */
+final class Nullable implements Type
+{
+    /** @var Type The actual type that is wrapped */
+    private $realType;
+
+    /**
+     * Initialises this nullable type using the real type embedded
      */
-    public function getExtensionRange()
+    public function __construct(Type $realType)
     {
-        return $this->extension_range;
+        $this->realType = $realType;
     }
 
     /**
-     * Generated from protobuf field <code>repeated .google.protobuf.DescriptorProto.ExtensionRange extension_range = 5;</code>
-     * @param \Google\Protobuf\Internal\DescriptorProto\ExtensionRange[]|\Google\Protobuf\Internal\RepeatedField $var
-     * @return $this
+     * Provide access to the actual type directly, if needed.
      */
-    public function setExtensionRange($var)
+    public function getActualType() : Type
     {
-        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Google\Protobuf\Internal\DescriptorProto\ExtensionRange::class);
-        $this->extension_range = $arr;
-        $this->has_extension_range = true;
-
-        return $this;
-    }
-
-    public function hasExtensionRange()
-    {
-        return $this->has_extension_range;
+        return $this->realType;
     }
 
     /**
-     * Generated from protobuf field <code>repeated .google.protobuf.OneofDescriptorProto oneof_decl = 8;</code>
-     * @return \Go
+     * Returns a rendered output of the Type as it would be used in a DocBlock.
+     */
+    public function __toString() : string
+    {
+        return '?' . $this->realType->__toString();
+    }
+}

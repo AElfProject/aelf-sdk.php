@@ -1,50 +1,33 @@
-<?php
-declare(strict_types=1);
+sebastian/environment
 
-namespace Mdanter\Ecc;
+Copyright (c) 2014-2017, Sebastian Bergmann <sebastian@phpunit.de>.
+All rights reserved.
 
-use Mdanter\Ecc\Crypto\Signature\Signer;
-use Mdanter\Ecc\Curves\NistCurve;
-use Mdanter\Ecc\Curves\SecgCurve;
-use Mdanter\Ecc\Math\GmpMathInterface;
-use Mdanter\Ecc\Math\MathAdapterFactory;
-use Mdanter\Ecc\Primitives\CurveFp;
-use Mdanter\Ecc\Primitives\CurveFpInterface;
-use Mdanter\Ecc\Primitives\CurveParameters;
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
 
-/**
- * Static factory class providing factory methods to work with NIST and SECG recommended curves.
- */
-class EccFactory
-{
-    /**
-     * Selects and creates the most appropriate adapter for the running environment.
-     *
-     * @param bool $debug [optional] Set to true to get a trace of all mathematical operations
-     *
-     * @throws \RuntimeException
-     * @return GmpMathInterface
-     */
-    public static function getAdapter(bool $debug = false): GmpMathInterface
-    {
-        return MathAdapterFactory::getAdapter($debug);
-    }
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
 
-    /**
-     * Returns a factory to create NIST Recommended curves and generators.
-     *
-     * @param  GmpMathInterface $adapter [optional] Defaults to the return value of EccFactory::getAdapter().
-     * @return NistCurve
-     */
-    public static function getNistCurves(GmpMathInterface $adapter = null): NistCurve
-    {
-        return new NistCurve($adapter ?: self::getAdapter());
-    }
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
 
-    /**
-     * Returns a factory to return SECG Recommended curves and generators.
-     *
-     * @param  GmpMathInterface $adapter [optional] Defaults to the return value of EccFactory::getAdapter().
-     * @return SecgCurve
-     */
-    public sta
+ * Neither the name of Sebastian Bergmann nor the names of his
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.

@@ -1,1 +1,31 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"2":"2 C d J M H I"},C:{"1":"0 1 3 4 7 8 9 k l m n o L q r s t u v w x y z HB GB BB CB FB","2":"fB","164":"2 6 DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j ZB YB"},D:{"1":"SB NB LB kB MB JB OB PB QB","292":"0 1 2 3 4 6 7 8 9 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB"},E:{"1":"5 aB","292":"F N K D G E A B C RB IB TB UB VB WB XB p"},F:{"2":"5 E B C bB cB dB eB p AB gB","292":"0 1 6 J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z"},G:{"1":"uB","292":"G IB hB EB jB KB lB mB nB oB pB qB rB sB tB"},H:{"2":"vB"},I:{"1":"4","292":"DB F wB xB yB zB EB 0B 1B"},J:{"292":"D A"},K:{"2":"5 A B C p AB","292":"L"},L:{"1":"JB"},M:{"1":"3"},N:{"2":"A B"},O:{"292":"2B"},P:{"292":"F 3B
+--TEST--
+phpunit -c ../_files/configuration.custom-printer.xml --verbose IncompleteTest ../_files/IncompleteTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '-c';
+$_SERVER['argv'][2] = __DIR__ . '/../_files/configuration.custom-printer.xml';
+$_SERVER['argv'][3] = '--verbose';
+$_SERVER['argv'][4] = 'IncompleteTest';
+$_SERVER['argv'][5] = __DIR__ . '/../_files/IncompleteTest.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+Runtime:       %s
+Configuration: %sconfiguration.custom-printer.xml
+
+I                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 incomplete test:
+
+1) IncompleteTest::testIncomplete
+Test incomplete
+
+%s
+
+OK, but incomplete, skipped, or risky tests!
+Tests: 1, Assertions: 0, Incomplete: 1.

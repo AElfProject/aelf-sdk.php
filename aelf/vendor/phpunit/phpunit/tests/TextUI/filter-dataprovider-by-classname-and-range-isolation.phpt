@@ -1,1 +1,21 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"2":"2 C d J M H I"},C:{"2":"2 6 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l ZB YB","132":"0 1 3 4 7 8 9 m n o L q r s t u v w x y z HB GB BB CB FB"},D:{"1":"0 1 3 4 7 8 9 z HB GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"2 6 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v","260":"w x y"},E:{"1":"5 B C p aB","2":"F N K D G RB IB TB UB VB","16":"E","132":"A WB XB"},F:{"1":"0 1 m n o L q r s t u v w x y z","2":"5 6 E B C J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l bB cB dB eB p AB gB"},G:{"1":"rB sB tB uB","2":"G IB hB EB jB KB lB mB","132":"nB oB pB qB"},H:{"2":"vB"}
+--TEST--
+phpunit --process-isolation --filter DataProviderFilterTest#1-3 DataProviderFilterTest ../_files/DataProviderFilterTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--process-isolation';
+$_SERVER['argv'][3] = '--filter';
+$_SERVER['argv'][4] = 'DataProviderFilterTest#1-3';
+$_SERVER['argv'][5] = 'DataProviderFilterTest';
+$_SERVER['argv'][6] = __DIR__ . '/../_files/DataProviderFilterTest.php';
+
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+...                                                                 3 / 3 (100%)
+
+Time: %s, Memory: %s
+
+OK (3 tests, 3 assertions)

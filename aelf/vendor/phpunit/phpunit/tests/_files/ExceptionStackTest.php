@@ -1,9 +1,26 @@
-"use strict";
+<?php
+use PHPUnit\Framework\ExpectationFailedException;
+use PHPUnit\Framework\TestCase;
 
-function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
+class ExceptionStackTest extends TestCase
+{
+    public function testPrintingChildException()
+    {
+        try {
+            $this->assertEquals([1], [2], 'message');
+        } catch (ExpectationFailedException $e) {
+            $message = $e->getMessage() . $e->getComparisonFailure()->getDiff();
 
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; _defaults(subClass, superClass); }
+            throw new PHPUnit\Framework\Exception("Child exception\n$message", 101, $e);
+        }
+    }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+    public function testNestedExceptions()
+    {
+        $exceptionThree = new Exception('Three');
+        $exceptionTwo   = new InvalidArgumentException('Two', 0, $exceptionThree);
+        $exceptionOne   = new Exception('One', 0, $exceptionTwo);
 
-var Declaration = require('../declaration');
+        throw $exceptionOne;
+    }
+}

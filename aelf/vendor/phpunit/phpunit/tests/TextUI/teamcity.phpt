@@ -1,59 +1,37 @@
-"use strict";
+--TEST--
+phpunit --teamcity BankAccountTest ../_files/BankAccountTest.php
+--FILE--
+<?php
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = '--teamcity';
+$_SERVER['argv'][3] = 'BankAccountTest';
+$_SERVER['argv'][4] = __DIR__ . '/../_files/BankAccountTest.php';
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var parser = require('postcss-value-parser');
-
-var vendor = require('postcss').vendor;
-
-var list = require('postcss').list;
-
-var Transition =
-/*#__PURE__*/
-function () {
-  function Transition(prefixes) {
-    _defineProperty(this, "props", ['transition', 'transition-property']);
-
-    this.prefixes = prefixes;
-  }
-  /**
-   * Process transition and add prefixes for all necessary properties
-   */
+require __DIR__ . '/../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
 
 
-  var _proto = Transition.prototype;
+##teamcity[testCount count='3' flowId='%d']
 
-  _proto.add = function add(decl, result) {
-    var _this = this;
+##teamcity[testSuiteStarted name='BankAccountTest' locationHint='php_qn://%s%etests%e_files%eBankAccountTest.php::\BankAccountTest' flowId='%d']
 
-    var prefix, prop;
-    var add = this.prefixes.add[decl.prop];
-    var declPrefixes = add && add.prefixes || [];
-    var params = this.parse(decl.value);
-    var names = params.map(function (i) {
-      return _this.findProp(i);
-    });
-    var added = [];
+##teamcity[testStarted name='testBalanceIsInitiallyZero' locationHint='php_qn://%s%etests%e_files%eBankAccountTest.php::\BankAccountTest::testBalanceIsInitiallyZero' flowId='%d']
 
-    if (names.some(function (i) {
-      return i[0] === '-';
-    })) {
-      return;
-    }
+##teamcity[testFinished name='testBalanceIsInitiallyZero' duration='%s' flowId='%d']
 
-    for (var _iterator = params, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
-      var _ref;
+##teamcity[testStarted name='testBalanceCannotBecomeNegative' locationHint='php_qn://%s%etests%e_files%eBankAccountTest.php::\BankAccountTest::testBalanceCannotBecomeNegative' flowId='%d']
 
-      if (_isArray) {
-        if (_i >= _iterator.length) break;
-        _ref = _iterator[_i++];
-      } else {
-        _i = _iterator.next();
-        if (_i.done) break;
-        _ref = _i.value;
-      }
+##teamcity[testFinished name='testBalanceCannotBecomeNegative' duration='%s' flowId='%d']
 
-      var param = _ref;
-      prop = this.findProp(param);
-      if (prop[0] === '-') continue;
-     
+##teamcity[testStarted name='testBalanceCannotBecomeNegative2' locationHint='php_qn://%s%etests%e_files%eBankAccountTest.php::\BankAccountTest::testBalanceCannotBecomeNegative2' flowId='%d']
+
+##teamcity[testFinished name='testBalanceCannotBecomeNegative2' duration='%s' flowId='%d']
+
+##teamcity[testSuiteFinished name='BankAccountTest' flowId='%d']
+
+
+Time: %s, Memory: %s
+
+OK (3 tests, 3 assertions)

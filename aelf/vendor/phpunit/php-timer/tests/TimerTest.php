@@ -1,95 +1,98 @@
 <?php
+/*
+ * This file is part of the PHP_Timer package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+use PHPUnit\Framework\TestCase;
 
-namespace BitWasp\Bitcoin\Mnemonic\Bip39;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Adapter\EcAdapterInterface;
-use BitWasp\Bitcoin\Crypto\Hash;
-use BitWasp\Bitcoin\Crypto\Random\Random;
-use BitWasp\Bitcoin\Mnemonic\MnemonicInterface;
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Buffertools\BufferInterface;
-
-class Bip39Mnemonic implements MnemonicInterface
+class PHP_TimerTest extends TestCase
 {
     /**
-     * @var EcAdapterInterface
+     * @covers PHP_Timer::start
+     * @covers PHP_Timer::stop
      */
-    private $ecAdapter;
-
-    /**
-     * @var Bip39WordListInterface
-     */
-    private $wordList;
-
-    const MIN_ENTROPY_BYTE_LEN = 16;
-    const MAX_ENTROPY_BYTE_LEN = 32;
-    const DEFAULT_ENTROPY_BYTE_LEN = self::MAX_ENTROPY_BYTE_LEN;
-
-    private $validEntropySizes = [
-        self::MIN_ENTROPY_BYTE_LEN * 8, 160, 192, 224, self::MAX_ENTROPY_BYTE_LEN * 8,
-    ];
-
-    /**
-     * @param EcAdapterInterface $ecAdapter
-     * @param Bip39WordListInterface $wordList
-     */
-    public function __construct(EcAdapterInterface $ecAdapter, Bip39WordListInterface $wordList)
+    public function testStartStop()
     {
-        $this->ecAdapter = $ecAdapter;
-        $this->wordList = $wordList;
+        $this->assertInternalType('float', PHP_Timer::stop());
     }
 
     /**
-     * Creates a new Bip39 mnemonic string.
-     *
-     * @param int $entropySize
-     * @return string
-     * @throws \BitWasp\Bitcoin\Exceptions\RandomBytesFailure
+     * @covers       PHP_Timer::secondsToTimeString
+     * @dataProvider secondsProvider
      */
-    public function create(int $entropySize = null): string
+    public function testSecondsToTimeString($string, $seconds)
     {
-        if (null === $entropySize) {
-            $entropySize = self::DEFAULT_ENTROPY_BYTE_LEN * 8;
-        }
-
-        if (!in_array($entropySize, $this->validEntropySizes)) {
-            throw new \InvalidArgumentException("Invalid entropy length");
-        }
-
-        $random = new Random();
-        $entropy = $random->bytes($entropySize / 8);
-
-        return $this->entropyToMnemonic($entropy);
+        $this->assertEquals(
+            $string,
+            PHP_Timer::secondsToTimeString($seconds)
+        );
     }
 
     /**
-     * @param BufferInterface $entropy
-     * @param integer $CSlen
-     * @return string
+     * @covers PHP_Timer::timeSinceStartOfRequest
      */
-    private function calculateChecksum(BufferInterface $entropy, int $CSlen): string
+    public function testTimeSinceStartOfRequest()
     {
-        // entropy range (128, 256) yields (4, 8) bits of checksum
-        $checksumChar = ord(Hash::sha256($entropy)->getBinary()[0]);
-        $cs = '';
-        for ($i = 0; $i < $CSlen; $i++) {
-            $cs .= $checksumChar >> (7 - $i) & 1;
-        }
-
-        return $cs;
+        $this->assertStringMatchesFormat(
+            '%f %s',
+            PHP_Timer::timeSinceStartOfRequest()
+        );
     }
 
-    /**
-     * @param BufferInterface $entropy
-     * @return string[] - array of words from the word list
-     */
-    public function entropyToWords(BufferInterface $entropy): array
-    {
-        $ENT = $entropy->getSize() * 8;
-        if (!in_array($entropy->getSize() * 8, $this->validEntropySizes)) {
-            throw new \InvalidArgumentException("Invalid entropy length");
-        }
 
-        $CS = $ENT 
+    /**
+     * @covers PHP_Timer::resourceUsage
+     */
+    public function testResourceUsage()
+    {
+        $this->assertStringMatchesFormat(
+            'Time: %s, Memory: %fMB',
+            PHP_Timer::resourceUsage()
+        );
+    }
+
+    public function secondsProvider()
+    {
+        return array(
+          array('0 ms', 0),
+          array('1 ms', .001),
+          array('10 ms', .01),
+          array('100 ms', .1),
+          array('999 ms', .999),
+          array('1 second', .9999),
+          array('1 second', 1),
+          array('2 seconds', 2),
+          array('59.9 seconds', 59.9),
+          array('59.99 seconds', 59.99),
+          array('59.99 seconds', 59.999),
+          array('1 minute', 59.9999),
+          array('59 seconds', 59.001),
+          array('59.01 seconds', 59.01),
+          array('1 minute', 60),
+          array('1.01 minutes', 61),
+          array('2 minutes', 120),
+          array('2.01 minutes', 121),
+          array('59.99 minutes', 3599.9),
+          array('59.99 minutes', 3599.99),
+          array('59.99 minutes', 3599.999),
+          array('1 hour', 3599.9999),
+          array('59.98 minutes', 3599.001),
+          array('59.98 minutes', 3599.01),
+          array('1 hour', 3600),
+          array('1 hour', 3601),
+          array('1 hour', 3601.9),
+          array('1 hour', 3601.99),
+          array('1 hour', 3601.999),
+          array('1 hour', 3601.9999),
+          array('1.01 hours', 3659.9999),
+          array('1.01 hours', 3659.001),
+          array('1.01 hours', 3659.01),
+          array('2 hours', 7199.9999),
+        );
+    }
+}

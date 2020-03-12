@@ -1,26 +1,18 @@
 <?php
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-/**
- * This file is part of phpDocumentor.
- *
- *  For the full copyright and license information, please view the LICENSE
- *  file that was distributed with this source code.
- *
- * @link http://phpdoc.org
- */
+use DOMDocument;
 
-namespace phpDocumentor\Reflection\DocBlock\Tags\Reference;
+class AuthorElementCollectionTest extends \PHPUnit_Framework_TestCase {
+    public function testAuthorElementCanBeRetrievedFromCollection() {
+        $dom = new DOMDocument();
+        $dom->loadXML('<?xml version="1.0" ?><author xmlns="https://phar.io/xml/manifest/1.0" name="Reiner Zufall" email="reiner@zufall.de" />');
+        $collection = new AuthorElementCollection($dom->childNodes);
 
-use phpDocumentor\Reflection\Fqsen as RealFqsen;
+        foreach($collection as $authorElement) {
+            $this->assertInstanceOf(AuthorElement::class, $authorElement);
+        }
+    }
 
-/**
- * Fqsen reference used by {@see \phpDocumentor\Reflection\DocBlock\Tags\See}
- */
-final class Fqsen implements Reference
-{
-    /** @var RealFqsen */
-    private $fqsen;
-
-    public function __construct(Rea
+}

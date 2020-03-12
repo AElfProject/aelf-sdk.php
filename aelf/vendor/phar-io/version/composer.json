@@ -1,1 +1,34 @@
-く','そんちょう','ぞんび','ぞんぶん','そんみん','たあい','たいいん','たいうん','たいえき','たいおう','だいがく','たいき','たいぐう','たいけん','たいこ','たいざい','だいじょうぶ','だいすき','たいせつ','たいそう','だいたい','たいちょう','たいてい','だいどころ','たいない','たいねつ','たいのう','たいはん','だいひょう','たいふう','たいへん','たいほ','たいまつばな','たいみんぐ','たいむ','たいめん','たいやき','たいよう','たいら','たいりょく','たいる','たい�
+{
+  "name": "phar-io/version",
+  "description": "Library for handling version information and constraints",
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "Arne Blankerts",
+      "email": "arne@blankerts.de",
+      "role": "Developer"
+    },
+    {
+      "name": "Sebastian Heuer",
+      "email": "sebastian@phpeople.de",
+      "role": "Developer"
+    },
+    {
+      "name": "Sebastian Bergmann",
+      "email": "sebastian@phpunit.de",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/phar-io/version/issues"
+  },
+  "require": {
+    "php": "^5.6 || ^7.0"
+  },
+  "autoload": {
+    "classmap": [
+      "src/"
+    ]
+  }
+}
+

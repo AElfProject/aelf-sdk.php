@@ -1,113 +1,165 @@
 <?php
-/*
- * This file is part of the PHPASN1 library.
- *
- * Copyright © Friedrich Große <friedrich.grosse@gmail.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
 
-namespace FG\ASN1;
+namespace StephenHill;
 
-class OID
+use InvalidArgumentException;
+
+class BCMathService implements ServiceInterface
 {
-    const RSA_ENCRYPTION                    = '1.2.840.113549.1.1.1';
-    const MD5_WITH_RSA_ENCRYPTION           = '1.2.840.113549.1.1.4';
-    const SHA1_WITH_RSA_SIGNATURE           = '1.2.840.113549.1.1.5';
-    const PKCS9_EMAIL                       = '1.2.840.113549.1.9.1';
-    const PKCS9_UNSTRUCTURED_NAME           = '1.2.840.113549.1.9.2';
-    const PKCS9_CONTENT_TYPE                = '1.2.840.113549.1.9.3';
-    const PKCS9_MESSAGE_DIGEST              = '1.2.840.113549.1.9.4';
-    const PKCS9_SIGNING_TIME                = '1.2.840.113549.1.9.5';
-    const PKCS9_EXTENSION_REQUEST           = '1.2.840.113549.1.9.14';
-
-    // certificate extension identifier
-    const CERT_EXT_SUBJECT_DIRECTORY_ATTR   = '2.5.29.9';
-    const CERT_EXT_SUBJECT_KEY_IDENTIFIER   = '2.5.29.14';
-    const CERT_EXT_KEY_USAGE                = '2.5.29.15';
-    const CERT_EXT_PRIVATE_KEY_USAGE_PERIOD = '2.5.29.16';
-    const CERT_EXT_SUBJECT_ALT_NAME         = '2.5.29.17';
-    const CERT_EXT_ISSUER_ALT_NAME          = '2.5.29.18';
-    const CERT_EXT_BASIC_CONSTRAINTS        = '2.5.29.19';
-    const CERT_EXT_CRL_NUMBER               = '2.5.29.20';
-    const CERT_EXT_REASON_CODE              = '2.5.29.21';
-    const CERT_EXT_INVALIDITY_DATE          = '2.5.29.24';
-    const CERT_EXT_DELTA_CRL_INDICATOR      = '2.5.29.27';
-    const CERT_EXT_ISSUING_DIST_POINT       = '2.5.29.28';
-    const CERT_EXT_CERT_ISSUER              = '2.5.29.29';
-    const CERT_EXT_NAME_CONSTRAINTS         = '2.5.29.30';
-    const CERT_EXT_CRL_DISTRIBUTION_POINTS  = '2.5.29.31';
-    const CERT_EXT_CERT_POLICIES            = '2.5.29.32';
-    const CERT_EXT_AUTHORITY_KEY_IDENTIFIER = '2.5.29.35';
-    const CERT_EXT_EXTENDED_KEY_USAGE       = '2.5.29.37';
-
-    // standard certificate files
-    const COMMON_NAME                       = '2.5.4.3';
-    const SURNAME                           = '2.5.4.4';
-    const SERIAL_NUMBER                     = '2.5.4.5';
-    const COUNTRY_NAME                      = '2.5.4.6';
-    const LOCALITY_NAME                     = '2.5.4.7';
-    const STATE_OR_PROVINCE_NAME            = '2.5.4.8';
-    const STREET_ADDRESS                    = '2.5.4.9';
-    const ORGANIZATION_NAME                 = '2.5.4.10';
-    const OU_NAME                           = '2.5.4.11';
-    const TITLE                             = '2.5.4.12';
-    const DESCRIPTION                       = '2.5.4.13';
-    const POSTAL_ADDRESS                    = '2.5.4.16';
-    const POSTAL_CODE                       = '2.5.4.17';
-    const AUTHORITY_REVOCATION_LIST         = '2.5.4.38';
-
-    const AUTHORITY_INFORMATION_ACCESS      = '1.3.6.1.5.5.7.1.1';
+    /**
+     * @var string
+     * @since v1.1.0
+     */
+    protected $alphabet;
 
     /**
-     * Returns the name of the given object identifier.
-     *
-     * Some OIDs are saved as class constants in this class.
-     * If the wanted oidString is not among them, this method will
-     * query http://oid-info.com for the right name.
-     * This behavior can be suppressed by setting the second method parameter to false.
-     *
-     * @param string $oidString
-     * @param bool $loadFromWeb
-     *
-     * @see self::loadFromWeb($oidString)
-     *
-     * @return string
+     * @var int
+     * @since v1.1.0
      */
-    public static function getName($oidString, $loadFromWeb = true)
+    protected $base;
+
+    /**
+     * Constructor
+     *
+     * @param string $alphabet optional
+     * @since v1.1.0
+     */
+    public function __construct($alphabet = null)
     {
-        switch ($oidString) {
-            case self::RSA_ENCRYPTION:
-                return 'RSA Encryption';
-            case self::MD5_WITH_RSA_ENCRYPTION:
-                return 'MD5 with RSA Encryption';
-            case self::SHA1_WITH_RSA_SIGNATURE:
-                return 'SHA-1 with RSA Signature';
+        // Handle null alphabet
+        if (is_null($alphabet) === true) {
+            $alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+        }
 
-            case self::PKCS9_EMAIL:
-                return 'PKCS #9 Email Address';
-            case self::PKCS9_UNSTRUCTURED_NAME:
-                return 'PKCS #9 Unstructured Name';
-            case self::PKCS9_CONTENT_TYPE:
-                return 'PKCS #9 Content Type';
-            case self::PKCS9_MESSAGE_DIGEST:
-                return 'PKCS #9 Message Digest';
-            case self::PKCS9_SIGNING_TIME:
-                return 'PKCS #9 Signing Time';
+        // Type validation
+        if (is_string($alphabet) === false) {
+            throw new InvalidArgumentException('Argument $alphabet must be a string.');
+        }
 
-            case self::COMMON_NAME:
-                return 'Common Name';
-            case self::SURNAME:
-                return 'Surname';
-            case self::SERIAL_NUMBER:
-                return 'Serial Number';
-            case self::COUNTRY_NAME:
-                return 'Country Name';
-            case self::LOCALITY_NAME:
-                return 'Locality Name';
-            case self::STATE_OR_PROVINCE_NAME:
-                return 'State or Province Name';
-            case self::STREET_ADDRESS:
-                return 'Street Address';
-            case se
+        // The alphabet must contain 58 characters
+        if (strlen($alphabet) !== 58) {
+            throw new InvalidArgumentException('Argument $alphabet must contain 58 characters.');
+        }
+
+        $this->alphabet = $alphabet;
+        $this->base = strlen($alphabet);
+    }
+    /**
+     * Encode a string into base58.
+     *
+     * @param  string $string The string you wish to encode.
+     * @since Release v1.1.0
+     * @return string The Base58 encoded string.
+     */
+    public function encode($string)
+    {
+        // Type validation
+        if (is_string($string) === false) {
+            throw new InvalidArgumentException('Argument $string must be a string.');
+        }
+
+        // If the string is empty, then the encoded string is obviously empty
+        if (strlen($string) === 0) {
+            return '';
+        }
+
+        // Strings in PHP are essentially 8-bit byte arrays
+        // so lets convert the string into a PHP array
+        $bytes = array_values(unpack('C*', $string));
+
+        // Now we need to convert the byte array into an arbitrary-precision decimal
+        // We basically do this by performing a base256 to base10 conversion
+        $decimal = $bytes[0];
+
+        for ($i = 1, $l = count($bytes); $i < $l; $i++) {
+            $decimal = bcmul($decimal, 256);
+            $decimal = bcadd($decimal, $bytes[$i]);
+        }
+
+        // This loop now performs base 10 to base 58 conversion
+        // The remainder or modulo on each loop becomes a base 58 character
+        $output = '';
+        while ($decimal >= $this->base) {
+            $div = bcdiv($decimal, $this->base, 0);
+            $mod = (int) bcmod($decimal, $this->base);
+            $output .= $this->alphabet[$mod];
+            $decimal = $div;
+        }
+
+        // If there's still a remainder, append it
+        if ($decimal > 0) {
+            $output .= $this->alphabet[$decimal];
+        }
+
+        // Now we need to reverse the encoded data
+        $output = strrev($output);
+
+        // Now we need to add leading zeros
+        foreach ($bytes as $byte) {
+            if ($byte === 0) {
+                $output = $this->alphabet[0] . $output;
+                continue;
+            }
+            break;
+        }
+
+        return (string) $output;
+    }
+
+    /**
+     * Decode base58 into a PHP string.
+     *
+     * @param  string $base58 The base58 encoded string.
+     * @since Release v1.1.0
+     * @return string Returns the decoded string.
+     */
+    public function decode($base58)
+    {
+        // Type Validation
+        if (is_string($base58) === false) {
+            throw new InvalidArgumentException('Argument $base58 must be a string.');
+        }
+
+        // If the string is empty, then the decoded string is obviously empty
+        if (strlen($base58) === 0) {
+            return '';
+        }
+
+        $indexes = array_flip(str_split($this->alphabet));
+        $chars = str_split($base58);
+
+        // Check for invalid characters in the supplied base58 string
+        foreach ($chars as $char) {
+            if (isset($indexes[$char]) === false) {
+                throw new InvalidArgumentException('Argument $base58 contains invalid characters. ($char: "'.$char.'" | $base58: "'.$base58.'") ');
+            }
+        }
+
+        // Convert from base58 to base10
+        $decimal = $indexes[$chars[0]];
+
+        for ($i = 1, $l = count($chars); $i < $l; $i++) {
+            $decimal = bcmul($decimal, $this->base);
+            $decimal = bcadd($decimal, $indexes[$chars[$i]]);
+        }
+
+        // Convert from base10 to base256 (8-bit byte array)
+        $output = '';
+        while ($decimal > 0) {
+            $byte = (int) bcmod($decimal, 256);
+            $output = pack('C', $byte) . $output;
+            $decimal = bcdiv($decimal, 256, 0);
+        }
+
+        // Now we need to add leading zeros
+        foreach ($chars as $char) {
+            if ($indexes[$char] === 0) {
+                $output = "\x00" . $output;
+                continue;
+            }
+            break;
+        }
+
+        return $output;
+    }
+}

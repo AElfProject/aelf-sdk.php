@@ -1,49 +1,42 @@
 <?php
+/*
+ * This file is part of PharIo\Manifest.
+ *
+ * (c) Arne Blankerts <arne@blankerts.de>, Sebastian Heuer <sebastian@phpeople.de>, Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
+namespace PharIo\Manifest;
 
-namespace BitWasp\Bitcoin\Network;
+use PharIo\Version\Version;
+use PHPUnit\Framework\TestCase;
 
-use BitWasp\Bitcoin\Exceptions\InvalidNetworkParameter;
-use BitWasp\Bitcoin\Exceptions\MissingBase58Prefix;
-use BitWasp\Bitcoin\Exceptions\MissingBech32Prefix;
-use BitWasp\Bitcoin\Exceptions\MissingBip32Prefix;
-use BitWasp\Bitcoin\Exceptions\MissingNetworkParameter;
-
-class Network implements NetworkInterface
-{
-    const BECH32_PREFIX_SEGWIT = "segwit";
-
-    const BASE58_ADDRESS_P2PKH = "p2pkh";
-    const BASE58_ADDRESS_P2SH = "p2sh";
-    const BASE58_WIF = "wif";
-    const BIP32_PREFIX_XPUB = "xpub";
-    const BIP32_PREFIX_XPRV = "xprv";
-
+/**
+ * @covers PharIo\Manifest\BundledComponent
+ *
+ * @uses \PharIo\Version\Version
+ */
+class BundledComponentTest extends TestCase {
     /**
-     * @var array map of base58 address type to byte
+     * @var BundledComponent
      */
-    protected $base58PrefixMap = [];
+    private $bundledComponent;
 
-    /**
-     * @var array map of bech32 address type to HRP
-     */
-    protected $bech32PrefixMap = [];
+    protected function setUp() {
+        $this->bundledComponent = new BundledComponent('phpunit/php-code-coverage', new Version('4.0.2'));
+    }
 
-    /**
-     * @var array map of bip32 type to bytes
-     */
-    protected $bip32PrefixMap = [];
+    public function testCanBeCreated() {
+        $this->assertInstanceOf(BundledComponent::class, $this->bundledComponent);
+    }
 
-    /**
-     * @var array map of bip32 key type to script type
-     */
-    protected $bip32ScriptTypeMap = [];
+    public function testNameCanBeRetrieved() {
+        $this->assertEquals('phpunit/php-code-coverage', $this->bundledComponent->getName());
+    }
 
-    /**
-     * @var string - message prefix for bitcoin signed messages
-     */
-    protected $signedMessagePrefix;
-
-    /**
-     * @var string - 4 bytes for 
+    public function testVersionCanBeRetrieved() {
+        $this->assertEquals('4.0.2', $this->bundledComponent->getVersion()->getVersionString());
+    }
+}

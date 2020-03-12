@@ -1,30 +1,33 @@
 <?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-declare(strict_types=1);
-
-namespace BitWasp\Bitcoin\Key\KeyToScript\Factory;
-
-use BitWasp\Bitcoin\Crypto\EcAdapter\Key\PublicKeyInterface;
-use BitWasp\Bitcoin\Key\KeyToScript\ScriptAndSignData;
-use BitWasp\Bitcoin\Script\ScriptFactory;
-use BitWasp\Bitcoin\Script\ScriptType;
-use BitWasp\Bitcoin\Transaction\Factory\SignData;
-
-class P2pkhScriptDataFactory extends KeyToScriptDataFactory
+/**
+ * Invocation matcher which allows any parameters to a method.
+ */
+class PHPUnit_Framework_MockObject_Matcher_AnyParameters extends PHPUnit_Framework_MockObject_Matcher_StatelessInvocation
 {
     /**
      * @return string
      */
-    public function getScriptType(): string
+    public function toString()
     {
-        return ScriptType::P2PKH;
+        return 'with any parameters';
     }
 
     /**
-     * @param PublicKeyInterface ...$keys
-     * @return ScriptAndSignData
+     * @param PHPUnit_Framework_MockObject_Invocation $invocation
+     *
+     * @return bool
      */
-    protected function convertKeyToScriptData(PublicKeyInterface ...$keys): ScriptAndSignData
+    public function matches(PHPUnit_Framework_MockObject_Invocation $invocation)
     {
-        if (count($keys) !== 1) {
-            throw new \InvalidArgumentExcepti
+        return true;
+    }
+}

@@ -1,126 +1,163 @@
 <?php
-declare(strict_types=1);
-
-namespace Mdanter\Ecc\Curves;
-
-use Mdanter\Ecc\Math\GmpMathInterface;
-use Mdanter\Ecc\Primitives\CurveParameters;
-use Mdanter\Ecc\Primitives\GeneratorPoint;
-use Mdanter\Ecc\Random\RandomNumberGeneratorInterface;
-
-/**
- * *********************************************************************
- * Copyright (C) 2012 Matyas Danter
+/*
+ * This file is part of sebastian/comparator.
  *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
  *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
- * OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- * ***********************************************************************
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
+namespace SebastianBergmann\Comparator;
+
+use DOMDocument;
+use DOMNode;
+use PHPUnit\Framework\TestCase;
+
 /**
+ * @coversDefaultClass SebastianBergmann\Comparator\DOMNodeComparator
  *
+ * @uses SebastianBergmann\Comparator\Comparator
+ * @uses SebastianBergmann\Comparator\Factory
+ * @uses SebastianBergmann\Comparator\ComparisonFailure
  */
-class SecgCurve
+class DOMNodeComparatorTest extends TestCase
 {
-    /**
-     * @var GmpMathInterface
-     */
-    private $adapter;
+    private $comparator;
 
-    const NAME_SECP_112R1 = 'secp112r1';
-    const NAME_SECP_192K1 = 'secp192k1';
-    const NAME_SECP_256K1 = 'secp256k1';
-    const NAME_SECP_256R1 = 'secp256r1';
-    const NAME_SECP_384R1 = 'secp384r1';
-
-    /**
-     * @param GmpMathInterface $adapter
-     */
-    public function __construct(GmpMathInterface $adapter)
+    protected function setUp()
     {
-        $this->adapter = $adapter;
+        $this->comparator = new DOMNodeComparator;
+    }
+
+    public function acceptsSucceedsProvider()
+    {
+        $document = new DOMDocument;
+        $node     = new DOMNode;
+
+        return [
+          [$document, $document],
+          [$node, $node],
+          [$document, $node],
+          [$node, $document]
+        ];
+    }
+
+    public function acceptsFailsProvider()
+    {
+        $document = new DOMDocument;
+
+        return [
+          [$document, null],
+          [null, $document],
+          [null, null]
+        ];
+    }
+
+    public function assertEqualsSucceedsProvider()
+    {
+        return [
+          [
+            $this->createDOMDocument('<root></root>'),
+            $this->createDOMDocument('<root/>')
+          ],
+          [
+            $this->createDOMDocument('<root attr="bar"></root>'),
+            $this->createDOMDocument('<root attr="bar"/>')
+          ],
+          [
+            $this->createDOMDocument('<root><foo attr="bar"></foo></root>'),
+            $this->createDOMDocument('<root><foo attr="bar"/></root>')
+          ],
+          [
+            $this->createDOMDocument("<root>\n  <child/>\n</root>"),
+            $this->createDOMDocument('<root><child/></root>')
+          ],
+        ];
+    }
+
+    public function assertEqualsFailsProvider()
+    {
+        return [
+          [
+            $this->createDOMDocument('<root></root>'),
+            $this->createDOMDocument('<bar/>')
+          ],
+          [
+            $this->createDOMDocument('<foo attr1="bar"/>'),
+            $this->createDOMDocument('<foo attr1="foobar"/>')
+          ],
+          [
+            $this->createDOMDocument('<foo> bar </foo>'),
+            $this->createDOMDocument('<foo />')
+          ],
+          [
+            $this->createDOMDocument('<foo xmlns="urn:myns:bar"/>'),
+            $this->createDOMDocument('<foo xmlns="urn:notmyns:bar"/>')
+          ],
+          [
+            $this->createDOMDocument('<foo> bar </foo>'),
+            $this->createDOMDocument('<foo> bir </foo>')
+          ]
+        ];
+    }
+
+    private function createDOMDocument($content)
+    {
+        $document                     = new DOMDocument;
+        $document->preserveWhiteSpace = false;
+        $document->loadXML($content);
+
+        return $document;
     }
 
     /**
-     * @return NamedCurveFp
+     * @covers       ::accepts
+     * @dataProvider acceptsSucceedsProvider
      */
-    public function curve112r1(): NamedCurveFp
+    public function testAcceptsSucceeds($expected, $actual)
     {
-        $p = gmp_init('0xDB7C2ABF62E35E668076BEAD208B', 16);
-        $a = gmp_init('0xDB7C2ABF62E35E668076BEAD2088', 16);
-        $b = gmp_init('0x659EF8BA043916EEDE8911702B22', 16);
-
-        $parameters = new CurveParameters(112, $p, $a, $b);
-
-        return new NamedCurveFp(self::NAME_SECP_112R1, $parameters, $this->adapter);
+        $this->assertTrue(
+          $this->comparator->accepts($expected, $actual)
+        );
     }
 
     /**
-     * @param RandomNumberGeneratorInterface $randomGenerator
-     * @return GeneratorPoint
+     * @covers       ::accepts
+     * @dataProvider acceptsFailsProvider
      */
-    public function generator112r1(RandomNumberGeneratorInterface $randomGenerator = null): GeneratorPoint
+    public function testAcceptsFails($expected, $actual)
     {
-        $curve = $this->curve112r1();
-
-        $order = gmp_init('0xDB7C2ABF62E35E7628DFAC6561C5', 16);
-        $x = gmp_init('0x09487239995A5EE76B55F9C2F098', 16);
-        $y = gmp_init('0xA89CE5AF8724C0A23E0E0FF77500', 16);
-
-        return $curve->getGenerator($x, $y, $order, $randomGenerator);
+        $this->assertFalse(
+          $this->comparator->accepts($expected, $actual)
+        );
     }
 
     /**
-     * @return NamedCurveFp
+     * @covers       ::assertEquals
+     * @dataProvider assertEqualsSucceedsProvider
      */
-    public function curve192k1(): NamedCurveFp
+    public function testAssertEqualsSucceeds($expected, $actual)
     {
-        $p = gmp_init('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFEE37', 16);
-        $a = gmp_init(0, 10);
-        $b = gmp_init(3, 10);
+        $exception = null;
 
-        $parameters = new CurveParameters(192, $p, $a, $b);
+        try {
+            $this->comparator->assertEquals($expected, $actual);
+        } catch (ComparisonFailure $exception) {
+        }
 
-        return new NamedCurveFp(self::NAME_SECP_192K1, $parameters, $this->adapter);
+        $this->assertNull($exception, 'Unexpected ComparisonFailure');
     }
 
     /**
-     * @param RandomNumberGeneratorInterface $randomGenerator
-     * @return \Mdanter\Ecc\Primitives\GeneratorPoint
+     * @covers       ::assertEquals
+     * @dataProvider assertEqualsFailsProvider
      */
-    public function generator192k1(RandomNumberGeneratorInterface $randomGenerator = null): GeneratorPoint
+    public function testAssertEqualsFails($expected, $actual)
     {
-        $curve = $this->curve192k1();
+        $this->expectException(ComparisonFailure::class);
+        $this->expectExceptionMessage('Failed asserting that two DOM');
 
-        $order = gmp_init('0xFFFFFFFFFFFFFFFFFFFFFFFE26F2FC170F69466A74DEFD8D', 16);
-        $x = gmp_init('0xDB4FF10EC057E9AE26B07D0280B7F4341DA5D1B1EAE06C7D', 16);
-        $y = gmp_init('0x9B2F2F6D9C5628A7844163D015BE86344082AA88D95E2F9D', 16);
-
-        return $curve->getGenerator($x, $y, $order, $randomGenerator);
+        $this->comparator->assertEquals($expected, $actual);
     }
-
-    /**
-     * @return NamedCurveFp
-     */
-    public function curve256k1(): NamedCurveFp
-    {
-        $p = gmp_init('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16);
-        $a = gmp_init(0, 10);
-        $b = gmp_init(7, 10);
-
-        $parameters = new CurveParameters(256, $p, $a, $b)
+}

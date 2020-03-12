@@ -1,224 +1,169 @@
-nent\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\HelperSet;
+<?php
+/*
+ * This file is part of PHPUnit.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+namespace PHPUnit\Framework;
 
+use PHPUnit\Framework\Error\Error;
+use Throwable;
 
-
-
-
-
-
-class ConsoleIO implements IOInterface
+/**
+ * A TestFailure collects a failed test together with the caught exception.
+ */
+class TestFailure
 {
-protected $input;
-protected $output;
-protected $helperSet;
-protected $authentications = array();
-protected $lastMessage;
-private $startTime;
+    /**
+     * @var string
+     */
+    private $testName;
 
+    /**
+     * @var Test|null
+     */
+    protected $failedTest;
 
+    /**
+     * @var Throwable
+     */
+    protected $thrownException;
 
+    /**
+     * Constructs a TestFailure with the given test and exception.
+     *
+     * @param Test      $failedTest
+     * @param Throwable $t
+     */
+    public function __construct(Test $failedTest, $t)
+    {
+        if ($failedTest instanceof SelfDescribing) {
+            $this->testName = $failedTest->toString();
+        } else {
+            $this->testName = \get_class($failedTest);
+        }
 
+        if (!$failedTest instanceof TestCase || !$failedTest->isInIsolation()) {
+            $this->failedTest = $failedTest;
+        }
 
+        $this->thrownException = $t;
+    }
 
+    /**
+     * Returns a short description of the failure.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return \sprintf(
+            '%s: %s',
+            $this->testName,
+            $this->thrownException->getMessage()
+        );
+    }
 
+    /**
+     * Returns a description for the thrown exception.
+     *
+     * @return string
+     */
+    public function getExceptionAsString()
+    {
+        return self::exceptionToString($this->thrownException);
+    }
 
-public function __construct(InputInterface $input, OutputInterface $output, HelperSet $helperSet)
-{
-$this->input = $input;
-$this->output = $output;
-$this->helperSet = $helperSet;
+    /**
+     * Returns a description for an exception.
+     *
+     * @param Throwable $e
+     *
+     * @return string
+     */
+    public static function exceptionToString(Throwable $e)
+    {
+        if ($e instanceof SelfDescribing) {
+            $buffer = $e->toString();
+
+            if ($e instanceof ExpectationFailedException && $e->getComparisonFailure()) {
+                $buffer .= $e->getComparisonFailure()->getDiff();
+            }
+
+            if (!empty($buffer)) {
+                $buffer = \trim($buffer) . "\n";
+            }
+
+            return $buffer;
+        }
+
+        if ($e instanceof Error) {
+            return $e->getMessage() . "\n";
+        }
+
+        if ($e instanceof ExceptionWrapper) {
+            return $e->getClassName() . ': ' . $e->getMessage() . "\n";
+        }
+
+        return \get_class($e) . ': ' . $e->getMessage() . "\n";
+    }
+
+    /**
+     * Returns the name of the failing test (including data set, if any).
+     *
+     * @return string
+     */
+    public function getTestName()
+    {
+        return $this->testName;
+    }
+
+    /**
+     * Returns the failing test.
+     *
+     * Note: The test object is not set when the test is executed in process
+     * isolation.
+     *
+     * @see Exception
+     *
+     * @return Test|null
+     */
+    public function failedTest()
+    {
+        return $this->failedTest;
+    }
+
+    /**
+     * Gets the thrown exception.
+     *
+     * @return Throwable
+     */
+    public function thrownException()
+    {
+        return $this->thrownException;
+    }
+
+    /**
+     * Returns the exception's message.
+     *
+     * @return string
+     */
+    public function exceptionMessage()
+    {
+        return $this->thrownException()->getMessage();
+    }
+
+    /**
+     * Returns true if the thrown exception
+     * is of type AssertionFailedError.
+     *
+     * @return bool
+     */
+    public function isFailure()
+    {
+        return ($this->thrownException() instanceof AssertionFailedError);
+    }
 }
-
-public function enableDebugging($startTime)
-{
-$this->startTime = $startTime;
-}
-
-
-
-
-public function isInteractive()
-{
-return $this->input->isInteractive();
-}
-
-
-
-
-public function isDecorated()
-{
-return $this->output->isDecorated();
-}
-
-
-
-
-public function isVerbose()
-{
-return $this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE;
-}
-
-
-
-
-public function isVeryVerbose()
-{
-return $this->output->getVerbosity() >= 3; 
- }
-
-
-
-
-public function isDebug()
-{
-return $this->output->getVerbosity() >= 4; 
- }
-
-
-
-
-public function write($messages, $newline = true)
-{
-if (null !== $this->startTime) {
-$messages = (array) $messages;
-$messages[0] = sprintf(
-'[%.1fMB/%.2fs] %s',
-memory_get_usage() / 1024 / 1024,
-microtime(true) - $this->startTime,
-$messages[0]
-);
-}
-$this->output->write($messages, $newline);
-$this->lastMessage = join($newline ? "\n" : '', (array) $messages);
-}
-
-
-
-
-public function overwrite($messages, $newline = true, $size = null)
-{
-
- $messages = join($newline ? "\n" : '', (array) $messages);
-
-
- if (!isset($size)) {
-
- $size = strlen(strip_tags($this->lastMessage));
-}
-
- $this->write(str_repeat("\x08", $size), false);
-
-
- $this->write($messages, false);
-
-$fill = $size - strlen(strip_tags($messages));
-if ($fill > 0) {
-
- $this->write(str_repeat(' ', $fill), false);
-
- $this->write(str_repeat("\x08", $fill), false);
-}
-
-if ($newline) {
-$this->write('');
-}
-$this->lastMessage = $messages;
-}
-
-
-
-
-public function ask($question, $default = null)
-{
-return $this->helperSet->get('dialog')->ask($this->output, $question, $default);
-}
-
-
-
-
-public function askConfirmation($question, $default = true)
-{
-return $this->helperSet->get('dialog')->askConfirmation($this->output, $question, $default);
-}
-
-
-
-
-public function askAndValidate($question, $validator, $attempts = false, $default = null)
-{
-return $this->helperSet->get('dialog')->askAndValidate($this->output, $question, $validator, $attempts, $default);
-}
-
-
-
-
-public function askAndHideAnswer($question)
-{
-
- if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-$exe = __DIR__.'\\hiddeninput.exe';
-
-
- if ('phar:' === substr(__FILE__, 0, 5)) {
-$tmpExe = sys_get_temp_dir().'/hiddeninput.exe';
-
-
- 
- $source = fopen(__DIR__.'\\hiddeninput.exe', 'r');
-$target = fopen($tmpExe, 'w+');
-stream_copy_to_stream($source, $target);
-fclose($source);
-fclose($target);
-unset($source, $target);
-
-$exe = $tmpExe;
-}
-
-$this->write($question, false);
-$value = rtrim(shell_exec($exe));
-$this->write('');
-
-
- if (isset($tmpExe)) {
-unlink($tmpExe);
-}
-
-return $value;
-}
-
-if (file_exists('/usr/bin/env')) {
-
- $test = "/usr/bin/env %s -c 'echo OK' 2> /dev/null";
-foreach (array('bash', 'zsh', 'ksh', 'csh') as $sh) {
-if ('OK' === rtrim(shell_exec(sprintf($test, $sh)))) {
-$shell = $sh;
-break;
-}
-}
-if (isset($shell)) {
-$this->write($question, false);
-$readCmd = ($shell === 'csh') ? 'set mypassword = $<' : 'read -r mypassword';
-$command = sprintf("/usr/bin/env %s -c 'stty -echo; %s; stty echo; echo \$mypassword'", $shell, $readCmd);
-$value = rtrim(shell_exec($command));
-$this->write('');
-
-return $value;
-}
-}
-
-
- return $this->ask($question);
-}
-
-
-
-
-public function getAuthentications()
-{
-return $this->authentications;
-}
-
-
-

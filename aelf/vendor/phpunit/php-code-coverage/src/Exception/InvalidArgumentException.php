@@ -1,34 +1,37 @@
 <?php
+/*
+ * This file is part of the php-code-coverage package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-namespace kornrunner;
+namespace SebastianBergmann\CodeCoverage;
 
-use InvalidArgumentException;
-
-class HexSignatureSerializerTest extends TestCase
+class InvalidArgumentException extends \InvalidArgumentException implements Exception
 {
-
     /**
-     * @dataProvider data
+     * @param int    $argument
+     * @param string $type
+     * @param mixed  $value
+     *
+     * @return InvalidArgumentException
      */
-    public function testParse(string $input, string $expect) {
-        $sig = $this->sigSerializer->parse($input);
-        $this->assertEquals($expect, gmp_strval($sig->getR(), 16) . gmp_strval($sig->getS(), 16));
-    }
+    public static function create($argument, $type, $value = null)
+    {
+        $stack = \debug_backtrace(0);
 
-    public function testParseException() {
-        $this->expectException(InvalidArgumentException::class);
-        $this->sigSerializer->parse($this->signed . random_bytes(3));
+        return new self(
+            \sprintf(
+                'Argument #%d%sof %s::%s() must be a %s',
+                $argument,
+                $value !== null ? ' (' . \gettype($value) . '#' . $value . ')' : ' (No Value) ',
+                $stack[1]['class'],
+                $stack[1]['function'],
+                $type
+            )
+        );
     }
-
-    /**
-     * @dataProvider data
-     */
-    public function testSerialize(string $input, string $expect) {
-        $parsed = $this->sigSerializer->parse($input);
-        $signed = $this->sigSerializer->serialize($parsed);
-        $this->assertEquals($expect, $signed);
-    }
-
-    public static function data(): array {
-        return [
-            ['f67118680df5993e8efca4d3ecc4172ca4ac5e3e007ea774293e37386480970347427f3633371c1a30abbb2b
+}

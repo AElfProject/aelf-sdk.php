@@ -1,6 +1,61 @@
-x…œKìÈq…½_QÌ²–6²ä±%2 @^i¡…Ç¸`±XUÙÍbR|tuµ¡ÿîç¯G#{fQçf“ÌÌÈxGÇ¾?ûÙÏñ‹¿ù§¯ã_œº¶o¦î«y™J»|Zc7÷_ÿê‹/†æÖÍcÓv‡-Ë›yüß¶–áûÿº[JËÀøóüşu:õe^¸gÿß«Ÿ÷l·ü[~7,İtf_ıß·úz¦`¹ó|øípaÊ«ÇİûÒ§ùå6öİ­–™å³Jÿ!güâ¿¿8ğß·ß|óü=|søõ[3šijùöù;Nå­YºÃOî,zş÷¾Œcwb!?¼{ê–ueXş÷íë±/íá¼íRêphë:,_}ıË¼0Ö±=MOˆ+~²\Ëüwÿ|é–méóW_s&ÛEş«3ÿÈÒ0÷ş°_~¶Ñ¿XÀóA_}Ù›áT‡/z8€K_–‡pß	Ôu1zóØÑ58×éh¸LM›ãëtÒ8¨m»y6,§|Hû$‡ÿ°_~-§l‹Æ¥óRZ]ü§µL~øTóáZÄó4tåR'£i_Å²6}ŸšQw4Óé„´è§ıÓĞğ­­½Ñ[3´ZÒé­vS=zÕçsS´˜ó™ƒ‡§Æ{¼4EGrÑ“.I«ËÔiìÚ5ºµÜâ~j™Æ:i=eöI¢t]\Úz­¢@ßù¾tš¿÷ßúNŒÑ÷õ³õ·jBôuĞ¢úñÚèÏëóMsÕ º@èŞ<Ä7DoÕğ­ù(Ã%.A%B 4{hÛCÓ?¼‚¡½ú€‡–åëêáâùP&Zâp™´¬¡Ü|üÃkşy@z}lÃ2Ôåš›ï	QJƒ¶<,åO«gy/…iĞ|cc
-µ¯]£İ(´Øæ8NÕ¼vÒ1Lí5ş<ÁÚ’È¬±Îë˜.^…O|º™hÓÍtšnZÀÄ†ER4#$Óóày‘qB?æ¨Ïß{™–õî+T¾î_Ğ¦¯gÿ¯œç&…f;İ4Ïyÿ<¯7M:/×›v¹\ûnÑğRÅÆËÒ´šaÙŒDLº,eYO¾ö3å´~¦Ö“ex½¤`'·­K²Õºˆ‡×e½I<Şº©1¹ŞjÛœtÉ[µ(ß›W-à	uÁùİ\½ÅûyÕ!ß_¹T[x/!#Çæ÷›öÚõ:Bş!İ}lNZÇ±	™96}*"0ú’écs;ÖX/F€ÿŸkbí£¸’ß®÷ÍSê&†×MÒğÇf[‚^u¦ÇfYÄÖÇåÇ-]4dh•œ»¶±ò›4Ç®;ë´eĞğØ]¤"İµo‹ÎşØ¡ÃrØ*‹Ñ`³c‡¾Ğ3‡î,8šßÌ¢w0TH'£÷NŠñØ=ª§*í£õştìÇ¢S?æ‚Ê.ñÇ¢ã,ZFÙ§éÍËÇ¾÷‚Ä' !	‹›¤ıô]üìmÜpI¼Â¾Öà§c”Ğ€“Ø½ôÅ±—ÌZY53k£Ùªôú±J1ë-œ€£`ëÖª¥UÛ‹#FÏD­“õ=£“tËÑ¦üXùqWËÇú‡WuHøIÌ¨8]¦mOø“qÇ”Ì²™'uİ‡Ø
-Y‹JJÔTÌ€S¹\Eƒ}ÙS‘v;NO¦/zj}5³LuÈ	ªÉ?íö„ï^sÒ}=r–ñ¨õd‚¯,JXq#zÉïZzíeíuk¯¬=
-SÏNùH¸Hl£æ…®“íåqÌ[>Çu.C2×:‹ôëÎ¸ë#ùññœ±mè£ØXÒ2Zì†ßî×IvÚFš
-z¾E
-¦ĞSÀQSåZ4Xh#P+Åå@ƒt%°zIÃ[ŒÁ ­'Ÿ-p,K>w\Ì[­t#¿pºn“T3v‰s¢=P^(£m¤5!k€2øÖÙJ“Q;!­$_Î>=XºÔ]jN“Z­j¶İ
+  $(function() {
+   var $window     = $(window)
+     , $top_link   = $('#toplink')
+     , $body       = $('body, html')
+     , offset      = $('#code').offset().top
+     , hidePopover = function ($target) {
+        $target.data('popover-hover', false);
+
+        setTimeout(function () {
+         if (!$target.data('popover-hover')) {
+          $target.popover('hide');
+         }
+        }, 300);
+     };
+
+   $top_link.hide().click(function(event) {
+    event.preventDefault();
+    $body.animate({scrollTop:0}, 800);
+   });
+
+   $window.scroll(function() {
+    if($window.scrollTop() > offset) {
+     $top_link.fadeIn();
+    } else {
+     $top_link.fadeOut();
+    }
+   }).scroll();
+
+   $('.popin')
+    .popover({trigger: 'manual'})
+    .on({
+     'mouseenter.popover': function () {
+      var $target = $(this);
+
+      $target.data('popover-hover', true);
+
+      // popover already displayed
+      if ($target.next('.popover').length) {
+       return;
+      }
+
+      // show the popover
+      $target.popover('show');
+
+      // register mouse events on the popover
+      $target.next('.popover:not(.popover-initialized)')
+       .on({
+        'mouseenter': function () {
+         $target.data('popover-hover', true);
+        },
+        'mouseleave': function () {
+         hidePopover($target);
+        }
+       })
+       .addClass('popover-initialized');
+     },
+     'mouseleave.popover': function () {
+      hidePopover($(this));
+     }
+    });
+  });

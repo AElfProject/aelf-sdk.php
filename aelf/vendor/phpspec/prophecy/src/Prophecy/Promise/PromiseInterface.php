@@ -1,32 +1,35 @@
-, $field)) {
-                        return false;
-                    }
-                }
-            }
-            if (!GPBUtil::hasSpecialJsonMapping($this)) {
-                $output->writeRaw("}", 1);
-            }
-        }
-        return true;
-    }
+<?php
 
-    /**
-     * Serialize the message to string.
-     * @return string Serialized binary protobuf data.
-     */
-    public function serializeToString()
-    {
-        $output = new CodedOutputStream($this->byteSize());
-        $this->serializeToStream($output);
-        return $output->getData();
-    }
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
+namespace Prophecy\Promise;
+
+use Prophecy\Prophecy\ObjectProphecy;
+use Prophecy\Prophecy\MethodProphecy;
+
+/**
+ * Promise interface.
+ * Promises are logical blocks, tied to `will...` keyword.
+ *
+ * @author Konstantin Kudryashov <ever.zet@gmail.com>
+ */
+interface PromiseInterface
+{
     /**
-     * Serialize the message to json string.
-     * @return string Serialized json protobuf data.
+     * Evaluates promise.
+     *
+     * @param array          $args
+     * @param ObjectProphecy $object
+     * @param MethodProphecy $method
+     *
+     * @return mixed
      */
-    public function serializeToJsonString()
-    {
-        $output = new CodedOutputStream($this->jsonByteSize());
-        $this->serializeToJsonStream($output);
-        
+    public function execute(array $args, ObjectProphecy $object, MethodProphecy $method);
+}

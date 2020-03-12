@@ -1,1 +1,34 @@
-module.exports={A:{A:{"2":"K D G E A B iB"},B:{"1":"d J M H I","16":"2 C"},C:{"1":"0 1 3 4 7 8 9 r s t u v w x y z HB GB BB CB FB","2":"2 6 fB DB F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q ZB YB"},D:{"1":"0 1 3 4 7 8 9 n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB","2":"2 6 F N K D G E A B C d J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m"},E:{"1":"5 E A B C WB XB p aB","2":"F N K D G RB IB TB UB VB"},F:{"1":"0 1 6 a b c e f g h i j k l m n o L q r s t u v w x y z","2":"5 E B C J M H I O P Q R S T U V W X Y Z bB cB dB eB p AB gB"},G:{"1":"nB oB pB qB rB sB tB uB","2":"G IB hB EB jB KB lB mB"},H:{"2":"vB"},I:{"1":"4","2":"DB F wB xB yB zB EB 0B 1B"},J:{"2
+--TEST--
+GH-503: assertEquals() Line Ending Differences Are Obscure
+--FILE--
+<?php
+
+$_SERVER['argv'][1] = '--no-configuration';
+$_SERVER['argv'][2] = 'Issue503Test';
+$_SERVER['argv'][3] = __DIR__ . '/503/Issue503Test.php';
+
+require __DIR__ . '/../../bootstrap.php';
+PHPUnit\TextUI\Command::main();
+?>
+--EXPECTF--
+PHPUnit %s by Sebastian Bergmann and contributors.
+
+F                                                                   1 / 1 (100%)
+
+Time: %s, Memory: %s
+
+There was 1 failure:
+
+1) Issue503Test::testCompareDifferentLineEndings
+Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+ #Warning: Strings contain different line endings!
+ 'foo
+ '
+
+%s:%i
+
+FAILURES!
+Tests: 1, Assertions: 1, Failures: 1.

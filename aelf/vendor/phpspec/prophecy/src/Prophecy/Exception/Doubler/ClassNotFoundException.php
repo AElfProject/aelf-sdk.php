@@ -1,34 +1,33 @@
-public function getName()
-    {
-        return $this->name;
-    }
+<?php
+
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Prophecy\Exception\Doubler;
+
+class ClassNotFoundException extends DoubleException
+{
+    private $classname;
 
     /**
-     * The fully qualified name of the interface which is included.
-     *
-     * Generated from protobuf field <code>string name = 1;</code>
-     * @param string $var
-     * @return $this
+     * @param string $message
+     * @param string $classname
      */
-    public function setName($var)
+    public function __construct($message, $classname)
     {
-        GPBUtil::checkString($var, True);
-        $this->name = $var;
+        parent::__construct($message);
 
-        return $this;
+        $this->classname = $classname;
     }
 
-    /**
-     * If non-empty specifies a path under which inherited HTTP paths
-     * are rooted.
-     *
-     * Generated from protobuf field <code>string root = 2;</code>
-     * @return string
-     */
-    public function getRoot()
+    public function getClassname()
     {
-        return $this->root;
+        return $this->classname;
     }
-
-    /**
-     * If non-emp
+}

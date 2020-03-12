@@ -1,47 +1,55 @@
-#!/bin/sh
-#
-# Copyright (c) 2006, 2008 Junio C Hamano
-#
-# The "pre-rebase" hook is run just before "git rebase" starts doing
-# its job, and can prevent the command from running by exiting with
-# non-zero status.
-#
-# The hook is called with the following parameters:
-#
-# $1 -- the upstream the series was forked from.
-# $2 -- the branch being rebased (or empty when rebasing the current branch).
-#
-# This sample shows how to prevent topic branches that are already
-# merged to 'next' branch from getting rebased, because allowing it
-# would result in rebasing already published history.
+<?php
 
-publish=next
-basebranch="$1"
-if test "$#" = 2
-then
-	topic="refs/heads/$2"
-else
-	topic=`git symbolic-ref HEAD` ||
-	exit 0 ;# we do not interrupt rebasing detached HEAD
-fi
+/*
+ * This file is part of the Prophecy.
+ * (c) Konstantin Kudryashov <ever.zet@gmail.com>
+ *     Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-case "$topic" in
-refs/heads/??/*)
-	;;
-*)
-	exit 0 ;# we do not interrupt others.
-	;;
-esac
+namespace Prophecy\Argument\Token;
 
-# Now we are dealing with a topic branch being rebased
-# on top of master.  Is it OK to rebase it?
+/**
+ * Approximate value token
+ *
+ * @author Daniel Leech <daniel@dantleech.com>
+ */
+class ApproximateValueToken implements TokenInterface
+{
+    private $value;
+    private $precision;
 
-# Does the topic really exist?
-git show-ref -q "$topic" || {
-	echo >&2 "No such branch $topic"
-	exit 1
+    public function __construct($value, $precision = 0)
+    {
+        $this->value = $value;
+        $this->precision = $precision;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function scoreArgument($argument)
+    {
+        return round($argument, $this->precision) === round($this->value, $this->precision) ? 10 : false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isLast()
+    {
+        return false;
+    }
+
+    /**
+     * Returns string representation for token.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return sprintf('≅%s', round($this->value, $this->precision));
+    }
 }
-
-# Is topic fully merged to master?
-not_in_master=`git rev-list --pretty=oneline ^master "$topic"`
-if test

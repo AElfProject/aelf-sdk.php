@@ -1,1 +1,29 @@
-module.exports={A:{A:{"8":"K D G E iB","1924":"A B"},B:{"1":"2 C d J M H I"},C:{"1":"0 1 3 4 6 7 8 9 V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB","8":"fB DB ZB","516":"T U","772":"2 F N K D G E A B C d J M H I O P Q R S YB"},D:{"1":"0 1 3 4 6 7 8 9 X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z HB GB BB CB FB SB NB LB kB MB JB OB PB QB","8":"F N K D","516":"T U V W","772":"S","900":"2 G E A B C d J M H I O P Q R"},E:{"1":"5 D G E A B C VB WB XB p aB","8":"F N RB IB","900":"K TB UB"},F:{"1":"0 1 6 J M H I O P Q R S T U V W X Y Z a b c e f g h i j k l m n o L q r s t u v w x y z","8":"E B bB cB dB eB p","900":"5 C AB gB"},G:{"1":"G lB mB nB oB pB qB rB sB tB uB","8":"IB hB EB","900":"jB KB"},H:{"900":"vB"},I:{"1":"4 0B 1B","8":"wB xB yB","900":"DB F zB EB"},J:{"1":"A","900":"D"},K:{"1":"L","8":"A B","900":"5 C p AB"},L:{"1"
+<?php
+/*
+ * This file is part of the phpunit-mock-objects package.
+ *
+ * (c) Sebastian Bergmann <sebastian@phpunit.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+/**
+ * Builder interface for unique identifiers.
+ *
+ * Defines the interface for recording unique identifiers. The identifiers
+ * can be used to define the invocation order of expectations. The expectation
+ * is recorded using id() and then defined in order using
+ * PHPUnit_Framework_MockObject_Builder_Match::after().
+ */
+interface PHPUnit_Framework_MockObject_Builder_Identity
+{
+    /**
+     * Sets the identification of the expectation to $id.
+     *
+     * @note The identifier is unique per mock object.
+     *
+     * @param string $id Unique identification of expectation.
+     */
+    public function id($id);
+}
