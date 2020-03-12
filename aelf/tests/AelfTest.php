@@ -1,13 +1,8 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2020/3/11 0011
- * Time: 21:47
- */
 
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
+
 class AelfTest extends TestCase
 {
     public $Aelf;
@@ -198,3 +193,5 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
+
+?>

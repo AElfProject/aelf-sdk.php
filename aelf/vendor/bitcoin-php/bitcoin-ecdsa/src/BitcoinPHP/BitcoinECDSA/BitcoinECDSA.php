@@ -737,16 +737,15 @@ class BitcoinECDSA
             }
         }
 
-        $address = $this->getNetworkPrefix() . $this->hash160(hex2bin($address));
-
+        $address = $this->hash256(hex2bin($address));
         //checksum
         $address = $address.substr($this->hash256(hex2bin($address)), 0, 8);
         $address = $this->base58_encode($address);
-
-        if($this->validateAddress($address))
+        return $address;
+       /* if($this->validateAddress($address))
             return $address;
         else
-            throw new \Exception('the generated address seems not to be valid.');
+            throw new \Exception('the generated address seems not to be valid.');*/
     }
 
     /***

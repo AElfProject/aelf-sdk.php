@@ -220,7 +220,7 @@ class Aelf{
     /**
      * Gets information about the peer nodes of the current node.Optional whether to include metrics.
      * wa:/api/net/peers?withMetrics=false
-     */
+     */     
     public function getPeers($withMetrics){
         return $this->getNetSdkObj()->getPeers($withMetrics);
     }
