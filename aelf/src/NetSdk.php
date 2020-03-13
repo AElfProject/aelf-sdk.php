@@ -51,17 +51,20 @@ Class NetSdk{
      * Attempts to remove a node from the connected network nodes wa:/api/net/peer.
      */
     public function removePeer($address){
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_REMOVEPEER."?address=".$address);
-        $Success = $this->Curl->exec();
-        if ($Success->hasError()) {
+         $url = $this->AElfClientUrl.self::$WA_REMOVEPEER;
+  
+        $this->Curl->makePost($url,json_encode(['address'=>$address]),array('Content-type: application/json;charset=UTF-8'));
+       
+        $response = $this->Curl->exec();
+        if ($response->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($response->getError());
         } else {
             //Success
-        
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
-            
+          
+            return json_decode($response->getBody(),JSON_UNESCAPED_UNICODE);
         }
+       
        
     }
 
