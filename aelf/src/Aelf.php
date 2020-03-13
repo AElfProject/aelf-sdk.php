@@ -1,6 +1,6 @@
 <?php
 
-
+require_once "../vendor/autoload.php";
 require_once "BlockChainSdk.php";
 require_once "NetSdk.php";
 /**
@@ -24,7 +24,7 @@ use Aelf\Protobuf\Generated\Hash;
 use GPBMetadata\Types;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 use StephenHill\Base58;
-use Bytes;
+use Aelf\Bytes\Bytes;
 use kornrunner\Secp256k1;
 use kornrunner\Serializer\HexSignatureSerializer;
 /**
@@ -320,7 +320,7 @@ class Aelf{
         $keyPair = new BitcoinECDSA();
         $keyPair->generateRandomPrivateKey();
         $privateKey = $keyPair->getPrivateKey();
-        $publicKey = $keyPair->publicKey();
+        $publicKey = $keyPair->getUncompressedPubKey();
         $address = $keyPair->getUncompressedAddress();
         $keyPairInfo=array('privateKey'=>$privateKey,'publicKey'=>$publicKey,'address'=>$address);
         return $keyPairInfo;

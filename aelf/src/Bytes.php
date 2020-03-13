@@ -1,4 +1,5 @@
 <?php  
+namespace Aelf\Bytes;
 /**
  * * byte array and string conversion class
 */

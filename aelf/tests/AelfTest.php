@@ -1,5 +1,6 @@
 <?php
-
+require_once "../src/Aelf.php";
+require_once "../vendor/autoload.php";
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 
@@ -193,5 +194,7 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-
+$r = new AelfTest();
+$r->setUp();
+var_dump($r->address);
 ?>

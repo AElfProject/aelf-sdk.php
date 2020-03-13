@@ -7,7 +7,7 @@
 use Hhxsv5\PhpMultiCurl\Curl as Curl;
 use Hhxsv5\PhpMultiCurl\MultiCurl as MultiCurl;
 use StephenHill\Base58;
-use Bytes;
+use Aelf\Bytes\Bytes;
 Class BlockChainSdk{
 
     private $AElfClientUrl;
