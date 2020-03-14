@@ -85,7 +85,7 @@ class Curl
         }
     }
 
-    public function makeDelete($url,$params =null ,array headers = []){
+    public function makeDelete($url,$params =null ,array $headers = []){
          $this->init();
 
         curl_setopt_array($this->handle, [CURLOPT_URL => $url, CURLOPT_CUSTOMREQUEST => 'DELETE']);
