@@ -15,10 +15,10 @@ class AelfTest extends TestCase
     public $OPREATIONADDRESS;
 
     public function setUp() {
-        $url = 'http://18.223.158.83:8000';
+        $url = 'http://127.0.0.1:8200';
 
         $this->Aelf = new Aelf($url);
-        $this->OPREATIONADDRESS ='18.223.158.83:7003';
+        $this->OPREATIONADDRESS ='10.211.55.4:7004';
 
         $bitcoinECDSA = new BitcoinECDSA();
         $this->private_key = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
@@ -162,13 +162,13 @@ class AelfTest extends TestCase
     }
 
     public function testNetworkApi(){
-        print('getNetworkInfo');
+       print('getNetworkInfo');
         echo "<br>";
         print_r($this->Aelf->getNetworkInfo());
         echo "<br>";
         print('remove_peer');
         echo "<br>";
-        print_r($this->Aelf->removePeer('18.223.158.83:7003'));
+        var_dump($this->Aelf->removePeer($this->OPREATIONADDRESS);
         echo "<br>";
         print('add_peer');
         print_r($this->Aelf->addPeer($this->OPREATIONADDRESS));
@@ -211,6 +211,5 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-
 
 ?>
