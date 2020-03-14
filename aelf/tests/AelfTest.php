@@ -1,5 +1,6 @@
 <?php
-
+require_once "../src/Aelf.php";
+require_once "../vendor/autoload.php";
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 use Aelf\Protobuf\Generated\Address;
@@ -162,12 +163,17 @@ class AelfTest extends TestCase
 
     public function testNetworkApi(){
         print('getNetworkInfo');
+        echo "<br>";
         print_r($this->Aelf->getNetworkInfo());
+        echo "<br>";
         print('remove_peer');
-        print($this->Aelf->removePeer('18.223.158.83:7003'));
+        echo "<br>";
+        print_r($this->Aelf->removePeer('18.223.158.83:7003'));
+        echo "<br>";
         print('add_peer');
         print_r($this->Aelf->addPeer($this->OPREATIONADDRESS));
         print_r($this->Aelf->getPeers(true));
+        echo "<br>";
 
     }
 
@@ -206,5 +212,7 @@ class AelfTest extends TestCase
     }
 }
 
-
+$t = new AelfTest();
+$t->setUp();
+$t->testNetworkApi();
 ?>

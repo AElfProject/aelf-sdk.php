@@ -88,8 +88,8 @@ class Curl
     public function makeDelete($url,$params =null ,array $headers = []){
          $this->init();
 
-        curl_setopt_array($this->handle, [CURLOPT_URL => $url, CURLOPT_CUSTOMREQUEST => 'DELETE']);
-
+        curl_setopt_array($this->handle, [CURLOPT_URL => $url]);
+        curl_setopt($this->handle, CURLOPT_CUSTOMREQUEST, "DELETE");
         //CURLFile support
         if (is_array($params)) {
             $hasUploadFile = false;
