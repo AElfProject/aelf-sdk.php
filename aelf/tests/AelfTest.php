@@ -1,6 +1,5 @@
 <?php
 
-
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 use Aelf\Protobuf\Generated\Address;
@@ -86,9 +85,9 @@ class AelfTest extends TestCase
         $address->mergeFromString(hex2bin($response));
         $base58Str = $this->base58->encodeChecked($address->getValue());
         $aa  = $this->Aelf->getContractAddressByName($this->private_key,$bytes);
-     
-        $this->assertTrue($aa == $base58Str);
-    
+        print_r($aa);
+
+        print_r($base58Str);
     }
     public function testRawTransactionApi(){
         $status = $this->Aelf->getChainStatus();
@@ -128,9 +127,9 @@ class AelfTest extends TestCase
         $block = $this->Aelf->getBlockByHeight($currentHeight,False);
         $params = hex2bin(hash('sha256','AElf.ContractNames.Vote'));
         $transaction = $this->buildTransaction($this->Aelf->getGenesisContractAddress(),'GetContractAddressByName',$params);
-
-        $result =  $this->Aelf->sendTransaction(bin2hex($transaction->serializeToString()));
-        print_r($result);
+        $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
+        $response =  $this->Aelf->sendTransaction($executeTransactionDtoObj);
+        print_r($response);
         $this->assertTrue($result['TransactionId'] != "");
     }
     public function testsendTransactions() {
@@ -162,18 +161,13 @@ class AelfTest extends TestCase
     }
 
     public function testNetworkApi(){
-       print('getNetworkInfo');
-        echo "<br>";
+        print('getNetworkInfo');
         print_r($this->Aelf->getNetworkInfo());
-        echo "<br>";
         print('remove_peer');
-        echo "<br>";
-        var_dump($this->Aelf->removePeer($this->OPREATIONADDRESS));
-        echo "<br>";
+        print($this->Aelf->removePeer('18.223.158.83:7003'));
         print('add_peer');
         print_r($this->Aelf->addPeer($this->OPREATIONADDRESS));
         print_r($this->Aelf->getPeers(true));
-        echo "<br>";
 
     }
 
@@ -211,5 +205,6 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
+
 
 ?>

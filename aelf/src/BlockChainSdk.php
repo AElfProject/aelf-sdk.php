@@ -262,7 +262,7 @@ Class BlockChainSdk{
     public function sendTransaction($input){
         $url = $this->AElfClientUrl.self::$WA_SENDTRANSACTION;
        
-        $this->Curl->makePost($url,json_encode(['RawTransaction'=>$input]),array('Content-type: application/json;charset=UTF-8'));
+        $this->Curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
         $response = $this->Curl->exec();
         if ($response->hasError()) {
             //Fail
