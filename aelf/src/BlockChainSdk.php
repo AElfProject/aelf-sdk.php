@@ -343,13 +343,15 @@ Class BlockChainSdk{
      * Get merkle path of a transaction. wa:/api/blockChain/merklePathByTransactionId
      */
     public function  getMerklePathByTransactionId($transactionId) {
-        $Success = $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETMBYTRANSACTIONID."?transactionId=".$transactionId)->exec();
+  
+        $this->Curl->makeGet(($this->AElfClientUrl.self::$WA_GETMBYTRANSACTIONID."?transactionId=".$transactionId);
+        $Success = $this->Curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
         } else {
             //Success
-            var_dump($Success->getBody());
+           return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
         }
     }
 
