@@ -85,9 +85,9 @@ class AelfTest extends TestCase
         $address->mergeFromString(hex2bin($response));
         $base58Str = $this->base58->encodeChecked($address->getValue());
         $aa  = $this->Aelf->getContractAddressByName($this->private_key,$bytes);
-        print_r($aa);
-
-        print_r($base58Str);
+     
+        $this->assertTrue($aa == $base58Str);
+    
     }
     public function testRawTransactionApi(){
         $status = $this->Aelf->getChainStatus();
