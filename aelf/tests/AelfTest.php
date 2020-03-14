@@ -1,9 +1,10 @@
 <?php
-require_once "../src/Aelf.php";
-require_once "../vendor/autoload.php";
+
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
-
+use Aelf\Protobuf\Generated\Address;
+use GPBMetadata\Types;
+use StephenHill\Base58;
 class AelfTest extends TestCase
 {
     public $Aelf;
@@ -23,7 +24,7 @@ class AelfTest extends TestCase
         $bitcoinECDSA->setPrivateKey($this->private_key);
         $this->public_key = $bitcoinECDSA->getUncompressedPubKey();
         $this->address= $this->Aelf->getAddressFromPrivateKey($this->private_key);
-
+         $this->base58 = new Base58();
     }
 
 
@@ -73,13 +74,20 @@ class AelfTest extends TestCase
         $methodName = "GetContractAddressByName";
         $bytes =hex2bin(hash('sha256','AElf.ContractNames.TokenConverter'));
         $transaction = $this->Aelf->generateTransaction($this->address, $toAddress, $methodName, $bytes);
+    
         $signature = $this->Aelf->signTransaction($this->private_key, $transaction);
 
         $transaction->setSignature(hex2bin($signature));
-
+       
         $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
-        $this->Aelf->executeTransaction($executeTransactionDtoObj);
+        $response =  $this->Aelf->executeTransaction($executeTransactionDtoObj);
+        $address = new Address();
+        $address->mergeFromString(hex2bin($response));
+        $base58Str = $this->base58->encodeChecked($address->getValue());
+        $aa  = $this->Aelf->getContractAddressByName($this->private_key,$bytes);
+        print_r($aa);
 
+        print_r($base58Str);
     }
     public function testRawTransactionApi(){
         $status = $this->Aelf->getChainStatus();
@@ -101,14 +109,17 @@ class AelfTest extends TestCase
 
         $transaction1 = array('RawTransaction'=>$raw_transaction['RawTransaction'],'signature'=>$sign);
         $execute = $this->Aelf->executeRawTransaction($transaction1);
-        print_r($execute.'<br/>');
+        print_r($execute);
         $transaction2 = array('Transaction'=>$raw_transaction['RawTransaction'],'signature'=>$sign,'returnTransaction'=>true);
         $execute1 = $this->Aelf->sendRawTransaction($transaction2);
-        print_r($execute1.'<br/>');
+        print_r($execute1);
     }
     public function testgetAddressFromPubKeyTest(){
-        $pubKeyAddress = $this->Aelf->getAddressFromPubKey($this->public_key);
-        $this->assertTrue($pubKeyAddress == $this->address);
+        //$pubKeyAddress = $this->Aelf->getAddressFromPubKey($this->public_key);
+        $pubKeyAddress = $this->Aelf->getAddressFromPubKey('04166cf4be901dee1c21f3d97b9e4818f229bec72a5ecd56b5c4d6ce7abfc3c87e25c36fd279db721acf4258fb489b4a4406e6e6e467935d06990be9d134e5741c');
+       
+        print_r($pubKeyAddress);
+        $this->assertTrue($pubKeyAddress == 'SD6BXDrKT2syNd1WehtPyRo3dPBiXqfGUj8UJym7YP9W9RynM');
     }
 
     public function testSendTransactionApi(){
@@ -194,7 +205,6 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-$r = new AelfTest();
-$r->setUp();
-var_dump($r->address);
+
+
 ?>

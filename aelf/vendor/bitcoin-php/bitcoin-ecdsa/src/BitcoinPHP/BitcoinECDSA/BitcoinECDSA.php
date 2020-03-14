@@ -673,13 +673,13 @@ class BitcoinECDSA
     public function decodeChecked($address)
     {
        
-        $address   = $this->base58_decode($address);
-       
+        $address   = hex2bin($this->base58_decode($address));
+        
         if(strlen($address) < 4)
             return false;
         $checksum   = substr($address, strlen($address)-4, 4);
+     
         $rawAddress = substr($address, 0, strlen($address)-4);
-        
         if(substr(hex2bin($this->hash256($rawAddress)), 0, 4) === $checksum)
             return $rawAddress;
         else

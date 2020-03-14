@@ -1,6 +1,7 @@
 <?php
 
-require_once "../vendor/autoload.php";
+
+
 require_once "BlockChainSdk.php";
 require_once "NetSdk.php";
 /**
@@ -184,7 +185,7 @@ class Aelf{
     /**
      * Get multiple transaction results. wa:/api/blockChain/transactionResults
      */
-    public function getTransactionResults($blockHash,$offset = 0,$limit = 1)
+    public function getTransactionResults($blockHash,$offset = 0,$limit = 10)
     {
         return $this->getBlockChainSdkObj()->getTransactionResults($blockHash,$offset,$limit);
     }
@@ -263,6 +264,7 @@ class Aelf{
     public function signTransaction($privateKeyHex,$transaction)
     {
         $transactionData = sha256($transaction->serializeToString());
+
         return $this->getSignatureWithPrivateKey($privateKeyHex,$transactionData);
     }
 
@@ -395,8 +397,9 @@ class Aelf{
      */
     public function isConnected() {
       
-        $this->getBlockChainSdkObj()->getChainStatus();
+        
         try {
+            $this->getBlockChainSdkObj()->getChainStatus();
             return true;
     
          } catch (Exception $e){
