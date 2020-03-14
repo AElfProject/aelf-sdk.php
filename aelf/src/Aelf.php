@@ -1,7 +1,7 @@
 <?php
 
 
-require_once "../vendor/autoload.php";
+
 require_once "BlockChainSdk.php";
 require_once "NetSdk.php";
 /**

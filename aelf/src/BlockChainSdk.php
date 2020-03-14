@@ -344,7 +344,7 @@ Class BlockChainSdk{
      */
     public function  getMerklePathByTransactionId($transactionId) {
   
-        $this->Curl->makeGet(($this->AElfClientUrl.self::$WA_GETMBYTRANSACTIONID."?transactionId=".$transactionId);
+        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETMBYTRANSACTIONID."?transactionId=".$transactionId);
         $Success = $this->Curl->exec();
         if ($Success->hasError()) {
             //Fail

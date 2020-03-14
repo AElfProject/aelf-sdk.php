@@ -1,6 +1,5 @@
 <?php
-require_once "../src/Aelf.php";
-require_once "../vendor/autoload.php";
+
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 use Aelf\Protobuf\Generated\Address;
@@ -212,7 +211,5 @@ class AelfTest extends TestCase
     }
 }
 
-$t = new AelfTest();
-$t->setUp();
-$t->testNetworkApi();
+
 ?>
