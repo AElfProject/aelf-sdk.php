@@ -168,7 +168,7 @@ class AelfTest extends TestCase
         echo "<br>";
         print('remove_peer');
         echo "<br>";
-        var_dump($this->Aelf->removePeer($this->OPREATIONADDRESS);
+        var_dump($this->Aelf->removePeer($this->OPREATIONADDRESS));
         echo "<br>";
         print('add_peer');
         print_r($this->Aelf->addPeer($this->OPREATIONADDRESS));
