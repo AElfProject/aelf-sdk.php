@@ -53,7 +53,7 @@ Class NetSdk{
     public function removePeer($address){
          $url = $this->AElfClientUrl.self::$WA_REMOVEPEER;
   
-        $this->Curl->makePost($url,json_encode(['address'=>$address]),array('Content-type: application/json;charset=UTF-8'));
+        $this->Curl->makeDelete($url,json_encode(['address'=>$address]),array('Content-type: application/json;charset=UTF-8'));
        
         $response = $this->Curl->exec();
         if ($response->hasError()) {

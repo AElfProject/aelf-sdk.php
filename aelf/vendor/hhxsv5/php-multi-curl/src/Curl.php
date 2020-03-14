@@ -85,6 +85,35 @@ class Curl
         }
     }
 
+    public function makeDelete($url,$params =null ,array headers = []){
+         $this->init();
+
+        curl_setopt_array($this->handle, [CURLOPT_URL => $url, CURLOPT_CUSTOMREQUEST => 'DELETE']);
+
+        //CURLFile support
+        if (is_array($params)) {
+            $hasUploadFile = false;
+            if ($this->meetPhp55) {//CURLFile: since 5.5.0
+                foreach ($params as $k => $v) {
+                    if ($v instanceof \CURLFile) {
+                        $hasUploadFile = true;
+                        break;
+                    }
+                }
+            }
+            $hasUploadFile OR $params = http_build_query($params);
+        }
+        
+        //$params: array => multipart/form-data, string => application/x-www-form-urlencoded
+        if (!empty($params)) {
+            curl_setopt($this->handle, CURLOPT_POSTFIELDS, $params);
+        }
+
+        if (!empty($headers)) {
+            curl_setopt($this->handle, CURLOPT_HTTPHEADER, $headers);
+        }
+    }
+
     public function makePost($url, $params = null, array $headers = [])
     {
         $this->init();
