@@ -1,5 +1,6 @@
 <?php
 
+
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 use Aelf\Protobuf\Generated\Address;
