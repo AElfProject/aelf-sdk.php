@@ -77,9 +77,7 @@ class AelfTest extends TestCase
         $methodName = "GetContractAddressByName";
         $bytes =hex2bin(hash('sha256','AElf.ContractNames.TokenConverter'));
         $transaction = $this->Aelf->generateTransaction($this->address, $toAddress, $methodName, $bytes);
-    
         $signature = $this->Aelf->signTransaction($this->private_key, $transaction);
-
         $transaction->setSignature(hex2bin($signature));
        
         $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
@@ -118,7 +116,6 @@ class AelfTest extends TestCase
         print_r($execute1);
     }
     public function testgetAddressFromPubKeyTest(){
-        //$pubKeyAddress = $this->Aelf->getAddressFromPubKey($this->public_key);
         $pubKeyAddress = $this->Aelf->getAddressFromPubKey('04166cf4be901dee1c21f3d97b9e4818f229bec72a5ecd56b5c4d6ce7abfc3c87e25c36fd279db721acf4258fb489b4a4406e6e6e467935d06990be9d134e5741c');
        
         print_r($pubKeyAddress);
@@ -126,11 +123,9 @@ class AelfTest extends TestCase
     }
 
     public function testSendTransactionApi(){
-        $currentHeight = $this->Aelf->getBlockHeight();
-        $block = $this->Aelf->getBlockByHeight($currentHeight,False);
         $params = hex2bin(hash('sha256','AElf.ContractNames.Vote'));
         $transaction = $this->buildTransaction($this->Aelf->getGenesisContractAddress(),'GetContractAddressByName',$params);
-        $Transactioninput = new TransferInput();
+   
         $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
         $result =  $this->Aelf->sendTransaction($executeTransactionDtoObj);
         print_r($result);
@@ -215,7 +210,7 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-$r= new AelfTest();
-$r->setUp();
-$r->testgetChainStatus();
+$AelfTest= new AelfTest();
+$AelfTest->setUp();
+$AelfTest->testgetChainStatus();
 ?>
