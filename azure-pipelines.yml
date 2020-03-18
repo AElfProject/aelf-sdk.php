@@ -27,5 +27,5 @@ jobs:
     displayName: 'Use PHP version $(phpVersion)'
   - script: composer install --no-interaction --prefer-dist
     displayName: 'composer install'
-  - script: phpunit -bootstrap example/AelfTest.php
+  - script: phpunit --bootstrap bootstrap.php example/AelfTest.php 
     displayName: 'test'
