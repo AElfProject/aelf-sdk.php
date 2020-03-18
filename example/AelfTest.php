@@ -30,9 +30,9 @@ class AelfTest extends TestCase
          $this->base58 = new Base58();
     }
     public function testgetChainStatus(){
-        $chain_status =$this->Aelf->getChainStatus();
+       /* $chain_status =$this->Aelf->getChainStatus();
         print_r($chain_status);
-        $this->assertTrue($chain_status['BestChainHeight'] > 0);
+        $this->assertTrue($chain_status['BestChainHeight'] > 0);*/
         $chain_id = $this->Aelf->getChainId();
         print_r($chain_id);
         $this->assertTrue($chain_id == 9992731);
@@ -55,6 +55,35 @@ class AelfTest extends TestCase
         $this->assertTrue($block2['Header']['Height'] == 1);
         return $block2['Header']['Height'];
 
+    }
+
+    public function testGetTransactionFee_Test(){
+        $toAccount = "2DyzHMD1DqurK9hhiPa91mTBEtcPNrPvY5Uh7tnqRMXGnB381R";
+        $toAddress = await Client.GetContractAddressByName(Hash.FromString("AElf.ContractNames.Token"));
+        $methodName = "TransferFrom";
+        $param = new TransferFromInput
+        {
+            From = new Proto.Address {Value = AddressHelper.Base58StringToAddress(_address).Value},
+            To = new Proto.Address {Value = AddressHelper.Base58StringToAddress(toAccount).Value},
+            Symbol = "ELF",
+            Amount = 10000
+        };
+
+        $transaction = await Client.GenerateTransaction(_address, toAddress.GetFormatted(), methodName, param);
+        $txWithSign = Client.SignTransaction(PrivateKey, transaction);
+
+        $result = await Client.SendTransactionAsync(new SendTransactionInput
+        {
+            RawTransaction = txWithSign.ToByteArray().ToHex()
+        });
+
+        result.ShouldNotBeNull();
+        _testOutputHelper.WriteLine(result.TransactionId);
+
+        await Task.Delay(2000);
+        $transactionResult = await Client.GetTransactionResultAsync(result.TransactionId);
+        $res = transactionResult.GetTransactionFees();
+        _testOutputHelper.WriteLine(JsonConvert.SerializeObject(res, Formatting.Indented));
     }
 
     public function testgetTransactionResultApi(){
@@ -209,5 +238,7 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-
+$AelfTest= new AelfTest();
+$AelfTest->setUp();
+$AelfTest->testgetChainStatus();
 ?>
