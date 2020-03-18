@@ -17,7 +17,7 @@ class AelfTest extends TestCase
     public $OPREATIONADDRESS;
 
     public function setUp() {
-        $url = 'http:/127.0.0.1:8001';
+        $url = 'http://127.0.0.1:8001';
 
         $this->Aelf = new Aelf($url);
         $this->OPREATIONADDRESS ='127.0.0.1:6800';
