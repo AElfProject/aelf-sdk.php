@@ -30,6 +30,7 @@ class Bytes {
     public static function getBytes($string) {
         $bytes = array();
         for($i = 0; $i < strlen($string); $i++){
+            
              $bytes[] = ord($string[$i]);
         }
         return $bytes;

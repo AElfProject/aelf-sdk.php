@@ -373,7 +373,12 @@ Class BlockChainSdk{
         $chainStatusDto = $this->getChainStatus();
         $bytes = $this->base58->decode($chainStatusDto['ChainId']);
         for($i = 0; $i < 4; $i++){
-             $arr[] = ord($bytes[$i]);
+            if(strlen($bytes)<$i){
+                $arr[] = 0;
+            }else{
+                $arr[] = ord($bytes[$i]);
+            }
+            
         }
         return Bytes::bytestointeger($arr, 0);
     }
