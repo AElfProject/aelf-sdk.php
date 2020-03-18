@@ -28,6 +28,7 @@ Class BlockChainSdk{
     private static $WA_GETTRANSACTIONRESULTS = "/api/blockChain/transactionResults";
     private static $WA_SENDTRANSACTIONS = "/api/blockChain/sendTransactions";
     private static $WA_GETMBYTRANSACTIONID = "/api/blockChain/merklePathByTransactionId";
+    private static $WA_GET;
     public $Curl;
     public $base58;
     /**
@@ -371,7 +372,9 @@ Class BlockChainSdk{
     public function getChainId(){
         $chainStatusDto = $this->getChainStatus();
         $bytes = $this->base58->decode($chainStatusDto['ChainId']);
-        $bytes = Bytes::getBytes($bytes);
-        return Bytes::bytestointeger($bytes, 0);
+        for($i = 0; $i < 4; $i++){
+             $arr[] = ord($bytes[$i]);
+        }
+        return Bytes::bytestointeger($arr, 0);
     }
 }

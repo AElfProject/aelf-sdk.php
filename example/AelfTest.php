@@ -29,8 +29,6 @@ class AelfTest extends TestCase
         $this->address= $this->Aelf->getAddressFromPrivateKey($this->private_key);
          $this->base58 = new Base58();
     }
-
-
     public function testgetChainStatus(){
         $chain_status =$this->Aelf->getChainStatus();
         print_r($chain_status);
@@ -63,7 +61,7 @@ class AelfTest extends TestCase
         $block = $this->Aelf->getBlockByHeight(1,true);
 
         $transaction_result = $this->Aelf->getTransactionResult($block['Body']['Transactions'][0]);
-        print_r('# get_transaction_result' );
+        print_r('# get_transaction_result');
         print_r($transaction_result);
         $this->assertTrue($transaction_result['Status'] == 'MINED');
         $transaction_results = $this->Aelf->getTransactionResults($block['BlockHash']);
@@ -103,7 +101,7 @@ class AelfTest extends TestCase
             "params"=> json_encode($param)
         ];
         $raw_transaction  = $this->Aelf->createRawTransaction($transaction);
-        print_r($raw_transaction.'<br/>');
+        print_r($raw_transaction);
         $transactionId =hash('sha256',hex2bin($raw_transaction['RawTransaction']));
 
         $sign =  $this->Aelf->getSignatureWithPrivateKey($this->private_key,$transactionId);
@@ -114,6 +112,7 @@ class AelfTest extends TestCase
         $transaction2 = array('Transaction'=>$raw_transaction['RawTransaction'],'signature'=>$sign,'returnTransaction'=>true);
         $execute1 = $this->Aelf->sendRawTransaction($transaction2);
         print_r($execute1);
+         $this->assertTrue($execute1 != '');
     }
     public function testgetAddressFromPubKeyTest(){
         $pubKeyAddress = $this->Aelf->getAddressFromPubKey('04166cf4be901dee1c21f3d97b9e4818f229bec72a5ecd56b5c4d6ce7abfc3c87e25c36fd279db721acf4258fb489b4a4406e6e6e467935d06990be9d134e5741c');
@@ -210,7 +209,5 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-$AelfTest= new AelfTest();
-$AelfTest->setUp();
-$AelfTest->testgetChainStatus();
+
 ?>
