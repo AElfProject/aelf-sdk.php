@@ -204,6 +204,8 @@ class AelfTest extends TestCase
         print('add_peer');
         print_r($this->Aelf->addPeer($this->OPREATIONADDRESS));
         print_r($this->Aelf->getPeers(true));
+        $this->assertTrue($this->Aelf->addPeer($this->OPREATIONADDRESS));
+
         echo "<br>";
 
     }
