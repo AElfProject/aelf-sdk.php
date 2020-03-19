@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.GetBalanceInput</code>
@@ -17,11 +16,11 @@ class GetBalanceInput extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
-    private $symbol = '';
+    protected $symbol = '';
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Address owner = 2;</code>
      */
-    private $owner = null;
+    protected $owner = null;
 
     /**
      * Constructor.

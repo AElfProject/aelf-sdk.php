@@ -128,3 +128,21 @@ message TransferInput {
     sint64 amount = 3;
     string memo = 4;
 }
+
+message TransferFromInput {
+    Address from = 1;
+    Address to = 2;
+    string symbol = 3;
+    sint64 amount = 4;
+    string memo = 5;
+}
+
+message TransactionFeeCharged {
+    string symbol = 1;
+    sint64 amount = 2;
+}
+
+message ResourceTokenCharged {
+    string symbol = 1;
+    sint64 amount = 2;
+}

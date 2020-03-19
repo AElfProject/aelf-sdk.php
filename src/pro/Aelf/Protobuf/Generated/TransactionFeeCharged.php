@@ -9,14 +9,18 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>aelf.protobuf.generated.GetTokenInfoInput</code>
+ * Generated from protobuf message <code>aelf.protobuf.generated.TransactionFeeCharged</code>
  */
-class GetTokenInfoInput extends \Google\Protobuf\Internal\Message
+class TransactionFeeCharged extends \Google\Protobuf\Internal\Message
 {
     /**
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
     protected $symbol = '';
+    /**
+     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     */
+    protected $amount = 0;
 
     /**
      * Constructor.
@@ -25,6 +29,7 @@ class GetTokenInfoInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $symbol
+     *     @type int|string $amount
      * }
      */
     public function __construct($data = NULL) {
@@ -50,6 +55,28 @@ class GetTokenInfoInput extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkString($var, True);
         $this->symbol = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * @return int|string
+     */
+    public function getAmount()
+    {
+        return $this->amount;
+    }
+
+    /**
+     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * @param int|string $var
+     * @return $this
+     */
+    public function setAmount($var)
+    {
+        GPBUtil::checkInt64($var);
+        $this->amount = $var;
 
         return $this;
     }

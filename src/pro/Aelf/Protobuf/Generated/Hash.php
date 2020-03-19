@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.Hash</code>
@@ -17,7 +16,7 @@ class Hash extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>bytes value = 1;</code>
      */
-    private $value = '';
+    protected $value = '';
 
     /**
      * Constructor.

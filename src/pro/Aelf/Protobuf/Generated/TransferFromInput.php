@@ -9,24 +9,28 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>aelf.protobuf.generated.TransferInput</code>
+ * Generated from protobuf message <code>aelf.protobuf.generated.TransferFromInput</code>
  */
-class TransferInput extends \Google\Protobuf\Internal\Message
+class TransferFromInput extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 1;</code>
+     * Generated from protobuf field <code>.aelf.protobuf.generated.Address from = 1;</code>
+     */
+    protected $from = null;
+    /**
+     * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 2;</code>
      */
     protected $to = null;
     /**
-     * Generated from protobuf field <code>string symbol = 2;</code>
+     * Generated from protobuf field <code>string symbol = 3;</code>
      */
     protected $symbol = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * Generated from protobuf field <code>sint64 amount = 4;</code>
      */
     protected $amount = 0;
     /**
-     * Generated from protobuf field <code>string memo = 4;</code>
+     * Generated from protobuf field <code>string memo = 5;</code>
      */
     protected $memo = '';
 
@@ -36,6 +40,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
+     *     @type \Aelf\Protobuf\Generated\Address $from
      *     @type \Aelf\Protobuf\Generated\Address $to
      *     @type string $symbol
      *     @type int|string $amount
@@ -48,7 +53,29 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 1;</code>
+     * Generated from protobuf field <code>.aelf.protobuf.generated.Address from = 1;</code>
+     * @return \Aelf\Protobuf\Generated\Address
+     */
+    public function getFrom()
+    {
+        return $this->from;
+    }
+
+    /**
+     * Generated from protobuf field <code>.aelf.protobuf.generated.Address from = 1;</code>
+     * @param \Aelf\Protobuf\Generated\Address $var
+     * @return $this
+     */
+    public function setFrom($var)
+    {
+        GPBUtil::checkMessage($var, \Aelf\Protobuf\Generated\Address::class);
+        $this->from = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 2;</code>
      * @return \Aelf\Protobuf\Generated\Address
      */
     public function getTo()
@@ -57,7 +84,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 1;</code>
+     * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 2;</code>
      * @param \Aelf\Protobuf\Generated\Address $var
      * @return $this
      */
@@ -70,7 +97,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string symbol = 2;</code>
+     * Generated from protobuf field <code>string symbol = 3;</code>
      * @return string
      */
     public function getSymbol()
@@ -79,7 +106,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string symbol = 2;</code>
+     * Generated from protobuf field <code>string symbol = 3;</code>
      * @param string $var
      * @return $this
      */
@@ -92,7 +119,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * Generated from protobuf field <code>sint64 amount = 4;</code>
      * @return int|string
      */
     public function getAmount()
@@ -101,7 +128,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * Generated from protobuf field <code>sint64 amount = 4;</code>
      * @param int|string $var
      * @return $this
      */
@@ -114,7 +141,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string memo = 4;</code>
+     * Generated from protobuf field <code>string memo = 5;</code>
      * @return string
      */
     public function getMemo()
@@ -123,7 +150,7 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string memo = 4;</code>
+     * Generated from protobuf field <code>string memo = 5;</code>
      * @param string $var
      * @return $this
      */

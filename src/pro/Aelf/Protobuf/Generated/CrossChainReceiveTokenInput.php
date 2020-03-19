@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.CrossChainReceiveTokenInput</code>
@@ -17,19 +16,19 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>int32 from_chain_id = 1;</code>
      */
-    private $from_chain_id = 0;
+    protected $from_chain_id = 0;
     /**
      * Generated from protobuf field <code>int64 parent_chain_height = 2;</code>
      */
-    private $parent_chain_height = 0;
+    protected $parent_chain_height = 0;
     /**
      * Generated from protobuf field <code>bytes transfer_transaction_bytes = 3;</code>
      */
-    private $transfer_transaction_bytes = '';
+    protected $transfer_transaction_bytes = '';
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.MerklePath merkle_path = 4;</code>
      */
-    private $merkle_path = null;
+    protected $merkle_path = null;
 
     /**
      * Constructor.

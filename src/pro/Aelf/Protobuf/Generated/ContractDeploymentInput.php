@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.ContractDeploymentInput</code>
@@ -17,11 +16,11 @@ class ContractDeploymentInput extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>sint32 category = 1;</code>
      */
-    private $category = 0;
+    protected $category = 0;
     /**
      * Generated from protobuf field <code>bytes code = 2;</code>
      */
-    private $code = '';
+    protected $code = '';
 
     /**
      * Constructor.

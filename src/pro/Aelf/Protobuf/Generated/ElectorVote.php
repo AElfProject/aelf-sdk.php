@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.ElectorVote</code>
@@ -25,11 +24,11 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>sint64 active_voted_votes_amount = 3;</code>
      */
-    private $active_voted_votes_amount = 0;
+    protected $active_voted_votes_amount = 0;
     /**
      * Generated from protobuf field <code>sint64 all_voted_votes_amount = 4;</code>
      */
-    private $all_voted_votes_amount = 0;
+    protected $all_voted_votes_amount = 0;
     /**
      * Generated from protobuf field <code>repeated .aelf.protobuf.generated.ElectionVotingRecord active_voting_records = 5;</code>
      */
@@ -41,7 +40,7 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>bytes public_key = 7;</code>
      */
-    private $public_key = '';
+    protected $public_key = '';
 
     /**
      * Constructor.

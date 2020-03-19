@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.IssueInput</code>
@@ -17,19 +16,19 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
-    private $symbol = '';
+    protected $symbol = '';
     /**
      * Generated from protobuf field <code>sint64 amount = 2;</code>
      */
-    private $amount = 0;
+    protected $amount = 0;
     /**
      * Generated from protobuf field <code>string memo = 3;</code>
      */
-    private $memo = '';
+    protected $memo = '';
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 4;</code>
      */
-    private $to = null;
+    protected $to = null;
 
     /**
      * Constructor.

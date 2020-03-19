@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.ElectionVotingRecord</code>
@@ -17,43 +16,43 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Address voter = 1;</code>
      */
-    private $voter = null;
+    protected $voter = null;
     /**
      * Generated from protobuf field <code>string candidate = 2;</code>
      */
-    private $candidate = '';
+    protected $candidate = '';
     /**
      * Generated from protobuf field <code>sint64 amount = 3;</code>
      */
-    private $amount = 0;
+    protected $amount = 0;
     /**
      * Generated from protobuf field <code>sint64 term_number = 4;</code>
      */
-    private $term_number = 0;
+    protected $term_number = 0;
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Hash vote_id = 5;</code>
      */
-    private $vote_id = null;
+    protected $vote_id = null;
     /**
      * Generated from protobuf field <code>sint64 lock_time = 7;</code>
      */
-    private $lock_time = 0;
+    protected $lock_time = 0;
     /**
      * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 10;</code>
      */
-    private $unlock_timestamp = null;
+    protected $unlock_timestamp = null;
     /**
      * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 11;</code>
      */
-    private $withdraw_timestamp = null;
+    protected $withdraw_timestamp = null;
     /**
      * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 12;</code>
      */
-    private $vote_timestamp = null;
+    protected $vote_timestamp = null;
     /**
      * Generated from protobuf field <code>bool is_withdrawn = 13;</code>
      */
-    private $is_withdrawn = false;
+    protected $is_withdrawn = false;
 
     /**
      * Constructor.

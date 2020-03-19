@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.MerklePathNode</code>
@@ -17,11 +16,11 @@ class MerklePathNode extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Hash hash = 1;</code>
      */
-    private $hash = null;
+    protected $hash = null;
     /**
      * Generated from protobuf field <code>bool is_left_child_node = 2;</code>
      */
-    private $is_left_child_node = false;
+    protected $is_left_child_node = false;
 
     /**
      * Constructor.

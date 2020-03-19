@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.CrossChainTransferInput</code>
@@ -17,27 +16,27 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Address to = 1;</code>
      */
-    private $to = null;
+    protected $to = null;
     /**
      * Generated from protobuf field <code>string symbol = 2;</code>
      */
-    private $symbol = '';
+    protected $symbol = '';
     /**
      * Generated from protobuf field <code>sint64 amount = 3;</code>
      */
-    private $amount = 0;
+    protected $amount = 0;
     /**
      * Generated from protobuf field <code>string memo = 4;</code>
      */
-    private $memo = '';
+    protected $memo = '';
     /**
      * Generated from protobuf field <code>int32 to_chain_id = 5;</code>
      */
-    private $to_chain_id = 0;
+    protected $to_chain_id = 0;
     /**
      * Generated from protobuf field <code>int32 issue_chain_id = 6;</code>
      */
-    private $issue_chain_id = 0;
+    protected $issue_chain_id = 0;
 
     /**
      * Constructor.

@@ -7,7 +7,6 @@ namespace Aelf\Protobuf\Generated;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
-use Google\Protobuf\Internal\GPBWrapperUtils;
 
 /**
  * Generated from protobuf message <code>aelf.protobuf.generated.Transaction</code>
@@ -17,31 +16,31 @@ class Transaction extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Address from_address = 1;</code>
      */
-    private $from_address = null;
+    protected $from_address = null;
     /**
      * Generated from protobuf field <code>.aelf.protobuf.generated.Address to_address = 2;</code>
      */
-    private $to_address = null;
+    protected $to_address = null;
     /**
      * Generated from protobuf field <code>int64 ref_block_number = 3;</code>
      */
-    private $ref_block_number = 0;
+    protected $ref_block_number = 0;
     /**
      * Generated from protobuf field <code>bytes ref_block_prefix = 4;</code>
      */
-    private $ref_block_prefix = '';
+    protected $ref_block_prefix = '';
     /**
      * Generated from protobuf field <code>string method_name = 5;</code>
      */
-    private $method_name = '';
+    protected $method_name = '';
     /**
      * Generated from protobuf field <code>bytes params = 6;</code>
      */
-    private $params = '';
+    protected $params = '';
     /**
      * Generated from protobuf field <code>bytes signature = 10000;</code>
      */
-    private $signature = '';
+    protected $signature = '';
 
     /**
      * Constructor.
@@ -78,10 +77,10 @@ class Transaction extends \Google\Protobuf\Internal\Message
      * @return $this
      */
     public function setFromAddress($var)
-    {   
-        
+    {
         GPBUtil::checkMessage($var, \Aelf\Protobuf\Generated\Address::class);
         $this->from_address = $var;
+
         return $this;
     }
 
