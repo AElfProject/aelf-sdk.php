@@ -76,7 +76,6 @@ class AelfTest extends TestCase
             ],
         ];
         $transaction_fees = $this->Aelf->getTransactionFees($logs);
- 
         $this->assertEqual($transaction_fees[0]['symbol'],'ELF');
         $this->assertEqual($transaction_fees[0]['amount'],32635000);
     
