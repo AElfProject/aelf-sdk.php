@@ -1,6 +1,5 @@
 <?php
 
-require_once "../vendor/autoload.php";
 use Aelf\Aelf;
 use PHPUnit\Framework\TestCase;
 use Aelf\AelfECDSA\AelfECDSA;
@@ -81,6 +80,16 @@ class AelfTest extends TestCase
     
     }
 
+    public function testGetTransactionFeeaddress(){
+        $toAccount = "2DyzHMD1DqurK9hhiPa91mTBEtcPNrPvY5Uh7tnqRMXGnB381R";
+        $toAddress = $this->Aelf->GetContractAddressByName($this->private_key,hex2bin(hash('sha256','AElf.ContractNames.Token')));
+        $methodName = "Transfer";
+         $Bit = new AelfECDSA();
+        $from = $Bit->decodeChecked($from);
+        $to = $Bit->decodeChecked($to);
+ //       $param =['to'=>new Address('value')=>];
+            
+    }
     public function testgetTransactionResultApi(){
         $block = $this->Aelf->getBlockByHeight(1,true);
 
