@@ -235,11 +235,5 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-<<<<<<< HEAD
+
 ?>
-=======
-$r= new AelfTest();
-$r->setUp();
-$r->testgetChainStatus();
-?>
->>>>>>> aelf/dev
