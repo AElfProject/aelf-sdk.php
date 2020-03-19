@@ -7,7 +7,9 @@ use Aelf\AelfECDSA\AelfECDSA;
 use Aelf\Protobuf\Generated\Address;
 use GPBMetadata\Types;
 use Aelf\Protobuf\Generated\TransferInput;
+use Aelf\Protobuf\Generated\TransferFromInput;
 use StephenHill\Base58;
+
 class AelfTest extends TestCase
 {
     public $Aelf;
@@ -23,16 +25,16 @@ class AelfTest extends TestCase
         $this->OPREATIONADDRESS ='18.223.158.83:7003';
 
         $AelfECDSA = new AelfECDSA();
-        $this->private_key = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
+        $this->private_key = '09da44778f8db2e602fb484334f37df19e221c84c4582ce5b7770ccfbc3ddbef';
         $AelfECDSA->setPrivateKey($this->private_key);
         $this->public_key = $AelfECDSA->getUncompressedPubKey();
         $this->address= $this->Aelf->getAddressFromPrivateKey($this->private_key);
          $this->base58 = new Base58();
     }
     public function testgetChainStatus(){
-       /* $chain_status =$this->Aelf->getChainStatus();
+       $chain_status =$this->Aelf->getChainStatus();
         print_r($chain_status);
-        $this->assertTrue($chain_status['BestChainHeight'] > 0);*/
+        $this->assertTrue($chain_status['BestChainHeight'] > 0);
         $chain_id = $this->Aelf->getChainId();
         print_r($chain_id);
         $this->assertTrue($chain_id == 9992731);
@@ -57,33 +59,27 @@ class AelfTest extends TestCase
 
     }
 
+
     public function testGetTransactionFee_Test(){
-        $toAccount = "2DyzHMD1DqurK9hhiPa91mTBEtcPNrPvY5Uh7tnqRMXGnB381R";
-        $toAddress = await Client.GetContractAddressByName(Hash.FromString("AElf.ContractNames.Token"));
-        $methodName = "TransferFrom";
-        $param = new TransferFromInput
-        {
-            From = new Proto.Address {Value = AddressHelper.Base58StringToAddress(_address).Value},
-            To = new Proto.Address {Value = AddressHelper.Base58StringToAddress(toAccount).Value},
-            Symbol = "ELF",
-            Amount = 10000
-        };
-
-        $transaction = await Client.GenerateTransaction(_address, toAddress.GetFormatted(), methodName, param);
-        $txWithSign = Client.SignTransaction(PrivateKey, transaction);
-
-        $result = await Client.SendTransactionAsync(new SendTransactionInput
-        {
-            RawTransaction = txWithSign.ToByteArray().ToHex()
-        });
-
-        result.ShouldNotBeNull();
-        _testOutputHelper.WriteLine(result.TransactionId);
-
-        await Task.Delay(2000);
-        $transactionResult = await Client.GetTransactionResultAsync(result.TransactionId);
-        $res = transactionResult.GetTransactionFees();
-        _testOutputHelper.WriteLine(JsonConvert.SerializeObject(res, Formatting.Indented));
+        $logs = [
+            [
+                "Address"=>"25CecrU94dmMdbhC3LWMKxtoaL4Wv8PChGvVJM6PxkHAyvXEhB",
+                "Name"=> "TransactionFeeCharged",
+                "Indexed"=>null,
+                "NonIndexed"=> "CgNFTEYQ8OGPHw=="
+            ],
+            [
+                "Address"=> "25CecrU94dmMdbhC3LWMKxtoaL4Wv8PChGvVJM6PxkHAyvXEhB",
+                "Name"=> "ResourceTokenCharged",
+                "Indexed"=> null,
+                "NonIndexed"=>  "CgNFTEYQ8OGPHw=="
+            ],
+        ];
+        $transaction_fees = $this->Aelf->getTransactionFees($logs);
+ 
+        $this->assertEqual($transaction_fees[0]['symbol'],'ELF');
+        $this->assertEqual($transaction_fees[0]['amount'],32635000);
+    
     }
 
     public function testgetTransactionResultApi(){
@@ -171,6 +167,7 @@ class AelfTest extends TestCase
             $sendTransactionsInputs = ['RawTransactions'=>$rawTransactions];
             $listString = $this->Aelf->sendTransactions($sendTransactionsInputs);
             print_r($listString);
+           $this->assertTrue($listString != "");
         }
 
     }
@@ -238,7 +235,4 @@ class AelfTest extends TestCase
         return $transactionObj;
     }
 }
-$AelfTest= new AelfTest();
-$AelfTest->setUp();
-$AelfTest->testgetChainStatus();
 ?>

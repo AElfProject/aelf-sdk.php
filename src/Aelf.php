@@ -11,6 +11,8 @@ use Aelf\Protobuf\Generated\Transaction;
 use Aelf\Protobuf\Generated\TransferInput;
 use Aelf\Protobuf\Generated\StringInput;
 use Aelf\Protobuf\Generated\Hash;
+use Aelf\Protobuf\Generated\TransactionFeeCharged;
+use Aelf\Protobuf\Generated\ResourceTokenCharged;
 use GPBMetadata\Types;
 use Aelf\AelfECDSA\AelfECDSA;
 use StephenHill\Base58;
@@ -397,6 +399,37 @@ class Aelf{
 
          }
     }
+    public function getTransactionFees($logs){
+        /*
+        Get transaction fees
+        :param logs: logs from transaction results
+        :return: transaction fees
+        */
+        $transactionFees = [];
+        foreach($logs as $log){
+            if($log['Name'] == 'TransactionFeeCharged'){
+                $transactionFee = new TransactionFeeCharged();
+                
+                $transactionFee->mergeFromString(base64_decode($log['NonIndexed']));
+                array_push($transactionFees,[
+                    'name'=>'transaction_fee_charged',
+                    'symbol' => $transactionFee->getSymbol(),
+                    'amount' => $transactionFee->getAmount(),
+                ]);
+            }
+            if($log['Name'] == 'ResourceTokenCharged'){
+                $resourceTokenFee = new ResourceTokenCharged();
 
+                $resourceTokenFee->mergeFromString(base64_decode($log['NonIndexed']));
+                array_push($transactionFees,[
+                    'name'=>'resource_token_charged',
+                    'symbol' => $resourceTokenFee->getSymbol(),
+                    'amount' => $resourceTokenFee->getAmount(),
+                ]);
+            }
+        }
+      
+        return $transactionFees;
+    }
 
 }
