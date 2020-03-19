@@ -25,7 +25,5 @@ jobs:
       sudo update-alternatives --set phar.phar /usr/bin/phar.phar$(phpVersion)
       php -version
     displayName: 'Use PHP version $(phpVersion)'
-  - script: composer install --no-interaction --prefer-dist
-    displayName: 'composer install'
-  - script: phpunit --bootstrap bootstrap.php example/AelfTest.php 
+  - script: php phpunit.phar --bootstrap bootstrap.php example/AelfTest.php 
     displayName: 'test'
