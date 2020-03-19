@@ -19,10 +19,10 @@ class AelfTest extends TestCase
     public $OPREATIONADDRESS;
 
     public function setUp() {
-        $url = 'http://18.223.158.83:8000';
+        $url = 'http://127.0.0.1:8001';
 
         $this->Aelf = new Aelf($url);
-        $this->OPREATIONADDRESS ='18.223.158.83:7003';
+        $this->OPREATIONADDRESS ='127.0.0.1:6800';
 
         $AelfECDSA = new AelfECDSA();
         $this->private_key = '09da44778f8db2e602fb484334f37df19e221c84c4582ce5b7770ccfbc3ddbef';
