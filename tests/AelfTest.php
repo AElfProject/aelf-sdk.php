@@ -18,7 +18,7 @@ class AElfTest extends TestCase
     public $OPREATIONADDRESS;
 
     public function setUp() {
-        $url = 'http://127.0.0.1:8000';
+        $url = 'http://127.0.0.1:8001';
        
         $this->AElf = new AElf($url);
         $this->OPREATIONADDRESS ='127.0.0.1:6800';
@@ -30,7 +30,7 @@ class AElfTest extends TestCase
         $this->address= $this->AElf->getAddressFromPrivateKey($this->private_key);
         $this->base58 = new Base58();
     }
-    public function GetChainStatus_Test(){
+    public function testGetChainStatus(){
         $ChainStatus =$this->AElf->getChainStatus();
         print_r($ChainStatus);
         $this->assertTrue($ChainStatus['BestChainHeight'] > 0);
@@ -40,7 +40,7 @@ class AElfTest extends TestCase
 
     }
 
-    public function Blockapi_Test(){
+    public function testBlockapi(){
         $blockHeight = $this->AElf->getBlockHeight();
         print_r('# getBlockHeight');
         echo '<br>';
@@ -55,7 +55,7 @@ class AElfTest extends TestCase
     }
 
 
-    public function GetTransactionFee_Test(){
+    public function testGetTransactionFee(){
         $TransactionResult = [
             [
                 "Address"=>"25CecrU94dmMdbhC3LWMKxtoaL4Wv8PChGvVJM6PxkHAyvXEhB",
@@ -76,7 +76,7 @@ class AElfTest extends TestCase
     
     }
 
-    public function GetTransactionFees_Test(){
+    public function testGetTransactionFees(){
 
         $toAccount = "2bWwpsN9WSc4iKJPHYL4EZX3nfxVY7XLadecnNMar1GdSb4hJz";
         $Hash = new Hash();
@@ -96,7 +96,7 @@ class AElfTest extends TestCase
         $this->assertEqual($TransactionFees[0]['symbol'],'ELF');
         $this->assertEqual($TransactionFees[0]['amount'],32635000);
     }
-    public function GetTransactionResultApi_Test(){
+    public function testGetTransactionResultApi(){
         $Block = $this->AElf->getBlockByHeight(1,true);
         $Transaction_result = $this->AElf->getTransactionResult($Block['Body']['Transactions'][0]);
         print_r('# get_transaction_result');
@@ -108,7 +108,7 @@ class AElfTest extends TestCase
         $merkle_path = $this->AElf->getMerklePathByTransactionId($Block['Body']['Transactions'][0]);
         $this->assertTrue(is_array($merkle_path['MerklePathNodes']));
     }
-    public function ExecuteTransaction_Test(){
+    public function testExecuteTransaction(){
         $toAddress = $this->AElf->getGenesisContractAddress();
         $methodName = "GetContractAddressByName";
         $Bytes = new Hash();
@@ -125,7 +125,7 @@ class AElfTest extends TestCase
         $this->assertTrue($Address == $base58Str);
     
     }
-    public function RawTransactionApi_Test(){
+    public function testRawTransactionApi(){
         $status = $this->AElf->getChainStatus();
         $Params = base64_encode(hex2bin(hash('sha256', 'AElf.ContractNames.Consensus')));
         $param = array('value'=>$Params);
@@ -151,7 +151,7 @@ class AElfTest extends TestCase
         print_r($Execute1);
         $this->assertTrue($Execute1 != '');
     }
-    public function testgetAddressFromPubKeyTest(){
+    public function testgetAddressFromPubKey(){
         $pubKeyAddress = $this->AElf->getAddressFromPubKey('04166cf4be901dee1c21f3d97b9e4818f229bec72a5ecd56b5c4d6ce7abfc3c87e25c36fd279db721acf4258fb489b4a4406e6e6e467935d06990be9d134e5741c');
        
         print_r($pubKeyAddress);
@@ -186,20 +186,20 @@ class AElfTest extends TestCase
         }
 
     }
-    public function TransactionPoolApi_Test(){
+    public function testTransactionPoolApi(){
         $TransactionPoolStatus = $this->AElf->getTransactionPoolStatus();
         print_r('# get_transaction_pool_status:');
         print_r($TransactionPoolStatus);
         $this->assertTrue($TransactionPoolStatus['Queued'] >= 0);
     }
 
-    public function TaskQueueApi_Test(){
+    public function testTaskQueueApi(){
         $task_queue_status = $this->AElf->getTaskQueueStatus();
         print_r($task_queue_status);
         $this->assertTrue(count($task_queue_status) > 0);
     }
 
-    public function NetworkApi_Test(){
+    public function testNetworkApi(){
        print('getNetworkInfo');
         echo "<br>";
         print_r($this->AElf->getNetworkInfo());
@@ -214,7 +214,7 @@ class AElfTest extends TestCase
         $this->assertTrue($this->AElf->addPeer($this->OPREATIONADDRESS));
     }
 
-    public function GetContractFilCeDescriptorSet_Test(){
+    public function testGetContractFilCeDescriptorSet(){
         $BlockHeight = $this->AElf->getBlockHeight();
         $this->assertTrue($BlockHeight  > 0);
         $blockDto = $this->AElf->getBlockByHeight($BlockHeight, false);
@@ -229,19 +229,19 @@ class AElfTest extends TestCase
     }
 
 
-    public function GenerateKeyPairInfo_Test(){
+    public function testGenerateKeyPairInfo(){
         $PairInfo = $this->AElf->generateKeyPairInfo();
         print($PairInfo);
 
         $this->assertTrue($PairInfo!=null);
     }
 
-    public function Helpers_Tests(){
+    public function testHelpers(){
         $is_connected =$this->AElf->isConnected();
         $this->assertTrue($is_connected);
     }
 
-    public function GetFormattedAddress_Test(){
+    public function testGetFormattedAddress(){
         $addressVal = $this->AElf->getFormattedAddress($this->private_key, $this->address);
         $this->assertTrue(("ELF_".$this->address."_AElf")==$addressVal);
     }
