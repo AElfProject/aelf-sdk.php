@@ -216,8 +216,8 @@ class AElfTest extends TestCase
 
     public function GetContractFilCeDescriptorSet_Test(){
         $BlockHeight = $this->AElf->getBlockHeight();
-        $this->assertTrue($blockHeight  > 0);
-        $blockDto = $this->AElf->getBlockByHeight($blockHeight, false);
+        $this->assertTrue($BlockHeight  > 0);
+        $blockDto = $this->AElf->getBlockByHeight($BlockHeight, false);
         $transactionResultDtoList = $this->AElf->getTransactionResults($blockDto['BlockHash'],0,10);
 
         foreach($transactionResultDtoList as $v){
