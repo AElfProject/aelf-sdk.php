@@ -288,8 +288,9 @@ class AElf{
     public function getFormattedAddress($privateKey,$address){
         $chainIdString = $this->getBlockChainSdkObj()->getChainStatus()['ChainId'];
         $fromAddress = $this->getAddressFromPrivateKey($privateKey);
-        
-        $toAddress = $this->getContractAddressByName($privateKey,hex2bin(sha256('AElf.ContractNames.Token')));
+        $ContractNames = new Hash();
+        $ContractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
+        $toAddress = $this->getContractAddressByName($privateKey,$ContractNames);
      
         $methodName = "GetPrimaryTokenSymbol";
         $bytes = new Hash();

@@ -92,7 +92,8 @@ class AElfTest extends TestCase
         $result =  $this->AElf->sendTransaction($Transactioninput);
         print_r($result);
         $TransactionResult = $this->AElf->getTransactionResult($result['TransactionId']);
-        $TransactionFees = $this->AElf->getTransactionFees($TransactionResult);
+        print_r($TransactionResult);
+        $TransactionFees = $this->AElf->getTransactionFees($TransactionResult['logs']);
         $this->assertEqual($TransactionFees[0]['symbol'],'ELF');
         $this->assertEqual($TransactionFees[0]['amount'],32635000);
     }
@@ -116,7 +117,7 @@ class AElfTest extends TestCase
         $Transaction = $this->AElf->generateTransaction($this->address, $toAddress, $methodName, $Bytes);
         $Signature = $this->AElf->signTransaction($this->private_key, $Transaction);
         $Transaction->setSignature(hex2bin($Signature));
-        $ExecuteTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
+        $ExecuteTransactionDtoObj =['RawTransaction'=>bin2hex($Transaction->serializeToString())];
         $Response =  $this->AElf->executeTransaction($executeTransactionDtoObj);
         $Address = new Address();
         $Address->mergeFromString(hex2bin($Response));
