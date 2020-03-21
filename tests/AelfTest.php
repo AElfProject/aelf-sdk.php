@@ -71,8 +71,9 @@ class AElfTest extends TestCase
             ],
         ];
         $TransactionFees = $this->AElf->getTransactionFees($TransactionResult);
-        $this->assertEqual($TransactionFees[0]['symbol'],'ELF');
-        $this->assertEqual($TransactionFees[0]['amount'],32635000);
+        var_dump($TransactionFees);
+        $this->assertEquals($TransactionFees[0]['symbol'],'ELF');
+        $this->assertEquals($TransactionFees[0]['amount'],32635000);
     
     }
 
@@ -93,16 +94,16 @@ class AElfTest extends TestCase
         print_r($result);
         $TransactionResult = $this->AElf->getTransactionResult($result['TransactionId']);
         print_r($TransactionResult);
-        $TransactionFees = $this->AElf->getTransactionFees($TransactionResult['logs']);
-        $this->assertEqual($TransactionFees[0]['symbol'],'ELF');
-        $this->assertEqual($TransactionFees[0]['amount'],32635000);
+        $TransactionFees = $this->AElf->getTransactionFees($TransactionResult['Logs']);
+        $this->assertEquals($TransactionFees[0]['symbol'],'ELF');
+        $this->assertEquals($TransactionFees[0]['amount'],32635000);
     }
     public function testGetTransactionResultApi(){
         $Block = $this->AElf->getBlockByHeight(1,true);
         $Transaction_result = $this->AElf->getTransactionResult($Block['Body']['Transactions'][0]);
         print_r('# get_transaction_result');
-        print_r($transaction_result);
-        $this->assertTrue($transaction_result['Status'] == 'MINED');
+        print_r($Transaction_result);
+        $this->assertTrue($Transaction_result['Status'] == 'MINED');
         $Transaction_results = $this->AElf->getTransactionResults($Block['BlockHash']);
         print_r('# get_transaction_results');
         print_r($Transaction_results);
@@ -118,7 +119,7 @@ class AElfTest extends TestCase
         $Signature = $this->AElf->signTransaction($this->private_key, $Transaction);
         $Transaction->setSignature(hex2bin($Signature));
         $ExecuteTransactionDtoObj =['RawTransaction'=>bin2hex($Transaction->serializeToString())];
-        $Response =  $this->AElf->executeTransaction($executeTransactionDtoObj);
+        $Response =  $this->AElf->executeTransaction($ExecuteTransactionDtoObj);
         $Address = new Address();
         $Address->mergeFromString(hex2bin($Response));
         $base58Str = $this->base58->encodeChecked($Address->getValue());
@@ -232,7 +233,6 @@ class AElfTest extends TestCase
 
     public function testGenerateKeyPairInfo(){
         $PairInfo = $this->AElf->generateKeyPairInfo();
-        print($PairInfo);
 
         $this->assertTrue($PairInfo!=null);
     }
@@ -244,7 +244,10 @@ class AElfTest extends TestCase
 
     public function testGetFormattedAddress(){
         $addressVal = $this->AElf->getFormattedAddress($this->private_key, $this->address);
-        $this->assertTrue(("ELF_".$this->address."_AElf")==$addressVal);
+   
+        $NowAddress = "ELF_".$this->address."_AELF";
+
+        $this->assertEquals($NowAddress,$addressVal);
     }
 
     private function buildTransaction($toaddress,$methodName,$params){
