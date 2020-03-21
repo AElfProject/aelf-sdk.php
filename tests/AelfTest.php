@@ -18,7 +18,7 @@ class AElfTest extends TestCase
     public $OPREATIONADDRESS;
 
     public function setUp() {
-        $url = 'http://127.0.0.1:8001';
+        $url = 'http://18.223.158.83:8000';
        
         $this->AElf = new AElf($url);
         $this->OPREATIONADDRESS ='127.0.0.1:6800';
@@ -71,12 +71,12 @@ class AElfTest extends TestCase
             ],
         ];
         $TransactionFees = $this->AElf->getTransactionFees($TransactionResult);
-        $this->assertEqual($transaction_fees[0]['symbol'],'ELF');
-        $this->assertEqual($transaction_fees[0]['amount'],32635000);
+        $this->assertEqual($TransactionFees[0]['symbol'],'ELF');
+        $this->assertEqual($TransactionFees[0]['amount'],32635000);
     
     }
 
-    public function GetTransactionFeeaddress_Test(){
+    public function GetTransactionFees_Test(){
 
         $toAccount = "2bWwpsN9WSc4iKJPHYL4EZX3nfxVY7XLadecnNMar1GdSb4hJz";
         $Hash = new Hash();
@@ -90,7 +90,11 @@ class AElfTest extends TestCase
         $transaction->setSignature(hex2bin($signature));
         $Transactioninput =['RawTransaction'=>bin2hex($transaction->serializeToString())];
         $result =  $this->AElf->sendTransaction($Transactioninput);
-
+        print_r($result);
+        $TransactionResult = $this->AElf->getTransactionResult($result['TransactionId']);
+        $TransactionFees = $this->AElf->getTransactionFees($TransactionResult);
+        $this->assertEqual($TransactionFees[0]['symbol'],'ELF');
+        $this->assertEqual($TransactionFees[0]['amount'],32635000);
     }
     public function GetTransactionResultApi_Test(){
         $Block = $this->AElf->getBlockByHeight(1,true);
@@ -252,5 +256,6 @@ class AElfTest extends TestCase
         return $transactionObj;
     }
 }
+
 ?>
 
