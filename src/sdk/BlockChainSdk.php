@@ -1,5 +1,5 @@
 <?php
-namespace Aelf\Api;
+namespace AElf\Api;
 /***
  * 
  */
@@ -7,7 +7,7 @@ namespace Aelf\Api;
 use Hhxsv5\PhpMultiCurl\Curl as Curl;
 use Hhxsv5\PhpMultiCurl\MultiCurl as MultiCurl;
 use StephenHill\Base58;
-use Aelf\Bytes\Bytes;
+use AElf\Bytes\Bytes;
 Class BlockChainSdk{
 
     private $AElfClientUrl;

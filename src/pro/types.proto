@@ -1,5 +1,5 @@
 syntax = "proto3";
-package aelf.protobuf.generated;
+package AElf.protobuf.generated;
 import "timestamp.proto";
 
 message StringInput {

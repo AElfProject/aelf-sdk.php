@@ -5,13 +5,13 @@
  * 
  */
 
-namespace Aelf\AelfECDSA;
+namespace AElf\AElfECDSA;
 
 if (!extension_loaded('gmp')) {
     throw new \Exception('GMP extension seems not to be installed');
 }
 
-class AelfECDSA
+class AElfECDSA
 {
 
     public $k;

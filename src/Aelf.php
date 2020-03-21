@@ -1,28 +1,28 @@
 <?php
-namespace Aelf;
+namespace AElf;
 /**
  *
  * @day2020022
  */
-use Aelf\Api\BlockChainSdk;
-use Aelf\Api\NetSdk;
-use Aelf\Protobuf\Generated\Address;
-use Aelf\Protobuf\Generated\Transaction;
-use Aelf\Protobuf\Generated\TransferInput;
-use Aelf\Protobuf\Generated\StringInput;
-use Aelf\Protobuf\Generated\Hash;
-use Aelf\Protobuf\Generated\TransactionFeeCharged;
-use Aelf\Protobuf\Generated\ResourceTokenCharged;
+use AElf\Api\BlockChainSdk;
+use AElf\Api\NetSdk;
+use AElf\Protobuf\Generated\Address;
+use AElf\Protobuf\Generated\Transaction;
+use AElf\Protobuf\Generated\TransferInput;
+use AElf\Protobuf\Generated\StringInput;
+use AElf\Protobuf\Generated\Hash;
+use AElf\Protobuf\Generated\TransactionFeeCharged;
+use AElf\Protobuf\Generated\ResourceTokenCharged;
 use GPBMetadata\Types;
-use Aelf\AelfECDSA\AelfECDSA;
+use AElf\AElfECDSA\AElfECDSA;
 use StephenHill\Base58;
-use Aelf\Bytes\Bytes;
+use AElf\Bytes\Bytes;
 use kornrunner\Secp256k1;
 use kornrunner\Serializer\HexSignatureSerializer;
 /**
- * AELF
+ * AElf
  */
-class Aelf{
+class AElf{
 
     public $url; //
     public $version;
@@ -230,7 +230,7 @@ class Aelf{
     public function generateTransaction($from,$to,$methodName,$params){
         $chainStatus = $this->getBlockChainSdkObj()->getChainStatus();
 
-        $Bit = new AelfECDSA();
+        $Bit = new AElfECDSA();
         $from = $Bit->decodeChecked($from);
         $to = $Bit->decodeChecked($to);
         $transaction = new Transaction();
@@ -241,9 +241,7 @@ class Aelf{
         $transaction->setFromAddress($Faddress);
         $transaction->setToAddress($Taddress);
         $transaction->setMethodName($methodName);
-        $Hash = new Hash();
-        $Hash->setValue($params);
-        $transaction->setParams($Hash->serializeToString());
+        $transaction->setParams($params->serializeToString());
         $transaction->setRefBlockNumber($chainStatus['BestChainHeight']);
         $transaction->setRefBlockPrefix(substr(hex2bin($chainStatus['BestChainHash']),0,4));
         return $transaction;
@@ -277,11 +275,11 @@ class Aelf{
      * @return Str
      */
     public function getAddressFromPubKey($pubKey = null) {
-        $aelfkey = new AelfECDSA();
-        $address = $aelfkey->hash256(hex2bin($pubKey));
+        $AElfkey = new AElfECDSA();
+        $address = $AElfkey->hash256(hex2bin($pubKey));
         //checksum
-        $address = $address.substr($aelfkey->hash256(hex2bin($address)), 0, 8);
-        $address = $aelfkey->base58_encode($address);
+        $address = $address.substr($AElfkey->hash256(hex2bin($address)), 0, 8);
+        $address = $AElfkey->base58_encode($address);
         return $address;
     }
     /**
@@ -294,7 +292,8 @@ class Aelf{
         $toAddress = $this->getContractAddressByName($privateKey,hex2bin(sha256('AElf.ContractNames.Token')));
      
         $methodName = "GetPrimaryTokenSymbol";
-        $bytes = '';
+        $bytes = new Hash();
+        $bytes->setValue('');
         $transaction = $this->generateTransaction($fromAddress,$toAddress,$methodName,$bytes);
         $signature = $this->signTransaction($privateKey,$transaction);
         $transaction->setSignature(hex2bin($signature));
@@ -311,7 +310,7 @@ class Aelf{
      */
     public function generateKeyPairInfo()
     {
-        $keyPair = new AelfECDSA();
+        $keyPair = new AElfECDSA();
         $keyPair->generateRandomPrivateKey();
         $privateKey = $keyPair->getPrivateKey();
         $publicKey = $keyPair->getUncompressedPubKey();
@@ -350,9 +349,9 @@ class Aelf{
      * Get address of a contract by given contractNameHash.
      */
     public function getAddressFromPrivateKey($privateKey) {
-        $aelfkey = new AelfECDSA();
-        $aelfkey->setPrivateKey($privateKey);
-        $address = $aelfkey->getUncompressedAddress();
+        $AElfkey = new AElfECDSA();
+        $AElfkey->setPrivateKey($privateKey);
+        $address = $AElfkey->getUncompressedAddress();
         return $address;
     }
 

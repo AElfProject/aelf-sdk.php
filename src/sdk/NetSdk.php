@@ -1,5 +1,5 @@
 <?php
-namespace Aelf\Api;
+namespace AElf\Api;
 /***
  * 
  */

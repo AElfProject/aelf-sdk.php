@@ -23,15 +23,15 @@
         ],
         "files":["src/helper/Sha.php"],
         "psr-4": {
-            "Aelf\\": "src/",
-            "Aelf\\Api\\":"src/sdk/",
+            "AElf\\": "src/",
+            "AElf\\Api\\":"src/sdk/",
             "Hhxsv5\\PhpMultiCurl\\": "src/helper",
             "StephenHill\\": "src/helper",
             "StephenHill\\Benchmarks\\": "benchmarks/",
-            "Aelf\\AelfECDSA\\": "src/helper/",
+            "AElf\\AElfECDSA\\": "src/helper/",
             "Google\\Protobuf\\": "src/pro/Google/Protobuf",
             "GPBMetadata\\Google\\Protobuf\\": "src/GPBMetadata/Google/Protobuf",
-            "Aelf\\Protobuf\\Generated\\": "src/pro/Aelf/Protobuf/Generated/",
+            "AElf\\Protobuf\\Generated\\": "src/pro/Aelf/Protobuf/Generated/",
             "GPBMetadata\\": "src/pro/GPBMetadata/"
         }
     },
