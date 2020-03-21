@@ -18,13 +18,13 @@ class AElfTest extends TestCase
     public $OPREATIONADDRESS;
 
     public function setUp() {
-        $url = 'http://18.223.158.83:8000';
+        $url = 'http://127.0.0.1:8000';
        
         $this->AElf = new AElf($url);
         $this->OPREATIONADDRESS ='127.0.0.1:6800';
 
         $AElfECDSA = new AElfECDSA();
-        $this->private_key = '09da44778f8db2e602fb484334f37df19e221c84c4582ce5b7770ccfbc3ddbef';
+        $this->private_key = 'cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458';
         $AElfECDSA->setPrivateKey($this->private_key);
         $this->public_key = $AElfECDSA->getUncompressedPubKey();
         $this->address= $this->AElf->getAddressFromPrivateKey($this->private_key);
