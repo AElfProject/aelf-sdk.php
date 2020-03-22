@@ -104,8 +104,8 @@ class AElf{
     /**
      * Get the protobuf definitions related to a contract /api/blockChain/contractFileDescriptorSet.
      */
-    public function getContractFilCeDescriptorSet($address){
-        return $this->getBlockChainSdkObj()->getContractFilCeDescriptorSet($address);
+    public function getContractFileDescriptorSet($address){
+        return $this->getBlockChainSdkObj()->getContractFileDescriptorSet($address);
     }
 
     /**
@@ -399,14 +399,14 @@ class AElf{
 
          }
     }
-    public function getTransactionFees($logs){
+    public function getTransactionFees($TransactionResult){
         /*
         Get transaction fees
         :param logs: logs from transaction results
         :return: transaction fees
         */
         $transactionFees = [];
-        foreach($logs as $log){
+        foreach($TransactionResult['Logs'] as $log){
             if($log['Name'] == 'TransactionFeeCharged'){
                 $transactionFee = new TransactionFeeCharged();
                 

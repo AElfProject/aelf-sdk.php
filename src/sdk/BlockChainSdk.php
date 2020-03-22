@@ -122,7 +122,7 @@ Class BlockChainSdk{
     /**
      * Get the protobuf definitions related to a contract /api/blockChain/contractFileDescriptorSet.
      */
-    public function getContractFilCeDescriptorSet($address){
+    public function getContractFileDescriptorSet($address){
 
         $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETCFCRIPTORSET."?address=".$address);
         $Success = $this->Curl->exec();
@@ -310,6 +310,8 @@ Class BlockChainSdk{
             var_dump($response->getError());
         } else {
             //Success
+            //
+
             return json_decode($response->getBody(),JSON_UNESCAPED_UNICODE);
             //var_dump($response->getBody());
         }

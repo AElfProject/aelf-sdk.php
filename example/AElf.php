@@ -16,4 +16,5 @@
 	$tokenContractName = new Hash();
     $tokenContractName->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
     $tokenContractAddress = $this->AElf->getContractAddressByName($private_key,$tokenContractName);
+    var_dump($tokenContractAddress);
 ?>
