@@ -90,11 +90,11 @@ class AElfTest extends TestCase
         $this->assertTrue(is_array($MerklePath['MerklePathNodes']));
     }
     public function testExecuteTransactionApi(){
-        $ToAddress = $this->AElf->getGenesisContractAddress();
-        $MethodName = "GetContractAddressByName";
+        $toAddress = $this->AElf->getGenesisContractAddress();
+        $methodName = "GetContractAddressByName";
         $Bytes = new Hash();
         $Bytes->setValue(hex2bin(hash('sha256','AElf.ContractNames.TokenConverter')));
-        $Transaction = $this->AElf->generateTransaction($this->address, $ToAddress, $MethodName, $Bytes);
+        $Transaction = $this->AElf->generateTransaction($this->address, $toAddress, $methodName, $Bytes);
         $Signature = $this->AElf->signTransaction($this->private_key, $Transaction);
         $Transaction->setSignature(hex2bin($Signature));
         $ExecuteTransactionDtoObj =['RawTransaction'=>bin2hex($Transaction->serializeToString())];
