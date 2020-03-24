@@ -26,11 +26,11 @@ class AElf{
 
     public $url; //
     public $version;
-    public $get_request_header;
-    public $post_request_header; //
+    public $getRequestHeader;
+    public $postRequestHeader; //
     public $blockChainSdk;
     public $netSdk;
-    public $private_key;  //
+    public $privateKey;  //
     public $base58;
      /**
      * Object construction through the url path.
@@ -44,7 +44,7 @@ class AElf{
         $this->url= $url;
 
         if($version != null){
-            $this-$version = $version;
+            $this->$version = $version;
         }
         $this->getBlockChainSdkObj();
         $this->getNetSdkObj();
@@ -234,12 +234,12 @@ class AElf{
         $from = $Bit->decodeChecked($from);
         $to = $Bit->decodeChecked($to);
         $transaction = new Transaction();
-        $Faddress = new Address();
-        $Taddress = new Address();
-        $Faddress->setValue($from);
-        $Taddress->setValue($to);
-        $transaction->setFromAddress($Faddress);
-        $transaction->setToAddress($Taddress);
+        $fromAddress = new Address();
+        $toAddress = new Address();
+        $fromAddress->setValue($from);
+        $toAddress->setValue($to);
+        $transaction->setFromAddress($fromAddress);
+        $transaction->setToAddress($toAddress);
         $transaction->setMethodName($methodName);
         $transaction->setParams($params->serializeToString());
         $transaction->setRefBlockNumber($chainStatus['BestChainHeight']);
@@ -275,11 +275,11 @@ class AElf{
      * @return Str
      */
     public function getAddressFromPubKey($pubKey = null) {
-        $AElfkey = new AElfECDSA();
-        $address = $AElfkey->hash256(hex2bin($pubKey));
+        $aelfkey = new AElfECDSA();
+        $address = $aelfkey->hash256(hex2bin($pubKey));
         //checksum
-        $address = $address.substr($AElfkey->hash256(hex2bin($address)), 0, 8);
-        $address = $AElfkey->base58_encode($address);
+        $address = $address.substr($aelfkey->hash256(hex2bin($address)), 0, 8);
+        $address = $aelfkey->base58_encode($address);
         return $address;
     }
     /**
@@ -288,9 +288,9 @@ class AElf{
     public function getFormattedAddress($privateKey,$address){
         $chainIdString = $this->getBlockChainSdkObj()->getChainStatus()['ChainId'];
         $fromAddress = $this->getAddressFromPrivateKey($privateKey);
-        $ContractNames = new Hash();
-        $ContractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
-        $toAddress = $this->getContractAddressByName($privateKey,$ContractNames);
+        $contractNames = new Hash();
+        $contractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
+        $toAddress = $this->getContractAddressByName($privateKey,$contractNames);
      
         $methodName = "GetPrimaryTokenSymbol";
         $bytes = new Hash();
@@ -325,25 +325,25 @@ class AElf{
      */
     public function getContractAddressByName($privateKey,$contractNameHash)
     {
-           $from = $this->getAddressFromPrivateKey($privateKey);
-           $to = $this->getGenesisContractAddress();
-           $methodName = 'GetContractAddressByName';
+        $from = $this->getAddressFromPrivateKey($privateKey);
+        $to = $this->getGenesisContractAddress();
+        $methodName = 'GetContractAddressByName';
 
-           $transaction = $this->generateTransaction($from,$to,$methodName,$contractNameHash);
-            
-           $signature = $this->signTransaction($privateKey, $transaction);
+        $transaction = $this->generateTransaction($from,$to,$methodName,$contractNameHash);
+
+        $signature = $this->signTransaction($privateKey, $transaction);
+
+        $transaction->setSignature(hex2bin($signature));
+
+        $executeTransactionDto = ['RawTransaction'=>bin2hex($transaction->serializeToString())];
+
+        $response = $this->getBlockChainSdkObj()->executeTransaction($executeTransactionDto);
+        $address = new Address();
+        $address->mergeFromString(hex2bin($response));
     
-           $transaction->setSignature(hex2bin($signature));
+        $base58Str = $this->base58->encodeChecked($address->getValue());
       
-           $executeTransactionDto = ['RawTransaction'=>bin2hex($transaction->serializeToString())];
-
-           $response = $this->getBlockChainSdkObj()->executeTransaction($executeTransactionDto);
-           $address = new Address();
-           $address->mergeFromString(hex2bin($response));
-        
-           $base58Str = $this->base58->encodeChecked($address->getValue());
-          
-          return $base58Str;
+        return $base58Str;
     }
 
     /**
@@ -399,37 +399,41 @@ class AElf{
 
          }
     }
-    public function getTransactionFees($TransactionResult){
+    public function getTransactionFees($transactionResult){
         /*
         Get transaction fees
         :param logs: logs from transaction results
         :return: transaction fees
         */
         $transactionFees = [];
-        foreach($TransactionResult['Logs'] as $log){
-            if($log['Name'] == 'TransactionFeeCharged'){
-                $transactionFee = new TransactionFeeCharged();
-                
-                $transactionFee->mergeFromString(base64_decode($log['NonIndexed']));
-                array_push($transactionFees,[
-                    'name'=>'transaction_fee_charged',
-                    'symbol' => $transactionFee->getSymbol(),
-                    'amount' => $transactionFee->getAmount(),
-                ]);
-            }
-            if($log['Name'] == 'ResourceTokenCharged'){
-                $resourceTokenFee = new ResourceTokenCharged();
+        if(!empty($transactionResult['Logs'])){
+            foreach($transactionResult['Logs'] as $log){
+                if($log['Name'] == 'TransactionFeeCharged'){
+                    $transactionFee = new TransactionFeeCharged();
+                    
+                    $transactionFee->mergeFromString(base64_decode($log['NonIndexed']));
+                    array_push($transactionFees,[
+                        'name'=>'transaction_fee_charged',
+                        'symbol' => $transactionFee->getSymbol(),
+                        'amount' => $transactionFee->getAmount(),
+                    ]);
+                }
+                if($log['Name'] == 'ResourceTokenCharged'){
+                    $resourceTokenFee = new ResourceTokenCharged();
 
-                $resourceTokenFee->mergeFromString(base64_decode($log['NonIndexed']));
-                array_push($transactionFees,[
-                    'name'=>'resource_token_charged',
-                    'symbol' => $resourceTokenFee->getSymbol(),
-                    'amount' => $resourceTokenFee->getAmount(),
-                ]);
+                    $resourceTokenFee->mergeFromString(base64_decode($log['NonIndexed']));
+                    array_push($transactionFees,[
+                        'name'=>'resource_token_charged',
+                        'symbol' => $resourceTokenFee->getSymbol(),
+                        'amount' => $resourceTokenFee->getAmount(),
+                    ]);
+                }
             }
+          
+            
         }
-      
         return $transactionFees;
+        
     }
 
 

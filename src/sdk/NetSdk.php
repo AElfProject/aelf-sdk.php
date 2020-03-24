@@ -23,8 +23,8 @@ Class NetSdk{
         $this->AElfClientUrl = $url;
         $this->version = $version;
         $this->Curl = new Curl();
-        $this->post_request_header = ['Content-Type' => 'application/json;charset=UTF-8'.$version];
-        $this->get_request_header = ['Accept'=>'application/json;charset=UTF-8'.$version];
+        $this->postRequestHeader = ['Content-Type' => 'application/json;charset=UTF-8'.$version];
+        $this->getRequestHeader = ['Accept'=>'application/json;charset=UTF-8'.$version];
     }
 
 

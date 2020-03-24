@@ -12,179 +12,194 @@ use AElf\Protobuf\Generated\Hash;
 class AElfTest extends TestCase
 {
     public $AElf;
-    public $private_key;
-    public $public_key;
+    public $privateKey;
+    public $publicKey;
     public $address;
     public $OPREATIONADDRESS;
 
-    public function setUp() {
+    public function setUp() 
+    {
         $url = 'http://18.223.158.83:8000';
        
         $this->AElf = new AElf($url);
         $this->OPREATIONADDRESS ='127.0.0.1:6800';
 
         $AElfECDSA = new AElfECDSA();
-        $this->private_key = 'cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458';
-        $AElfECDSA->setPrivateKey($this->private_key);
-        $this->public_key = $AElfECDSA->getUncompressedPubKey();
-        $this->address= $this->AElf->getAddressFromPrivateKey($this->private_key);
+        $this->privateKey = 'cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458';
+        $AElfECDSA->setPrivateKey($this->privateKey);
+        $this->publicKey = $AElfECDSA->getUncompressedPubKey();
+        $this->address= $this->AElf->getAddressFromPrivateKey($this->publicKey);
         $this->base58 = new Base58();
     }
-    public function testGetChainStatusApi(){
-        $ChainStatus =$this->AElf->getChainStatus();
-        print_r($ChainStatus);
-        $this->assertTrue($ChainStatus['BestChainHeight'] > 0);
-        $ChainId = $this->AElf->getChainId();
-        print_r($ChainId);
-        $this->assertTrue($ChainId == 9992731);
+    public function testGetChainStatusApi()
+    {
+        $chainStatus =$this->AElf->getChainStatus();
+        print_r($chainStatus);
+        $this->assertTrue($chainStatus['BestChainHeight'] > 0);
+        $chainId = $this->AElf->getChainId();
+        print_r($chainId);
+        $this->assertTrue($chainId == 9992731);
 
     }
 
-    public function testBlockApi(){
-        $BlockHeight = $this->AElf->getBlockHeight();
+    public function testBlockApi()
+    {
+        $blockHeight = $this->AElf->getBlockHeight();
         print_r('# getBlockHeight');
         echo '<br>';
-        print_r($BlockHeight);
-        $this->assertTrue($BlockHeight > 0);
-        $Block = $this->AElf->getBlockByHeight(1,true);
-        $this->assertTrue($Block['Header']['Height'] ==1 );
-        $Block2 = $this->AElf->getBlockByHash($Block['BlockHash'],false);
-        $this->assertTrue($Block2['Header']['Height'] == 1);
-        return $Block2['Header']['Height'];
+        print_r($blockHeight);
+        $this->assertTrue($blockHeight > 0);
+        $block = $this->AElf->getBlockByHeight(1,true);
+        $this->assertTrue($block['Header']['Height'] ==1 );
+        $block2 = $this->AElf->getBlockByHash($block['BlockHash'],false);
+        $this->assertTrue($block2['Header']['Height'] == 1);
+        return $block2['Header']['Height'];
 
     }
 
-    public function testGetTransactionFeesApi(){
+    public function testGetTransactionFeesApi()
+    {
 
         $toAccount = "2bWwpsN9WSc4iKJPHYL4EZX3nfxVY7XLadecnNMar1GdSb4hJz";
-        $Hash = new Hash();
-        $Hash->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
-        $toAddress = $this->AElf->getContractAddressByName($this->private_key,$Hash);
+        $hash = new Hash();
+        $hash->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
+        $toAddress = $this->AElf->getContractAddressByName($this->privateKey,$hash);
         $methodName = "Transfer";
-        $Bit = new AElfECDSA();
-        $param =new TransferInput(['to'=>new Address(['value'=>$Bit->decodeChecked($toAccount)]),'symbol'=>'ELF','amount'=>1]);
+        $bit = new AElfECDSA();
+        $param =new TransferInput(['to'=>new Address(['value'=>$bit->decodeChecked($toAccount)]),'symbol'=>'ELF','amount'=>1]);
         $transaction = $this->AElf->generateTransaction($this->address,$toAddress,$methodName,$param);
-        $signature = $this->AElf->signTransaction($this->private_key, $transaction);
+        $signature = $this->AElf->signTransaction($this->privateKey, $transaction);
         $transaction->setSignature(hex2bin($signature));
-        $Transactioninput =['RawTransaction'=>bin2hex($transaction->serializeToString())];
-        $result =  $this->AElf->sendTransaction($Transactioninput);
+        $transactionInput =['RawTransaction'=>bin2hex($transaction->serializeToString())];
+        $result =  $this->AElf->sendTransaction($transactionInput);
         print_r($result);
-        $TransactionResult = $this->AElf->getTransactionResult($result['TransactionId']);
-        print_r($TransactionResult);
-        $TransactionFees = $this->AElf->getTransactionFees($TransactionResult);
-       
-        $this->assertEquals($TransactionFees[0]['symbol'],'ELF');
-        $this->assertEquals($TransactionFees[0]['amount'],0);
-    }
-    public function testGetTransactionResultApi(){
-        $Block = $this->AElf->getBlockByHeight(1,true);
-        $Transaction_result = $this->AElf->getTransactionResult($Block['Body']['Transactions'][0]);
-        print_r('# get_transaction_result');
-        print_r($Transaction_result);
-        $this->assertTrue($Transaction_result['Status'] == 'MINED');
-        $Transaction_results = $this->AElf->getTransactionResults($Block['BlockHash']);
-        print_r('# get_transaction_results');
-        print_r($Transaction_results);
+        sleep(4);
+        $transactionResult = $this->AElf->getTransactionResult($result['TransactionId']);
+        var_dump($transactionResult);
+        $transactionFees = $this->AElf->getTransactionFees($transactionResult);
+        echo "<br>";
 
-        $MerklePath = $this->AElf->getMerklePathByTransactionId($Block['Body']['Transactions'][0]);
-
-        $this->assertTrue(is_array($MerklePath['MerklePathNodes']));
+        $this->assertEquals($transactionFees[0]['symbol'],'ELF');
+        $this->assertEquals($transactionFees[0]['amount'],0);
     }
-    public function testExecuteTransactionApi(){
+    public function testGetTransactionResultApi()
+    {
+        $block = $this->AElf->getBlockByHeight(1,true);
+        $transactionResult = $this->AElf->getTransactionResult($block['Body']['Transactions'][0]);
+        print_r('# getRransactionResult');
+        print_r($transactionResult);
+        $this->assertTrue($transactionResult['Status'] == 'MINED');
+        $transactionResult = $this->AElf->getTransactionResults($block['BlockHash']);
+        print_r('# getTransactionResults');
+        print_r($transactionResult);
+
+        $merklePath = $this->AElf->getMerklePathByTransactionId($block['Body']['Transactions'][0]);
+
+        $this->assertTrue(is_array($merklePath['MerklePathNodes']));
+    }
+    public function testExecuteTransactionApi()
+    {
         $toAddress = $this->AElf->getGenesisContractAddress();
         $methodName = "GetContractAddressByName";
-        $Bytes = new Hash();
-        $Bytes->setValue(hex2bin(hash('sha256','AElf.ContractNames.TokenConverter')));
-        $Transaction = $this->AElf->generateTransaction($this->address, $toAddress, $methodName, $Bytes);
-        $Signature = $this->AElf->signTransaction($this->private_key, $Transaction);
-        $Transaction->setSignature(hex2bin($Signature));
-        $ExecuteTransactionDtoObj =['RawTransaction'=>bin2hex($Transaction->serializeToString())];
-        $Response =  $this->AElf->executeTransaction($ExecuteTransactionDtoObj);
-        $Address = new Address();
-        $Address->mergeFromString(hex2bin($Response));
-        $Base58Str = $this->base58->encodeChecked($Address->getValue());
-        $Address  = $this->AElf->getContractAddressByName($this->private_key,$Bytes);
-        $this->assertTrue($Address == $Base58Str);
+        $bytes = new Hash();
+        $bytes->setValue(hex2bin(hash('sha256','AElf.ContractNames.TokenConverter')));
+        $transaction = $this->AElf->generateTransaction($this->address, $toAddress, $methodName, $bytes);
+        $signature = $this->AElf->signTransaction($this->privateKey, $transaction);
+        $transaction->setSignature(hex2bin($signature));
+        $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
+        $response =  $this->AElf->executeTransaction($executeTransactionDtoObj);
+        $address = new Address();
+        $address->mergeFromString(hex2bin($response));
+        $base58Str = $this->base58->encodeChecked($address->getValue());
+        $address  = $this->AElf->getContractAddressByName($this->privateKey,$bytes);
+        $this->assertTrue($address == $base58Str);
     
     }
-    public function testRawTransactionApi(){
+    public function testRawTransactionApi()
+    {
         $status = $this->AElf->getChainStatus();
-        $Params = base64_encode(hex2bin(hash('sha256', 'AElf.ContractNames.Consensus')));
-        $param = array('value'=>$Params);
+        $params = base64_encode(hex2bin(hash('sha256', 'AElf.ContractNames.Consensus')));
+        $param = array('value'=>$params);
         $transaction = [
-            "from" =>$this->AElf->getAddressFromPrivateKey($this->private_key),
+            "from" =>$this->AElf->getAddressFromPrivateKey($this->privateKey),
             "to"=>$this->AElf->getGenesisContractAddress(),
             "refBlockNumber"=>$status['BestChainHeight'],
             "refBlockHash"=> $status['BestChainHash'],
             "methodName"=> "GetContractAddressByName",
             "params"=> json_encode($param)
         ];
-        $RawTransaction  = $this->AElf->createRawTransaction($transaction);
-        print_r($RawTransaction);
-        $transactionId =hash('sha256',hex2bin($RawTransaction['RawTransaction']));
+        $rawTransaction  = $this->AElf->createRawTransaction($transaction);
+        print_r($rawTransaction);
+        $transactionId =hash('sha256',hex2bin($rawTransaction['RawTransaction']));
 
-        $sign =  $this->AElf->getSignatureWithPrivateKey($this->private_key,$transactionId);
+        $signature =  $this->AElf->getSignatureWithPrivateKey($this->privateKey,$transactionId);
 
-        $transaction = array('RawTransaction'=>$RawTransaction['RawTransaction'],'signature'=>$sign);
-        $Execute = $this->AElf->executeRawTransaction($transaction);
-        print_r($Execute);
-        $transaction2 = array('Transaction'=>$RawTransaction['RawTransaction'],'signature'=>$sign,'returnTransaction'=>true);
-        $Execute1 = $this->AElf->sendRawTransaction($transaction2);
-        print_r($Execute1);
-        $this->assertTrue($Execute1 != '');
+        $transaction = array('RawTransaction'=>$rawTransaction['RawTransaction'],'signature'=>$signature);
+        $execute = $this->AElf->executeRawTransaction($transaction);
+        print_r($execute);
+        $transaction2 = array('Transaction'=>$rawTransaction['RawTransaction'],'signature'=>$sign,'returnTransaction'=>true);
+        $execute1 = $this->AElf->sendRawTransaction($transaction2);
+        print_r($execute1);
+        $this->assertTrue($execute1 != '');
     }
-    public function testgetAddressFromPubKey(){
-        $PubKeyAddress = $this->AElf->getAddressFromPubKey('04166cf4be901dee1c21f3d97b9e4818f229bec72a5ecd56b5c4d6ce7abfc3c87e25c36fd279db721acf4258fb489b4a4406e6e6e467935d06990be9d134e5741c');
+    public function testGetAddressFromPubKey()
+    {
+        $pubKeyAddress = $this->AElf->getAddressFromPubKey('04166cf4be901dee1c21f3d97b9e4818f229bec72a5ecd56b5c4d6ce7abfc3c87e25c36fd279db721acf4258fb489b4a4406e6e6e467935d06990be9d134e5741c');
        
-        print_r($PubKeyAddress);
-        $this->assertTrue($PubKeyAddress == 'SD6BXDrKT2syNd1WehtPyRo3dPBiXqfGUj8UJym7YP9W9RynM');
+        print_r($pubKeyAddress);
+        $this->assertTrue($pubKeyAddress == 'SD6BXDrKT2syNd1WehtPyRo3dPBiXqfGUj8UJym7YP9W9RynM');
     }
 
-    public function testSendTransactionApi(){
+    public function testSendTransactionApi()
+    {
         $params = new Hash();
         $params->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
-        $Transaction = $this->buildTransaction($this->AElf->getGenesisContractAddress(),'GetContractAddressByName',$params);
+        $transaction = $this->buildTransaction($this->AElf->getGenesisContractAddress(),'GetContractAddressByName',$params);
    
-        $ExecuteTransactionDtoObj =['RawTransaction'=>bin2hex($Transaction->serializeToString())];
-        $Result =  $this->AElf->sendTransaction($ExecuteTransactionDtoObj);
-        print_r($Result);
-        $this->assertTrue($Result['TransactionId'] != "");
+        $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
+        $result =  $this->AElf->sendTransaction($executeTransactionDtoObj);
+        print_r($result);
+        $this->assertTrue($result['TransactionId'] != "");
     }
-    public function testsendTransactionsApi() {
+    public function testsendTransactionsApi() 
+    {
         $toAddress = $this->AElf->getGenesisContractAddress();
         $params1 = new Hash();
         $params1->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
         $params2 = new Hash();
         $params2->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
         $methodName = "GetContractAddressByName";
-        $tmp  = [$params1,$params2];
-        $sb = [];
-        foreach($tmp as $k){
+        $listParams  = [$params1,$params2];
+        $listRawTransactions = [];
+        foreach($listParams as $k){
             $transactionObj = $this->buildTransaction($toAddress,$methodName,$k);
             $rawTransactions = bin2hex($transactionObj->serializeToString());
-            array_push($sb,$rawTransactions);
+            array_push($listRawTransactions,$rawTransactions);
         }
-        $sendTransactionsInputs = ['RawTransactions'=>implode(',',$sb)];
+        $sendTransactionsInputs = ['RawTransactions'=>implode(',',$listRawTransactions)];
         $listString = $this->AElf->sendTransactions($sendTransactionsInputs);
         print_r($listString);
         $this->assertTrue($listString != "");
 
     }
-    public function testTransactionPoolApi(){
-        $TransactionPoolStatus = $this->AElf->getTransactionPoolStatus();
-        print_r('# get_transaction_pool_status:');
-        print_r($TransactionPoolStatus);
-        $this->assertTrue($TransactionPoolStatus['Queued'] >= 0);
+    public function testTransactionPoolApi()
+    {
+        $transactionPoolStatus = $this->AElf->getTransactionPoolStatus();
+        print_r('# getTransactionPoolStatus:');
+        print_r($transactionPoolStatus);
+        $this->assertTrue($transactionPoolStatus['Queued'] >= 0);
     }
 
-    public function testTaskQueueApi(){
-        $TaskQueueStatus = $this->AElf->getTaskQueueStatus();
-        print_r($TaskQueueStatus);
-        $this->assertTrue(count($TaskQueueStatus) > 0);
+    public function testTaskQueueApi()
+    {
+        $taskQueueStatus = $this->AElf->getTaskQueueStatus();
+        print_r($taskQueueStatus);
+        $this->assertTrue(count($taskQueueStatus) > 0);
     }
 
-    public function testNetworkApi(){
-       print('getNetworkInfo');
+    public function testNetworkApi()
+    {
+        print('getNetworkInfo');
         echo "<br>";
         print_r($this->AElf->getNetworkInfo());
         echo "<br>";
@@ -200,48 +215,53 @@ class AElfTest extends TestCase
         $this->assertTrue(!$this->AElf->addPeer($this->OPREATIONADDRESS));
     }
 
-    public function testgetContractFileDescriptorSetApi(){
-        $BlockHeight = $this->AElf->getBlockHeight();
-        $this->assertTrue($BlockHeight  > 0);
-        $BlockDto = $this->AElf->getBlockByHeight($BlockHeight, false);
-        $TransactionResultDtoList = $this->AElf->getTransactionResults($BlockDto['BlockHash'],0,10);
+    public function testGetContractFileDescriptorSetApi()
+    {
+        $blockHeight = $this->AElf->getBlockHeight();
+        $this->assertTrue($blockHeight  > 0);
+        $blockDto = $this->AElf->getBlockByHeight($blockHeight, false);
+        $transactionResultDtoList = $this->AElf->getTransactionResults($blockDto['BlockHash'],0,10);
 
-        foreach($TransactionResultDtoList as $v){
-            $Request = $this->AElf->getContractFileDescriptorSet($v['Transaction']['To']);
-            print_r($Request);
+        foreach($transactionResultDtoList as $v){
+            $request = $this->AElf->getContractFileDescriptorSet($v['Transaction']['To']);
+            print_r($request);
         }
        
 
     }
 
 
-    public function testGenerateKeyPairInfo(){
-        $PairInfo = $this->AElf->generateKeyPairInfo();
+    public function testGenerateKeyPairInfo()
+    {
+        $pairInfo = $this->AElf->generateKeyPairInfo();
 
-        $this->assertTrue($PairInfo!=null);
+        $this->assertTrue($pairInfo!=null);
     }
 
-    public function testHelpers(){
-        $Is_connected =$this->AElf->isConnected();
-        $this->assertTrue($Is_connected);
+    public function testHelpers()
+    {
+        $isConnected =$this->AElf->isConnected();
+        $this->assertTrue($isConnected);
     }
 
-    public function testGetFormattedAddress(){
-        $AddressVal = $this->AElf->getFormattedAddress($this->private_key, $this->address);
+    public function testGetFormattedAddress()
+    {
+        $addressVal = $this->AElf->getFormattedAddress($this->privateKey, $this->address);
    
-        $NowAddress = "ELF_".$this->address."_AELF";
+        $nowAddress = "ELF_".$this->address."_AELF";
 
-        $this->assertEquals($NowAddress,$AddressVal);
+        $this->assertEquals($nowAddress,$addressVal);
     }
 
-    private function buildTransaction($toaddress,$methodName,$params){
+    private function buildTransaction($toaddress,$methodName,$params)
+    {
       
-        $TransactionObj  = $this->AElf->generateTransaction($this->address,$toaddress,$methodName,$params);
+        $transactionObj  = $this->AElf->generateTransaction($this->address,$toaddress,$methodName,$params);
 
-        $Signature = $this->AElf->signTransaction($this->private_key,$TransactionObj);
-        $TransactionObj->setSignature(hex2bin($Signature));
+        $signature = $this->AElf->signTransaction($this->privateKey,$transactionObj);
+        $transactionObj->setSignature(hex2bin($signature));
 
-        return $TransactionObj;
+        return $transactionObj;
     }
 }
 
