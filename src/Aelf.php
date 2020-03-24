@@ -432,7 +432,5 @@ class AElf{
         return $transactionFees;
     }
 
-    public function transfer($toAddressString,$symbol,$amount,$memo){
-        $transfer_input;
-    }
+
 }

@@ -1,5 +1,5 @@
 <?php
-
+require __DIR__ . '/../vendor/autoload.php';
 use AElf\AElf;
 use PHPUnit\Framework\TestCase;
 use AElf\AElfECDSA\AElfECDSA;
@@ -62,7 +62,7 @@ class AElfTest extends TestCase
         $toAddress = $this->AElf->getContractAddressByName($this->private_key,$Hash);
         $methodName = "Transfer";
         $Bit = new AElfECDSA();
-        $param =new TransferInput(['to'=>new Address(['value'=>$Bit->decodeChecked($toAccount)]),'symbol'=>'ELF','amount'=>1000]);
+        $param =new TransferInput(['to'=>new Address(['value'=>$Bit->decodeChecked($toAccount)]),'symbol'=>'ELF','amount'=>1]);
         $transaction = $this->AElf->generateTransaction($this->address,$toAddress,$methodName,$param);
         $signature = $this->AElf->signTransaction($this->private_key, $transaction);
         $transaction->setSignature(hex2bin($signature));
@@ -72,8 +72,9 @@ class AElfTest extends TestCase
         $TransactionResult = $this->AElf->getTransactionResult($result['TransactionId']);
         print_r($TransactionResult);
         $TransactionFees = $this->AElf->getTransactionFees($TransactionResult);
+       
         $this->assertEquals($TransactionFees[0]['symbol'],'ELF');
-        $this->assertEquals($TransactionFees[0]['amount'],32635000);
+        $this->assertEquals($TransactionFees[0]['amount'],0);
     }
     public function testGetTransactionResultApi(){
         $Block = $this->AElf->getBlockByHeight(1,true);
@@ -140,9 +141,9 @@ class AElfTest extends TestCase
     }
 
     public function testSendTransactionApi(){
-        $Params = new Hash();
-        $Params->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
-        $Transaction = $this->buildTransaction($this->AElf->getGenesisContractAddress(),'GetContractAddressByName',$Params);
+        $params = new Hash();
+        $params->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
+        $Transaction = $this->buildTransaction($this->AElf->getGenesisContractAddress(),'GetContractAddressByName',$params);
    
         $ExecuteTransactionDtoObj =['RawTransaction'=>bin2hex($Transaction->serializeToString())];
         $Result =  $this->AElf->sendTransaction($ExecuteTransactionDtoObj);
@@ -151,12 +152,12 @@ class AElfTest extends TestCase
     }
     public function testsendTransactionsApi() {
         $toAddress = $this->AElf->getGenesisContractAddress();
-        $Params1 = new Hash();
-        $Params1->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
-        $Params2 = new Hash();
-        $Params2->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
+        $params1 = new Hash();
+        $params1->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
+        $params2 = new Hash();
+        $params2->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
         $methodName = "GetContractAddressByName";
-        $tmp  = [$Params1,$Params2];
+        $tmp  = [$params1,$params2];
         $sb = [];
         foreach($tmp as $k){
             $transactionObj = $this->buildTransaction($toAddress,$methodName,$k);
@@ -243,7 +244,9 @@ class AElfTest extends TestCase
         return $TransactionObj;
     }
 }
-
+$c= new AElfTest();
+$c->setUp();
+$c->testGetTransactionFeesApi();
 
 ?>
 
