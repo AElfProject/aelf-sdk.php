@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../vendor/autoload.php';
+
 use AElf\AElf;
 use PHPUnit\Framework\TestCase;
 use AElf\AElfECDSA\AElfECDSA;
@@ -244,9 +244,7 @@ class AElfTest extends TestCase
         return $TransactionObj;
     }
 }
-$c= new AElfTest();
-$c->setUp();
-$c->testGetTransactionFeesApi();
+
 
 ?>
 
