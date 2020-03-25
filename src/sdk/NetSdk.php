@@ -8,21 +8,21 @@ use Hhxsv5\PhpMultiCurl\MultiCurl as MultiCurl;
 
 Class NetSdk{
 
-    private $AElfClientUrl;
+    private $aelfClientUrl;
     private $version;
     private static $WA_ADDPEER = "/api/net/peer";
     private static $WA_REMOVEPEER = "/api/net/peer";
     private static $WA_GETPEERS = "/api/net/peers";
     private static $WA_GETNETWORKINFO = "/api/net/networkInfo";
-    public $Curl;
+    private $curl;
     /**
      * Object construction through the url path.
      */
     public function __construct($url,$version='') {
       
-        $this->AElfClientUrl = $url;
+        $this->aelfClientUrl = $url;
         $this->version = $version;
-        $this->Curl = new Curl();
+        $this->curl = new Curl();
         $this->postRequestHeader = ['Content-Type' => 'application/json;charset=UTF-8'.$version];
         $this->getRequestHeader = ['Accept'=>'application/json;charset=UTF-8'.$version];
     }
@@ -32,10 +32,10 @@ Class NetSdk{
      * Attempts to add a node to the connected network nodes wa:/api/net/peer.
      */
     public function addPeer($input){
-        $url = $this->AElfClientUrl.self::$WA_ADDPEER;
+        $url = $this->aelfClientUrl.self::$WA_ADDPEER;
       
-        $this->Curl->makePost($url,json_encode(['address'=>$input]),array('Content-type: application/json;charset=UTF-8'));
-        $response = $this->Curl->exec();
+        $this->curl->makePost($url,json_encode(['address'=>$input]),array('Content-type: application/json;charset=UTF-8'));
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -51,11 +51,11 @@ Class NetSdk{
      * Attempts to remove a node from the connected network nodes wa:/api/net/peer.
      */
     public function removePeer($address){
-         $url = $this->AElfClientUrl.self::$WA_REMOVEPEER;
+         $url = $this->aelfClientUrl.self::$WA_REMOVEPEER;
   
-        $this->Curl->makeDelete($url.'?address='.$address);
+        $this->curl->makeDelete($url.'?address='.$address);
         
-        $response = $this->Curl->exec();
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -74,16 +74,16 @@ Class NetSdk{
      */
     public function getPeers($withMetrics){
      
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETPEERS."?withMetrics=".($withMetrics?'true':'false'));
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETPEERS."?withMetrics=".($withMetrics?'true':'false'));
        
-        $Success = $this->Curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
             
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
             
         }
        
@@ -93,14 +93,14 @@ Class NetSdk{
      * Get information about the node’s connection to the network. wa:/api/net/networkInfo
      */
     public function getNetworkInfo(){
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETNETWORKINFO);
-        $Success = $this->Curl->exec();
-        if ($Success->hasError()) {
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETNETWORKINFO);
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
             
         }
        

@@ -10,7 +10,7 @@ use StephenHill\Base58;
 use AElf\Bytes\Bytes;
 Class BlockChainSdk{
 
-    private $AElfClientUrl;
+    private $aelfClientUrl;
     private $version;
     private static $WA_BLOCKHEIGHT = "/api/blockChain/blockHeight";
     private static $WA_BLOCK = "/api/blockChain/block";
@@ -29,21 +29,21 @@ Class BlockChainSdk{
     private static $WA_SENDTRANSACTIONS = "/api/blockChain/sendTransactions";
     private static $WA_GETMBYTRANSACTIONID = "/api/blockChain/merklePathByTransactionId";
     private static $WA_GET;
-    public $Curl;
-    public $base58;
+    private $curl;
+    private $base58;
     /**
      * Object construction through the url path.
      */
     public function __construct($url,$version='') {
       
-        $this->AElfClientUrl = $url;
+        $this->aelfClientUrl = $url;
         $this->version = $version;
         $options = [//The custom options of cURL
             CURLOPT_TIMEOUT        => 0,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_USERAGENT      => 'Multi-cURL client v1.5.0',
         ];
-        $this->Curl = new Curl(null, $options);
+        $this->curl = new Curl(null, $options);
         $this->base58 = new Base58();
     }
 
@@ -53,8 +53,8 @@ Class BlockChainSdk{
     */
     public function getBlockHeight(){
         
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_BLOCKHEIGHT);
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_BLOCKHEIGHT);
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -70,8 +70,8 @@ Class BlockChainSdk{
      * wa://api/blockChain/block?includeTransactions={includeTransactions}
      */
     public function getBlockByHash($blockHash,$includeTransactions=false){
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_BLOCK.'?blockHash='.$blockHash.'&includeTransactions='.($includeTransactions?'true':'false'));
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_BLOCK.'?blockHash='.$blockHash.'&includeTransactions='.($includeTransactions?'true':'false'));
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -92,8 +92,8 @@ Class BlockChainSdk{
             throw new Exception("[20001]Not found");
         }
        
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_BLOCKBYHEIGHT.'?blockHeight='.$blockHeight.'&includeTransactions='.($includeTransactions?'true':'false'));
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_BLOCKBYHEIGHT.'?blockHeight='.$blockHeight.'&includeTransactions='.($includeTransactions?'true':'false'));
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -107,8 +107,8 @@ Class BlockChainSdk{
      * Get the current status of the block chain. wa:/api/blockChain/chainStatus
      */
     public function getChainStatus(){
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETCHAINSTATUS);
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETCHAINSTATUS);
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -124,8 +124,8 @@ Class BlockChainSdk{
      */
     public function getContractFileDescriptorSet($address){
 
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETCFCRIPTORSET."?address=".$address);
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETCFCRIPTORSET."?address=".$address);
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -141,8 +141,8 @@ Class BlockChainSdk{
      * Gets the status information of the task queue wa:/api/blockChain/taskQueueStatus.
      */
     public function getTaskQueueStatus(){
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETTASKQUEUESTATUS);
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETTASKQUEUESTATUS);
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -158,8 +158,8 @@ Class BlockChainSdk{
      * Gets information about the current transaction pool.wa:/api/blockChain/transactionPoolStatus
      */
     public function getTransactionPoolStatus(){
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETTRANSACTIONPOOLSTATUS);
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETTRANSACTIONPOOLSTATUS);
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -175,11 +175,11 @@ Class BlockChainSdk{
      * Call a read-only method of a contract. wa:/api/blockChain/executeTransaction
      */
     public function executeTransaction($input){
-        $url = $this->AElfClientUrl.self::$WA_EXECUTETRANSACTION;
+        $url = $this->aelfClientUrl.self::$WA_EXECUTETRANSACTION;
   
-        $this->Curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
+        $this->curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
        
-        $response = $this->Curl->exec();
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -208,9 +208,9 @@ Class BlockChainSdk{
      * Creates an unsigned serialized transaction wa:/api/blockChain/rawTransaction.
      */
     public function createRawTransaction($input) {
-        $url = $this->AElfClientUrl.self::$WA_CREATERAWTRANSACTION;
-        $this->Curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
-        $response = $this->Curl->exec();
+        $url = $this->aelfClientUrl.self::$WA_CREATERAWTRANSACTION;
+        $this->curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -226,9 +226,9 @@ Class BlockChainSdk{
      * Call a method of a contract by given serialized str wa:/api/blockChain/executeRawTransaction.
      */
     public function executeRawTransaction($input){
-        $url = $this->AElfClientUrl.self::$WA_EXECUTERAWTRANSACTION;
-        $this->Curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
-        $response = $this->Curl->exec();
+        $url = $this->aelfClientUrl.self::$WA_EXECUTERAWTRANSACTION;
+        $this->curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -243,10 +243,10 @@ Class BlockChainSdk{
      * Broadcast a serialized transaction. wa:/api/blockChain/sendRawTransaction
      */
     public function sendRawTransaction($input){
-        $url = $this->AElfClientUrl.self::$WA_SENDRAWTRANSACTION;
+        $url = $this->aelfClientUrl.self::$WA_SENDRAWTRANSACTION;
        
-        $this->Curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
-        $response = $this->Curl->exec();
+        $this->curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -261,10 +261,10 @@ Class BlockChainSdk{
      * Broadcast a transaction wa:/api/blockChain/sendTransaction.
      */
     public function sendTransaction($input){
-        $url = $this->AElfClientUrl.self::$WA_SENDTRANSACTION;
+        $url = $this->aelfClientUrl.self::$WA_SENDTRANSACTION;
        
-        $this->Curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
-        $response = $this->Curl->exec();
+        $this->curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -278,10 +278,10 @@ Class BlockChainSdk{
      * Broadcast volume transactions wa:/api/blockChain/sendTransactions.
      */
     public function sendTransactions($input){
-        $url = $this->AElfClientUrl.self::$WA_SENDTRANSACTIONS;
+        $url = $this->aelfClientUrl.self::$WA_SENDTRANSACTIONS;
        
-        $this->Curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
-        $response = $this->Curl->exec();
+        $this->curl->makePost($url,json_encode($input),array('Content-type: application/json;charset=UTF-8'));
+        $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
             var_dump($response->getError());
@@ -303,7 +303,7 @@ Class BlockChainSdk{
             CURLOPT_USERAGENT      => 'Multi-cURL client v1.5.0',
         ];
         $c = new Curl(null, $options);
-        $c->makeGet($this->AElfClientUrl.self::$WA_GETTRANSACTIONRESULT."?transactionId=".$transactionId);
+        $c->makeGet($this->aelfClientUrl.self::$WA_GETTRANSACTIONRESULT."?transactionId=".$transactionId);
         $response = $c->exec();
         if ($response->hasError()) {
             //Fail
@@ -329,8 +329,8 @@ Class BlockChainSdk{
             echo "Error.InvalidLimit";
             exit();
         }
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETTRANSACTIONRESULTS."?blockHash=".$blockHash.'&offset='.$offset."&limit=".$limit);
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETTRANSACTIONRESULTS."?blockHash=".$blockHash.'&offset='.$offset."&limit=".$limit);
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());
@@ -347,8 +347,8 @@ Class BlockChainSdk{
      */
     public function  getMerklePathByTransactionId($transactionId) {
   
-        $this->Curl->makeGet($this->AElfClientUrl.self::$WA_GETMBYTRANSACTIONID."?transactionId=".$transactionId);
-        $Success = $this->Curl->exec();
+        $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETMBYTRANSACTIONID."?transactionId=".$transactionId);
+        $Success = $this->curl->exec();
         if ($Success->hasError()) {
             //Fail
             var_dump($Success->getError());

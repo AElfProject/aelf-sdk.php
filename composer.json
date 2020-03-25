@@ -31,13 +31,13 @@
             "AElf\\AElfECDSA\\": "src/helper/",
             "Google\\Protobuf\\": "src/pro/Google/Protobuf",
             "GPBMetadata\\Google\\Protobuf\\": "src/GPBMetadata/Google/Protobuf",
-            "AElf\\Protobuf\\Generated\\": "src/pro/Aelf/Protobuf/Generated/",
+            "AElf\\Protobuf\\Generated\\": "src/pro/AElf/Protobuf/Generated/",
             "GPBMetadata\\": "src/pro/GPBMetadata/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Aelf\\example\\": "example/"
+            "AElf\\example\\": "example/"
         }
     }
 }
