@@ -54,14 +54,14 @@ Class BlockChainSdk{
     public function getBlockHeight(){
         
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_BLOCKHEIGHT);
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
             
-            return $Success->getBody();
+            return $success->getBody();
         }
     }
 
@@ -71,15 +71,15 @@ Class BlockChainSdk{
      */
     public function getBlockByHash($blockHash,$includeTransactions=false){
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_BLOCK.'?blockHash='.$blockHash.'&includeTransactions='.($includeTransactions?'true':'false'));
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-          //  var_dump($Success->getBody());
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
-          //  return $Success->getBody();
+          //  var_dump($success->getBody());
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
+          //  return $success->getBody();
         }
     }
 
@@ -93,13 +93,13 @@ Class BlockChainSdk{
         }
        
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_BLOCKBYHEIGHT.'?blockHeight='.$blockHeight.'&includeTransactions='.($includeTransactions?'true':'false'));
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -108,13 +108,13 @@ Class BlockChainSdk{
      */
     public function getChainStatus(){
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETCHAINSTATUS);
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
             
         }
     }
@@ -125,14 +125,14 @@ Class BlockChainSdk{
     public function getContractFileDescriptorSet($address){
 
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETCFCRIPTORSET."?address=".$address);
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
        
-            return $Success->getBody();
+            return $success->getBody();
         }
 
     }
@@ -142,13 +142,13 @@ Class BlockChainSdk{
      */
     public function getTaskQueueStatus(){
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETTASKQUEUESTATUS);
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
             
         }
        
@@ -159,13 +159,13 @@ Class BlockChainSdk{
      */
     public function getTransactionPoolStatus(){
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETTRANSACTIONPOOLSTATUS);
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
             
         }
        
@@ -330,13 +330,13 @@ Class BlockChainSdk{
             exit();
         }
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETTRANSACTIONRESULTS."?blockHash=".$blockHash.'&offset='.$offset."&limit=".$limit);
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-            return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+            return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
          
         }
     
@@ -348,13 +348,13 @@ Class BlockChainSdk{
     public function  getMerklePathByTransactionId($transactionId) {
   
         $this->curl->makeGet($this->aelfClientUrl.self::$WA_GETMBYTRANSACTIONID."?transactionId=".$transactionId);
-        $Success = $this->curl->exec();
-        if ($Success->hasError()) {
+        $success = $this->curl->exec();
+        if ($success->hasError()) {
             //Fail
-            var_dump($Success->getError());
+            var_dump($success->getError());
         } else {
             //Success
-           return json_decode($Success->getBody(),JSON_UNESCAPED_UNICODE);
+           return json_decode($success->getBody(),JSON_UNESCAPED_UNICODE);
         }
     }
 
