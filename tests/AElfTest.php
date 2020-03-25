@@ -73,7 +73,7 @@ class AElfTest extends TestCase
         $transactionFees = $this->aelf->getTransactionFees($transactionResult);
        
         $this->assertEquals($transactionFees[0]['symbol'],'ELF');
-        $this->assertEquals($transactionFees[0]['amount'],0);
+        $this->assertEquals($transactionFees[0]['amount'],1);
     }
     public function testGetTransactionResultApi(){
         $block = $this->aelf->getBlockByHeight(1,true);
