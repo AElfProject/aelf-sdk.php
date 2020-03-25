@@ -69,9 +69,9 @@ class AElfTest extends TestCase
         print_r($result);
         sleep(4);
         $transactionResult = $this->aelf->getTransactionResult($result['TransactionId']);
-        print_r($transactionResult);
+
         $transactionFees = $this->aelf->getTransactionFees($transactionResult);
-        var_dump($transactionFees);
+     
         $this->assertEquals($transactionFees[0]['symbol'],'ELF');
         $this->assertEquals($transactionFees[0]['amount'],1);
     }
@@ -243,4 +243,5 @@ class AElfTest extends TestCase
         return $transactionObj;
     }
 }
+
 ?>
