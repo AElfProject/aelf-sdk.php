@@ -18,13 +18,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/fgrosse/PHPASN1/zipball/7ebf2a09084a7bbdb7b879c66fdf7ad80461bbe8",
                 "reference": "7ebf2a09084a7bbdb7b879c66fdf7ad80461bbe8",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.cloud.tencent.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.0.0"
@@ -93,13 +87,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/kornrunner/php-secp256k1/zipball/915f0ef1ec748606a1117b171093266de349b058",
                 "reference": "915f0ef1ec748606a1117b171093266de349b058",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.cloud.tencent.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "mdanter/ecc": "^0.5",
@@ -146,13 +134,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/phpecc/phpecc/zipball/b95f25cc1bacc83a9f0ccd375900b7cfd343029e",
                 "reference": "b95f25cc1bacc83a9f0ccd375900b7cfd343029e",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.cloud.tencent.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "ext-gmp": "*",

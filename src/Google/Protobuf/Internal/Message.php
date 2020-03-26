@@ -92,10 +92,12 @@ class Message
     {
         $pool = DescriptorPool::getGeneratedPool();
         $this->desc = $pool->getDescriptorByClassName(get_class($this));
+
         if (is_null($this->desc)) {
             user_error(get_class($this) . " is not found in descriptor pool.");
             return;
         }
+
         foreach ($this->desc->getField() as $field) {
             $setter = $field->getSetter();
             if ($field->isMap()) {
@@ -1041,6 +1043,7 @@ class Message
         // Just call the setters for the field names
         foreach ($array as $key => $value) {
             $field = $this->desc->getFieldByName($key);
+            
             if (is_null($field)) {
                 throw new \UnexpectedValueException(
                     'Invalid message property: ' . $key);
