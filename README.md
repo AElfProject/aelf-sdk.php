@@ -16,11 +16,10 @@ You can also see full examples in `./example`;
 1. Create a new instance of AElf, connect to an AElf chain node.
     ```php
   	<?php
-
-  	require_once 'vendor/autoload.php';
-  	use AElf\AElf;
-  	$url = '127.0.0.1:8000';
-  	$AElf = new AElf($url);
+    require_once 'vendor/autoload.php';
+    use AElf\AElf;
+    $url = '127.0.0.1:8000';
+    $AElf = new AElf($url);
     ```
 2. Create or load a wallet with `AElf.wallet`;
 
@@ -36,14 +35,12 @@ You can also see full examples in `./example`;
     ```
 3. Get a system contract address, take `AElf.ContractNames.Token` as an example
     ```php
-  	$tokenContractName = 'AElf.ContractNames.Token';
-      
+    $tokenContractName = 'AElf.ContractNames.Token';
     $tokenContractAddress = $AElf->getContractAddressByName($privateKey,hex2bin(hash('sha256',$tokenContractName)));
     ```
 4. Get a contract instance by contract address
     ```php
 	  $tokenContractName = 'AElf.ContractNames.Token';
-    
     $tokenContract = $AElf->getTransactionResults($tokenContractAddress);
     ```
 5. How to use contract instance
@@ -55,13 +52,12 @@ You can also see full examples in `./example`;
     $params = new Hash();
     $params->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
     $transactionObj  = $this->AElf->generateTransaction($this->address,$AElf->getGenesisContractAddress(),'GetContractAddressByName',$params);
-  	$signature = $AElf->signTransaction($privateKey,$transactionObj);
-  	$transactionObj->setSignature(hex2bin($signature));
+    $signature = $AElf->signTransaction($privateKey,$transactionObj);
+    $transactionObj->setSignature(hex2bin($signature));
     $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
     $result =  $AElf->sendTransaction($executeTransactionDtoObj);
     print_r($result);
     ```
-
 ### Test
 
 This module contains tests for all services provided by AElf. You can see how to properly use services provided by AElf here.
@@ -75,7 +71,7 @@ You need to firstly set necessary parameters to make sure tests can run successf
 
    $url = "Http://127.0.0.1:8001";
    ```
-   ?>
+
 
 2. Give a valid privateKey of a node.
 
