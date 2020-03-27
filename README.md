@@ -35,20 +35,22 @@ You can also see full examples in `./example`;
     ```
 3. Get a system contract address, take `AElf.ContractNames.Token` as an example
     ```php
-    $tokenContractName = 'AElf.ContractNames.Token';
-    $tokenContractAddress = $AElf->getContractAddressByName($privateKey,hex2bin(hash('sha256',$tokenContractName)));
+    use AElf\Protobuf\Generated\Hash;
+    use GPBMetadata\Types;
+    $tokenContractName = new Hash();
+    $tokenContractName->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
+    $tokenContractAddress = $AElf->getContractAddressByName($privateKey,$tokenContractName);
     ```
 4. Get a contract instance by contract address
     ```php
-	  $tokenContractName = 'AElf.ContractNames.Token';
+    $tokenContractName = 'AElf.ContractNames.Token';
     $tokenContract = $AElf->getTransactionResults($tokenContractAddress);
     ```
 5. How to use contract instance
 
     A contract instance consists of several contract methods and methods can be called in two ways: read-only and send transaction
     ```php
-    use AElf\Protobuf\Generated\Hash;
-    use GPBMetadata\Types;
+
     $params = new Hash();
     $params->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
     $transactionObj  = $this->AElf->generateTransaction($this->address,$AElf->getGenesisContractAddress(),'GetContractAddressByName',$params);
