@@ -15,12 +15,12 @@ You can also see full examples in `./example`;
 
 1. Create a new instance of AElf, connect to an AElf chain node.
     ```php
-	<?php
+  	<?php
 
-	require_once 'vendor/autoload.php';
-	use AElf\AElf;
-	$url = '127.0.0.1:8000';
-	$AElf = new AElf($url);
+  	require_once 'vendor/autoload.php';
+  	use AElf\AElf;
+  	$url = '127.0.0.1:8000';
+  	$AElf = new AElf($url);
     ```
 2. Create or load a wallet with `AElf.wallet`;
 
@@ -29,20 +29,20 @@ You can also see full examples in `./example`;
     // create a new wallet
     $AElfECDSA = new AElfECDSA();
     // load a wallet by private key
-    $private_key = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
-    $AElfECDSA->setPrivateKey($private_key);
+    $privateKey = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
+    $AElfECDSA->setPrivateKey($privateKey);
     // To obtain the public key
-    $public_key = $AElfECDSA->getUncompressedPubKey();
+    $publicKey = $AElfECDSA->getUncompressedPubKey();
     ```
 3. Get a system contract address, take `AElf.ContractNames.Token` as an example
     ```php
-	$tokenContractName = 'AElf.ContractNames.Token';
-    
-  $tokenContractAddress = $AElf->getContractAddressByName($private_key,hex2bin(hash('sha256',$tokenContractName)));
+  	$tokenContractName = 'AElf.ContractNames.Token';
+      
+    $tokenContractAddress = $AElf->getContractAddressByName($privateKey,hex2bin(hash('sha256',$tokenContractName)));
     ```
 4. Get a contract instance by contract address
     ```php
-	$tokenContractName = 'AElf.ContractNames.Token';
+	  $tokenContractName = 'AElf.ContractNames.Token';
     
     $tokenContract = $AElf->getTransactionResults($tokenContractAddress);
     ```
@@ -50,11 +50,13 @@ You can also see full examples in `./example`;
 
     A contract instance consists of several contract methods and methods can be called in two ways: read-only and send transaction
     ```php
-
-  	$params = hex2bin(hash('sha256','AElf.ContractNames.Vote'));
+    use AElf\Protobuf\Generated\Hash;
+    use GPBMetadata\Types;
+    $params = new Hash();
+    $params->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
     $transactionObj  = $this->AElf->generateTransaction($this->address,$AElf->getGenesisContractAddress(),'GetContractAddressByName',$params);
-	$signature = $AElf->signTransaction($private_key,$transactionObj);
-	$transactionObj->setSignature(hex2bin($signature));
+  	$signature = $AElf->signTransaction($privateKey,$transactionObj);
+  	$transactionObj->setSignature(hex2bin($signature));
     $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
     $result =  $AElf->sendTransaction($executeTransactionDtoObj);
     print_r($result);
@@ -78,7 +80,7 @@ You need to firstly set necessary parameters to make sure tests can run successf
 2. Give a valid privateKey of a node.
 
    ```php
-   $this->private_key = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
+   $this->privateKey = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
    ```
 
 ### Note
