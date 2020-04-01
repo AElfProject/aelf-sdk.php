@@ -1,65 +1,103 @@
 # AElf-sdk.php
+## Introduction
+
+This is a PHP# client library, used to communicate with the [AElf](https://github.com/AElfProject/AElf)  API.
+
+## Usage
 AElf php SDK
 
 ```lang=bash
 $ composer require AElf/AElf-sdk
 ```
-
-## Usage
-
 ## Basic usage
-
+    
+```php
+require_once 'vendor/autoload.php';
+use AElf\AElf;
+$url = '127.0.0.1:8000';
+$AElf = new AElf($url);
+$height = $AElf->GetBlockHeight();
+```
 ### Examples
 
 You can also see full examples in `./example`;
 
-1. Create a new instance of AElf, connect to an AElf chain node.
-    ```php
-  	<?php
-    require_once 'vendor/autoload.php';
-    use AElf\AElf;
-    $url = '127.0.0.1:8000';
-    $AElf = new AElf($url);
-    ```
-2. Create or load a wallet with `AElf.wallet`;
+### Interface
 
-    ```php
-    use use AElf\AElfECDSA\AElfECDSA;
-    // create a new wallet
-    $AElfECDSA = new AElfECDSA();
-    // load a wallet by private key
-    $privateKey = 'be3abe5c1439899ac2efd0001e15715fd989a3ae11f09e1cb95d320cd4993e2a';
-    $AElfECDSA->setPrivateKey($privateKey);
-    // To obtain the public key
-    $publicKey = $AElfECDSA->getUncompressedPubKey();
-    ```
-3. Get a system contract address, take `AElf.ContractNames.Token` as an example
-    ```php
-    use AElf\Protobuf\Generated\Hash;
-    use GPBMetadata\Types;
-    $tokenContractName = new Hash();
-    $tokenContractName->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
-    $tokenContractAddress = $AElf->getContractAddressByName($privateKey,$tokenContractName);
-    ```
-4. Get a contract instance by contract address
-    ```php
-    $tokenContractName = 'AElf.ContractNames.Token';
-    $tokenContract = $AElf->getTransactionResults($tokenContractAddress);
-    ```
-5. How to use contract instance
+Interface methods can be easily available by the instance "aelfClient" shown in basic usage. The following is a list of input parameters and output for each method. Check out the [Web api reference](https://docs.aelf.io/v/dev/reference) for detailed Interface description.
 
-    A contract instance consists of several contract methods and methods can be called in two ways: read-only and send transaction
-    ```php
+#### IBlockAppService
 
-    $params = new Hash();
-    $params->setValue(hex2bin(hash('sha256','AElf.ContractNames.Vote')));
-    $transactionObj  = $this->AElf->generateTransaction($this->address,$AElf->getGenesisContractAddress(),'GetContractAddressByName',$params);
-    $signature = $AElf->signTransaction($privateKey,$transactionObj);
-    $transactionObj->setSignature(hex2bin($signature));
-    $executeTransactionDtoObj =['RawTransaction'=>bin2hex($transaction->serializeToString())];
-    $result =  $AElf->sendTransaction($executeTransactionDtoObj);
-    print_r($result);
-    ```
+```php
+public function getBlockHeight();
+
+public function getBlockByHash($blockHash,$includeTransactions = false);
+
+public function getBlockByHeight($blockHeight,$includeTransactions = false);
+
+```
+
+#### IChainAppService
+
+```php
+public function getChainStatus();
+
+public function getContractFileDescriptorSet($address);
+
+public function GetCurrentRoundInformationAsync();
+
+public function GetTaskQueueStatusAsync();
+
+public function GetChainIdAsync();
+```
+#### INetAppService
+
+```php
+ public function addPeer($address);
+
+ public function removePeer($address);
+
+ public function getPeers($withMetrics);
+
+ public function getNetworkInfo();
+```
+#### ITransactionAppService
+
+```c#
+public function getTransactionPoolStatus();
+
+public function executeTransaction($input);
+
+public function executeRawTransaction($input);
+
+public function createRawTransaction($input);
+
+public function sendRawTransaction($input);
+
+public function sendTransaction($input);
+
+public function sendTransactions($input);
+
+public function getTransactionResult($transactionId);
+
+public function getTransactionResults($blockHash,$offset = 0,$limit = 10);
+
+public function getMerklePathByTransactionId($transactionId);
+```
+
+#### IClientService
+
+```c#
+public function isConnected();
+
+public function getFormattedAddress($privateKey,$address);
+
+public function getAddressFromPubKey($pubKey) ;
+
+public function getGenesisContractAddress();
+
+public function getContractAddressByName($privateKey,$contractNameHash);
+```
 ### Test
 
 This module contains tests for all services provided by AElf. You can see how to properly use services provided by AElf here.

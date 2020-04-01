@@ -132,8 +132,7 @@ class AElf{
     /**
      * Creates an unsigned serialized transaction wa:/api/blockChain/rawTransaction.
      */
-    public function createRawTransaction($input)
-       {
+    public function createRawTransaction($input){
         return $this->getBlockChainSdkObj()->createRawTransaction($input);
     }
 
@@ -176,8 +175,7 @@ class AElf{
     /**
      * Get multiple transaction results. wa:/api/blockChain/transactionResults
      */
-    public function getTransactionResults($blockHash,$offset = 0,$limit = 10)
-    {
+    public function getTransactionResults($blockHash,$offset = 0,$limit = 10){
         return $this->getBlockChainSdkObj()->getTransactionResults($blockHash,$offset,$limit);
     }
 
@@ -198,8 +196,8 @@ class AElf{
     /**
      * Attempts to add a node to the connected network nodes wa:/api/net/peer.
      */
-    public function addPeer($input){
-        return $this->getNetSdkObj()->addPeer($input);
+    public function addPeer($address){
+        return $this->getNetSdkObj()->addPeer($address);
     }
 
     /**
