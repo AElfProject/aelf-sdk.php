@@ -1,4 +1,5 @@
 <?php
+use StephenHill\Base58;
 /*
 
 Currently (PHP 7.1) has no built-in function to calculate, sha1() sha1_file() md5() md5_file() can be used to calculate the sha1 hash value and md5 hash value of a string and a file, respectively, nor does the current version of PHP 7.1 sha256() sha256_file() sha512() sha512_file(). Sha-2 is the combined name of sha-224, sha-256, sha-384, and sha-512.
@@ -19,11 +20,10 @@ We can encapsulate custom functions that allow PHP to compute sha256 sha512 and 
 
 The following code implements PHP sha256() sha256_file() sha512() sha512_file()
 
-* /
+*/
 
 
-
-/ *
+/*
 
 * the following code makes PHP sha256() sha256_file() sha512() sha512_file() PHP 5.1.2+ perfectly compatible
 
@@ -62,18 +62,41 @@ function sha256_file($file, $rawOutput = false)
     $rawOutput = !!$rawOutput;
     return hash_file('sha256', $file, $rawOutput);
 }
+function decodeChecked($address)
+{
+    $base58 = new base58();
+    $address   = $base58->decode($address);
+    if(strlen($address) < 4)
+        return false;
+    $checksum   = substr($address, strlen($address)-4, 4);
+  
+    $rawAddress = substr($address, 0, strlen($address)-4);
+
+    if(substr(hex2bin(Sha256twice($rawAddress)), 0, 4) === $checksum)
+        return $rawAddress;
+    else
+        return false;
+}
+
+function encodeChecked($address){
+    $base58 = new base58();
+    $checksum =hex2bin(Sha256twice($address));
+    $address = $address.substr($checksum, 0, 4);
+    $address = $base58->encode($address);
+    return $address;
+}
 function checksum($input){
     return hash('sha256', hex2bin(hash('sha256', $input)));
 }
-function EncodeCheck($input){
-    
-}
+
+
 function SHA256Hex($str){
     $re=hash('sha256', $str, true);
     return bin2hex($re);
 }
 function Sha256twice($str){
-    return hash('sha256', hex2bin(hash('sha256', $data)));
+ 
+   return hash('sha256', hex2bin(hash('sha256', $str)));
 }
 /* PHP sha512() */
 function sha512($data, $rawOutput = false)
