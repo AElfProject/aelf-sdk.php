@@ -44,6 +44,32 @@ function sha256_file($file, $rawOutput = false)
     $rawOutput = !!$rawOutput;
     return hash_file('sha256', $file, $rawOutput);
 }
+function makeDelete($url,$params =null ,array $headers = [],&$obj){
+    $obj->init();
+    curl_setopt_array($obj->handle, [CURLOPT_URL => $url]);
+    curl_setopt($obj->handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+    //CURLFile support
+    if (is_array($params)) {
+        $hasUploadFile = false;
+        if ($obj->meetPhp55) {//CURLFile: since 5.5.0
+            foreach ($params as $k => $v) {
+                if ($v instanceof \CURLFile) {
+                    $hasUploadFile = true;
+                    break;
+                }
+            }
+        }
+        $hasUploadFile OR $params = http_build_query($params);
+    }
+    //$params: array => multipart/form-data, string => application/x-www-form-urlencoded
+    if (!empty($params)) {
+        curl_setopt($obj->handle, CURLOPT_POSTFIELDS, $params);
+    }
+
+    if (!empty($headers)) {
+        curl_setopt($obj->handle, CURLOPT_HTTPHEADER, $headers);
+    }
+}
 function decodeChecked($address)
 {
     $base58 = new base58();
