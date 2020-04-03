@@ -1,5 +1,5 @@
 jobs:
-#All tasks on Linux
+# All tasks on Linux
 - job: build_all_linux
   displayName: Build all tasks (Linux)
   services:
@@ -35,6 +35,7 @@ jobs:
   - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php 
     displayName: 'test'
 - job: build_all_macos
+# All tasks on macOS
   displayName: Build all tasks (macos)
   pool:
     vmImage: macos-latest
@@ -44,7 +45,6 @@ jobs:
   - task: DotNetCoreInstaller@0
     inputs:
       version: '3.1.101'
-  - script: ifconfig
   - script: cd scripts/aelf-node && bash start-mac.sh
     displayName: 'Deploy a full node'
   - script: |
