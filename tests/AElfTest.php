@@ -18,7 +18,7 @@ class AElfTest extends TestCase
 
     public function setUp() {
         $url = 'http://127.0.0.1:8001';
-    
+        $this->aelf = new AElf($url);
         $this->opreationAddress ='127.0.0.1:6800';
         $aelfEcdsa = new BitcoinECDSA();
         $this->privateKey = 'cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458';
