@@ -1,5 +1,5 @@
 jobs:
-# All tasks on Linux
+#All tasks on Linux
 - job: build_all_linux
   displayName: Build all tasks (Linux)
   services:
@@ -25,8 +25,42 @@ jobs:
       sudo update-alternatives --set phar.phar /usr/bin/phar.phar$(phpVersion)
       php -version
     displayName: 'Use PHP version $(phpVersion)'
-  - script: composer install --no-interaction --prefer-dist
+  - script: |
+      php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
+      php composer-setup.php
+      sudo mv composer.phar /usr/local/bin/composer
+      composer config -g repo.packagist composer https://packagist.phpcomposer.com
+      composer install --no-interaction --prefer-dist
     displayName: 'composer install'
   - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php 
-
     displayName: 'test'
+- job: build_all_macos
+  displayName: Build all tasks (macos)
+  pool:
+    vmImage: macos-latest
+  variables:
+    phpVersion: 7.2
+  steps:
+  - task: DotNetCoreInstaller@0
+    inputs:
+      version: '3.1.101'
+  - script: ifconfig
+  - script: cd scripts/aelf-node && bash start-mac.sh
+    displayName: 'Deploy a full node'
+  - script: |
+      sudo update-alternatives --set php /usr/bin/php$(phpVersion)
+      sudo update-alternatives --set phar /usr/bin/phar$(phpVersion)
+      sudo update-alternatives --set phpdbg /usr/bin/phpdbg$(phpVersion)
+      sudo update-alternatives --set php-cgi /usr/bin/php-cgi$(phpVersion)
+      sudo update-alternatives --set phar.phar /usr/bin/phar.phar$(phpVersion)
+      php -version
+    displayName: 'Use PHP version $(phpVersion)'
+  - script: |
+      php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
+      php composer-setup.php
+      sudo mv composer.phar /usr/local/bin/composer
+      composer config -g repo.packagist composer https://packagist.phpcomposer.com
+      composer install --no-interaction --prefer-dist
+  - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php
+    displayName: 'test'
+
