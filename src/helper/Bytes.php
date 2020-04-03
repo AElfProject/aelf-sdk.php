@@ -1,31 +1,16 @@
 <?php  
 namespace AElf\Bytes;
 /**
- * * byte array and string conversion class
+ **byte array and string conversion class
 */
 class Bytes {
 
 
-    /* *
-
-
-
-    * converts a String String to a byte array
-
-
-
-    * @param $STR requires the string to be converted
-
-
-
-    * @param $bytes target byte array
-
-
-
+    /**
+    *converts a String String to a byte array
+    *@param $STR requires the string to be converted
+    *@param $bytes target byte array
     * @ author Zikie
-
-
-
     */
     public static function getBytes($string) {
         $bytes = array();
