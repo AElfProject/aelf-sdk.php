@@ -17,7 +17,7 @@ class AElfTest extends TestCase
     public $opreationAddress;
 
     public function setUp() {
-        $url = 'http://127.0.0.1:8001';
+        $url = 'http://18.223.158.83:8000';
         $this->aelf = new AElf($url);
         $this->opreationAddress ='127.0.0.1:6800';
         $aelfEcdsa = new BitcoinECDSA();
@@ -246,4 +246,5 @@ class AElfTest extends TestCase
         return $transactionObj;
     }
 }
+
 ?>

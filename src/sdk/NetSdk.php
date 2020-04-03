@@ -52,15 +52,15 @@ Class NetSdk{
      */
     public function removePeer($address){
         $url = $this->aelfClientUrl.self::$WA_REMOVEPEER;
-        makeDelete($url.'?address='.$address,null,[],$this->curl);
-        $response = $this->curl->exec();
-        if ($response->hasError()) {
+        $response = send_request($url.'?address='.$address,'DELETE');
+      
+        if ($response['httpCode']==200) {
             //Fail
-            var_dump($response->getError());
+            return $response['data'];
         } else {
             //Success
           
-            return json_decode($response->getBody(),JSON_UNESCAPED_UNICODE);
+            return $response['data'];
         }
        
        
