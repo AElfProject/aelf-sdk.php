@@ -5,6 +5,8 @@ use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 use AElf\Protobuf\Generated\Address;
 use GPBMetadata\Types;
 use AElf\Protobuf\Generated\TransferInput;
+use AElf\Protobuf\Generated\TransactionFeeCharged;
+use AElf\Protobuf\Generated\ResourceTokenCharged;
 use AElf\Protobuf\Generated\TransferFromInput;
 use Tuupola\Base58;
 use AElf\Protobuf\Generated\Hash;
@@ -17,7 +19,7 @@ class AElfTest extends TestCase
     public $opreationAddress;
 
     public function setUp() {
-        $url = 'http://18.223.158.83:8000';
+        $url = 'http://127.0.0.1:8001';
         $this->aelf = new AElf($url);
         $this->opreationAddress ='127.0.0.1:6800';
         $aelfEcdsa = new BitcoinECDSA();
@@ -38,9 +40,7 @@ class AElfTest extends TestCase
         $chainId = $this->aelf->getChainId();
         print_r($chainId);
         $this->assertTrue($chainId == 9992731);
-
     }
-
     public function testBlockApi(){
         $blockHeight = $this->aelf->getBlockHeight();
         print_r('# getBlockHeight');
@@ -56,26 +56,24 @@ class AElfTest extends TestCase
     }
 
     public function testGetTransactionFeesApi(){
-
-        $toAccount = "2bWwpsN9WSc4iKJPHYL4EZX3nfxVY7XLadecnNMar1GdSb4hJz";
-        $hash = new Hash();
-        $hash->setValue(hex2bin(hash('sha256','AElf.ContractNames.Token')));
-        $toAddress = $this->aelf->getContractAddressByName($this->privateKey,$hash);
-        $methodName = "Transfer";
-        $param =new TransferInput(['to'=>new Address(['value'=>decodeChecked($toAccount)]),'symbol'=>'ELF','amount'=>1]);
-        $transaction = $this->aelf->generateTransaction($this->address,$toAddress,$methodName,$param);
-        $signature = $this->aelf->signTransaction($this->privateKey, $transaction);
-        $transaction->setSignature(hex2bin($signature));
-        $transactionInput =['RawTransaction'=>bin2hex($transaction->serializeToString())];
-        $result =  $this->aelf->sendTransaction($transactionInput);
-        print_r($result);
-        sleep(4);
-        $transactionResult = $this->aelf->getTransactionResult($result['TransactionId']);
-
-        $transactionFees = $this->aelf->getTransactionFees($transactionResult);
-     
+        $TransactionFeeCharged =new TransactionFeeCharged(['symbol'=>'ELF','amount'=>1000]);
+        $ResourceTokenCharged = new ResourceTokenCharged(['symbol'=>'READ','amount'=>800]);
+       $transactionResultDto=array(
+            'Logs'=>array(
+                array(
+                    'Name'=>'TransactionFeeCharged',
+                    'NonIndexed' => base64_encode($TransactionFeeCharged->serializeToString()),
+                ),
+                array(
+                    'Name'=>'ResourceTokenCharged',
+                    'NonIndexed' =>base64_encode($ResourceTokenCharged->serializeToString()),
+                )
+            )
+        );
+        $transactionFees = $this->aelf->getTransactionFees($transactionResultDto);
+        var_dump($transactionFees);
         $this->assertEquals($transactionFees[0]['symbol'],'ELF');
-        $this->assertEquals($transactionFees[0]['amount'],1);
+        $this->assertTrue($transactionFees[0]['amount']>0);
     }
     public function testGetTransactionResultApi(){
         $block = $this->aelf->getBlockByHeight(1,true);
