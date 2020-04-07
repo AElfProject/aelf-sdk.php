@@ -26,7 +26,7 @@
         "classmap": [
            "src/helper"
         ],
-        "files":["src/helper/Sha.php"],
+        "files":["src/helper/Sha.php","src/helper/CurlUniversalRequest.php"],
         "psr-4": {
             "AElf\\": "src/",
             "AElf\\Api\\":"src/sdk/",
