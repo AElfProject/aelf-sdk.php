@@ -14,7 +14,7 @@ use AElf\Protobuf\Generated\Hash;
 use AElf\Protobuf\Generated\TransactionFeeCharged;
 use AElf\Protobuf\Generated\ResourceTokenCharged;
 use GPBMetadata\Types;
-use AElf\AElfECDSA\AElfECDSA;
+use BitcoinPHP\BitcoinECDSA\BitcoinECDSA as AElfECDSA;
 use StephenHill\Base58;
 use AElf\Bytes\Bytes;
 use kornrunner\Secp256k1;
@@ -132,8 +132,7 @@ class AElf{
     /**
      * Creates an unsigned serialized transaction wa:/api/blockChain/rawTransaction.
      */
-    public function createRawTransaction($input)
-       {
+    public function createRawTransaction($input){
         return $this->getBlockChainSdkObj()->createRawTransaction($input);
     }
 
@@ -176,8 +175,7 @@ class AElf{
     /**
      * Get multiple transaction results. wa:/api/blockChain/transactionResults
      */
-    public function getTransactionResults($blockHash,$offset = 0,$limit = 10)
-    {
+    public function getTransactionResults($blockHash,$offset = 0,$limit = 10){
         return $this->getBlockChainSdkObj()->getTransactionResults($blockHash,$offset,$limit);
     }
 
@@ -198,8 +196,8 @@ class AElf{
     /**
      * Attempts to add a node to the connected network nodes wa:/api/net/peer.
      */
-    public function addPeer($input){
-        return $this->getNetSdkObj()->addPeer($input);
+    public function addPeer($address){
+        return $this->getNetSdkObj()->addPeer($address);
     }
 
     /**
@@ -229,9 +227,8 @@ class AElf{
      */
     public function generateTransaction($from,$to,$methodName,$params){
         $chainStatus = $this->getBlockChainSdkObj()->getChainStatus();
-        $bit = new AElfECDSA();
-        $from = $bit->decodeChecked($from);
-        $to = $bit->decodeChecked($to);
+        $from = decodeChecked($from);
+        $to = decodeChecked($to);
         $transaction = new Transaction();
         $fromAddress = new Address();
         $toAddress = new Address();
@@ -315,7 +312,9 @@ class AElf{
         $keyPair->generateRandomPrivateKey();
         $privateKey = $keyPair->getPrivateKey();
         $publicKey = $keyPair->getUncompressedPubKey();
-        $address = $keyPair->getUncompressedAddress();
+        $address = $keyPair->hash256(hex2bin($publicKey));
+        $address = $address.substr($keyPair->hash256(hex2bin($address)), 0, 8);
+        $address = $keyPair->base58_encode($address);
         $keyPairInfo=array('privateKey'=>$privateKey,'publicKey'=>$publicKey,'address'=>$address);
         return $keyPairInfo;
     }
@@ -340,7 +339,7 @@ class AElf{
         $response = $this->getBlockChainSdkObj()->executeTransaction($executeTransactionDto);
         $address = new Address();
         $address->mergeFromString(hex2bin($response));
-        $base58Str = $this->base58->encodeChecked($address->getValue());
+        $base58Str = encodeChecked($address->getValue());
         return $base58Str;
     }
 
@@ -350,7 +349,10 @@ class AElf{
     public function getAddressFromPrivateKey($privateKey) {
         $aelfKey = new AElfECDSA();
         $aelfKey->setPrivateKey($privateKey);
-        $address = $aelfKey->getUncompressedAddress();
+        $publicKey = $aelfKey->getUncompressedPubKey();
+        $address = $aelfKey->hash256(hex2bin($publicKey));
+        $address = $address.substr($aelfKey->hash256(hex2bin($address)), 0, 8);
+        $address = $aelfKey->base58_encode($address);
         return $address;
     }
 
