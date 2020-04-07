@@ -9,17 +9,17 @@
 * @ return string | bool
  */
 function send_request($url, $method = "POST", $data = array(), $header = array(), $type = '0') {
-    //检查地址是否为空
+   // check if the address is empty
     if (empty($url)) {
         return false;
     }
-    //控制请求方法范围
+    //controls the scope of the request method
     $httpMethod = array('GET', 'POST', 'PUT', 'DELETE');
     $method = strtoupper($method);
     if (!in_array($method, $httpMethod)) {
         return false;
     }
-    //请求头初始化
+    //Request header initialization
     $request_headers = array();
     $User_Agent = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.43 Safari/537.31';
     $request_headers[] = 'User-Agent: '. $User_Agent;
@@ -42,7 +42,7 @@ function send_request($url, $method = "POST", $data = array(), $header = array()
             break;
         default:
     }
-    //发送http请求
+    //Send an HTTP request
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -63,7 +63,7 @@ function send_request($url, $method = "POST", $data = array(), $header = array()
         default:
     }
 
-    //格式化发送数据
+    //Format send data
     if($data) {
         if ($type) {
             $dataValue = json_encode($data,JSON_UNESCAPED_UNICODE);
@@ -74,7 +74,7 @@ function send_request($url, $method = "POST", $data = array(), $header = array()
     }
 
     curl_setopt($ch, CURLOPT_TIMEOUT, 50);
-    //发送请求获取返回响应
+    //Send the request for the returned response
     $result['data'] = curl_exec($ch);
     $result['httpCode'] = curl_getinfo($ch,CURLINFO_HTTP_CODE);
     if(strlen(curl_error($ch))>1){
