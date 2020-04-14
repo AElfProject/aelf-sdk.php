@@ -10,8 +10,10 @@ use kornrunner\Secp256k1;
 use AElf\Api\BlockChainSdk;
 use AElf\Protobuf\Generated\Hash;
 use AElf\Protobuf\Generated\Address;
+use AElf\Protobuf\Generated\TokenInfo;
 use AElf\Protobuf\Generated\StringInput;
 use AElf\Protobuf\Generated\Transaction;
+use AElf\Protobuf\Generated\GetTokenInfoInput;
 use AElf\Protobuf\Generated\TransactionFeeCharged;
 use AElf\Protobuf\Generated\ResourceTokenCharged;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA as AElfECDSA;
@@ -444,6 +446,4 @@ class AElf
         return $transactionFees;
 
     }
-
-
 }

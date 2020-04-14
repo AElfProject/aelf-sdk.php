@@ -7,7 +7,7 @@ This is a PHP# client library, used to communicate with the [AElf](https://githu
 AElf php SDK
 
 ```lang=bash
-$ composer require AElf/AElf-sdk
+$ composer require aelf/aelf-sdk
 ```
 ## Basic usage
     

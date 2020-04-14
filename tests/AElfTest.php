@@ -5,6 +5,7 @@ use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
 use AElf\Protobuf\Generated\Address;
 use GPBMetadata\Types;
 use AElf\Protobuf\Generated\TransferInput;
+use AElf\Protobuf\Generated\TokenInfo;
 use AElf\Protobuf\Generated\TransactionFeeCharged;
 use AElf\Protobuf\Generated\ResourceTokenCharged;
 use AElf\Protobuf\Generated\Hash;
@@ -93,20 +94,20 @@ class AElfTest extends TestCase
 
     public function testExecuteTransactionApi()
     {
-        $toAddress = $this->aelf->getGenesisContractAddress();
-        $methodName = "GetContractAddressByName";
+        $methodName = "GetNativeTokenInfo";
         $bytes = new Hash();
-        $bytes->setValue(hex2bin(hash('sha256', 'AElf.ContractNames.TokenConverter')));
-        $transaction = $this->aelf->generateTransaction($this->address, $toAddress, $methodName, $bytes);
+        $bytes->setValue(hex2bin(hash('sha256', 'AElf.ContractNames.Token')));
+        $toAddress = $this->aelf->GetContractAddressByName($this->privateKey, $bytes);
+        $param = new Hash();
+        $param->setValue('');
+        $transaction = $this->aelf->generateTransaction($this->address, $toAddress, $methodName, $param);
         $signature = $this->aelf->signTransaction($this->privateKey, $transaction);
         $transaction->setSignature(hex2bin($signature));
         $executeTransactionDtoObj = ['RawTransaction' => bin2hex($transaction->serializeToString())];
         $response = $this->aelf->executeTransaction($executeTransactionDtoObj);
-        $address = new Address();
-        $address->mergeFromString(hex2bin($response));
-        $base58Str = encodeChecked($address->getValue());
-        $address = $this->aelf->getContractAddressByName($this->privateKey, $bytes);
-        $this->assertTrue($address == $base58Str);
+        $tokenInfo = new TokenInfo();
+        $tokenInfo->mergeFromString(hex2bin($response));
+        $this->assertTrue($tokenInfo->getSymbol() == 'ELF');
     }
 
     public function testRawTransactionApi()

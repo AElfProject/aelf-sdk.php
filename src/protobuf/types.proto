@@ -146,3 +146,16 @@ message ResourceTokenCharged {
     string symbol = 1;
     sint64 amount = 2;
 }
+
+message TokenInfo {
+    string symbol = 1;
+    string token_name = 2;
+    int64 supply = 3;
+    int64 total_supply = 4;
+    int32 decimals = 5;
+    Address issuer = 6;
+    bool is_burnable = 7;
+    bool is_profitable = 8;
+    int32 issue_chain_id = 9;
+    int64 burned = 10;
+}
