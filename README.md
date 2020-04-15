@@ -1,7 +1,7 @@
 # AElf-sdk.php
 ## Introduction
 
-This is a PHP# client library, used to communicate with the [AElf](https://github.com/AElfProject/AElf)  API.
+This is a PHP client library, used to communicate with the [AElf](https://github.com/AElfProject/AElf)  API.
 
 ## Usage
 AElf php SDK
@@ -44,11 +44,11 @@ public function getChainStatus();
 
 public function getContractFileDescriptorSet($address);
 
-public function GetCurrentRoundInformationAsync();
+public function getCurrentRoundInformationAsync();
 
-public function GetTaskQueueStatusAsync();
+public function getTaskQueueStatusAsync();
 
-public function GetChainIdAsync();
+public function getChainIdAsync();
 ```
 #### INetAppService
 
