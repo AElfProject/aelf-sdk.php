@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 use AElf\AElf;
 use AElf\Protobuf\Generated\Hash;
 use GPBMetadata\Types;
