@@ -34,8 +34,8 @@ If you directly clone the sdk You must install composer and execute it in the ro
 require_once 'vendor/autoload.php';
 use AElf\AElf;
 $url = '127.0.0.1:8000';
-$AElf = new AElf($url);
-$height = $AElf->GetBlockHeight();
+$aelfClient = new AElf($url);
+$height = $aelfClient->GetBlockHeight();
 ```
 ### Examples
 
@@ -99,7 +99,7 @@ public function sendTransactions($input);
 
 public function getTransactionResult($transactionId);
 
-public function getTransactionResults($blockHash,$offset = 0,$limit = 10);
+public function getTransactionResults($blockHash, $offset = 0, $limit = 10);
 
 public function getMerklePathByTransactionId($transactionId);
 ```
@@ -109,13 +109,13 @@ public function getMerklePathByTransactionId($transactionId);
 ```php
 public function isConnected();
 
-public function getFormattedAddress($privateKey,$address);
+public function getFormattedAddress($privateKey, $address);
 
 public function getAddressFromPubKey($pubKey) ;
 
 public function getGenesisContractAddress();
 
-public function getContractAddressByName($privateKey,$contractNameHash);
+public function getContractAddressByName($privateKey, $contractNameHash);
 ```
 ### Test
 

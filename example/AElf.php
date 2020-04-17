@@ -5,7 +5,7 @@ use AElf\Protobuf\Generated\Hash;
 use GPBMetadata\Types;
 
 $url = 'http://127.0.0.1:8000';
-$AElf = new AElf($url);
+$aelfClient = new AElf($url);
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;;
 
 // create a new wallet
@@ -17,6 +17,6 @@ $AElfECDSA->setPrivateKey($privateKey);
 $publicKey = $AElfECDSA->getUncompressedPubKey();
 $tokenContractName = new Hash();
 $tokenContractName->setValue(hex2bin(hash('sha256', 'AElf.ContractNames.Token')));
-$tokenContractAddress = $AElf->getContractAddressByName($privateKey, $tokenContractName);
+$tokenContractAddress = $aelfClient->getContractAddressByName($privateKey, $tokenContractName);
 var_dump($tokenContractAddress);
 ?>
