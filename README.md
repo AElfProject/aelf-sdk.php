@@ -1,14 +1,33 @@
 # AElf-sdk.php
-## Introduction
 
-This is a PHP# client library, used to communicate with the [AElf](https://github.com/AElfProject/AElf)  API.
+#Introduction
 
-## Usage
+This is a PHP client library, used to communicate with the [AElf](https://github.com/AElfProject/AElf)  API.
+
+## Installation
 AElf php SDK
+
+In order to install this library via composer run the following command in the console:
 
 ```lang=bash
 $ composer require aelf/aelf-sdk
 ```
+composer require curl/curl
+
+If you directly clone the sdk You must install composer and execute it in the root directory 
+
+```lang=bash
+"aelf/aelf-sdk": "dev-dev"
+```
+
+## Environment configuration And extensions that need to be turned on
+
+```lang=bash
+1. PHP => 7.0
+2. gmp
+3. curl
+```
+
 ## Basic usage
     
 ```php
@@ -44,11 +63,11 @@ public function getChainStatus();
 
 public function getContractFileDescriptorSet($address);
 
-public function GetCurrentRoundInformationAsync();
+public function getCurrentRoundInformationAsync();
 
-public function GetTaskQueueStatusAsync();
+public function getTaskQueueStatusAsync();
 
-public function GetChainIdAsync();
+public function getChainIdAsync();
 ```
 #### INetAppService
 
@@ -63,7 +82,7 @@ public function GetChainIdAsync();
 ```
 #### ITransactionAppService
 
-```c#
+```php
 public function getTransactionPoolStatus();
 
 public function executeTransaction($input);
@@ -87,7 +106,7 @@ public function getMerklePathByTransactionId($transactionId);
 
 #### IClientService
 
-```c#
+```php
 public function isConnected();
 
 public function getFormattedAddress($privateKey,$address);
