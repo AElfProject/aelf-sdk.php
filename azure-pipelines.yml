@@ -1,4 +1,5 @@
 jobs:
+# All tasks on window
 - job: build_all_window
   pool:
     vmImage: 'windows-2019'
@@ -15,7 +16,7 @@ jobs:
       php composer.phar install --no-interaction --prefer-dist
     displayName: 'composer install'
   - powershell: ./scripts/aelf-node/start-window.ps1
-    displayName: 'deploy a full node and run test'
+    displayName: 'deploy and test'
 # All tasks on Linux
 - job: build_all_linux
   displayName: Build all tasks (Linux)
