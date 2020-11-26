@@ -14,10 +14,14 @@ use Google\Protobuf\Internal\GPBUtil;
 class ContractUpdateInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The contract address that needs to be updated.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address address = 1;</code>
      */
     protected $address = null;
     /**
+     * The byte array of the new contract code.
+     *
      * Generated from protobuf field <code>bytes code = 2;</code>
      */
     protected $code = '';
@@ -29,7 +33,9 @@ class ContractUpdateInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Address $address
+     *           The contract address that needs to be updated.
      *     @type string $code
+     *           The byte array of the new contract code.
      * }
      */
     public function __construct($data = NULL) {
@@ -38,6 +44,8 @@ class ContractUpdateInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The contract address that needs to be updated.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address address = 1;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -47,6 +55,8 @@ class ContractUpdateInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The contract address that needs to be updated.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address address = 1;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -60,6 +70,8 @@ class ContractUpdateInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The byte array of the new contract code.
+     *
      * Generated from protobuf field <code>bytes code = 2;</code>
      * @return string
      */
@@ -69,6 +81,8 @@ class ContractUpdateInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The byte array of the new contract code.
+     *
      * Generated from protobuf field <code>bytes code = 2;</code>
      * @param string $var
      * @return $this

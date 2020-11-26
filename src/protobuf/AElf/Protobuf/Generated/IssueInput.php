@@ -14,18 +14,26 @@ use Google\Protobuf\Internal\GPBUtil;
 class IssueInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The token symbol to issue.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
     protected $symbol = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * The token amount to issue.
+     *
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      */
     protected $amount = 0;
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 3;</code>
      */
     protected $memo = '';
     /**
+     * The target address to issue.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 4;</code>
      */
     protected $to = null;
@@ -37,9 +45,13 @@ class IssueInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $symbol
+     *           The token symbol to issue.
      *     @type int|string $amount
+     *           The token amount to issue.
      *     @type string $memo
+     *           The memo.
      *     @type \AElf\Protobuf\Generated\Address $to
+     *           The target address to issue.
      * }
      */
     public function __construct($data = NULL) {
@@ -48,6 +60,8 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The token symbol to issue.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @return string
      */
@@ -57,6 +71,8 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The token symbol to issue.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @param string $var
      * @return $this
@@ -70,7 +86,9 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * The token amount to issue.
+     *
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      * @return int|string
      */
     public function getAmount()
@@ -79,7 +97,9 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * The token amount to issue.
+     *
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      * @param int|string $var
      * @return $this
      */
@@ -92,6 +112,8 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 3;</code>
      * @return string
      */
@@ -101,6 +123,8 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 3;</code>
      * @param string $var
      * @return $this
@@ -114,6 +138,8 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The target address to issue.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 4;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -123,6 +149,8 @@ class IssueInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The target address to issue.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 4;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this

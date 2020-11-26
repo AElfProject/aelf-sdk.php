@@ -14,10 +14,14 @@ use Google\Protobuf\Internal\GPBUtil;
 class ContractDeploymentInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The category of contract code(0: C#).
+     *
      * Generated from protobuf field <code>sint32 category = 1;</code>
      */
     protected $category = 0;
     /**
+     * The byte array of the contract code.
+     *
      * Generated from protobuf field <code>bytes code = 2;</code>
      */
     protected $code = '';
@@ -29,7 +33,9 @@ class ContractDeploymentInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type int $category
+     *           The category of contract code(0: C#).
      *     @type string $code
+     *           The byte array of the contract code.
      * }
      */
     public function __construct($data = NULL) {
@@ -38,6 +44,8 @@ class ContractDeploymentInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The category of contract code(0: C#).
+     *
      * Generated from protobuf field <code>sint32 category = 1;</code>
      * @return int
      */
@@ -47,6 +55,8 @@ class ContractDeploymentInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The category of contract code(0: C#).
+     *
      * Generated from protobuf field <code>sint32 category = 1;</code>
      * @param int $var
      * @return $this
@@ -60,6 +70,8 @@ class ContractDeploymentInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The byte array of the contract code.
+     *
      * Generated from protobuf field <code>bytes code = 2;</code>
      * @return string
      */
@@ -69,6 +81,8 @@ class ContractDeploymentInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The byte array of the contract code.
+     *
      * Generated from protobuf field <code>bytes code = 2;</code>
      * @param string $var
      * @return $this

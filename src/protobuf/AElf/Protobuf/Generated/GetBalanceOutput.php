@@ -14,15 +14,21 @@ use Google\Protobuf\Internal\GPBUtil;
 class GetBalanceOutput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
     protected $symbol = '';
     /**
+     * The target address of the query.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address owner = 2;</code>
      */
     protected $owner = null;
     /**
-     * Generated from protobuf field <code>sint64 balance = 3;</code>
+     * The balance of the owner.
+     *
+     * Generated from protobuf field <code>int64 balance = 3;</code>
      */
     protected $balance = 0;
 
@@ -33,8 +39,11 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $symbol
+     *           The symbol of token.
      *     @type \AElf\Protobuf\Generated\Address $owner
+     *           The target address of the query.
      *     @type int|string $balance
+     *           The balance of the owner.
      * }
      */
     public function __construct($data = NULL) {
@@ -43,6 +52,8 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @return string
      */
@@ -52,6 +63,8 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @param string $var
      * @return $this
@@ -65,6 +78,8 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The target address of the query.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address owner = 2;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -74,6 +89,8 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The target address of the query.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address owner = 2;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -87,7 +104,9 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 balance = 3;</code>
+     * The balance of the owner.
+     *
+     * Generated from protobuf field <code>int64 balance = 3;</code>
      * @return int|string
      */
     public function getBalance()
@@ -96,7 +115,9 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 balance = 3;</code>
+     * The balance of the owner.
+     *
+     * Generated from protobuf field <code>int64 balance = 3;</code>
      * @param int|string $var
      * @return $this
      */

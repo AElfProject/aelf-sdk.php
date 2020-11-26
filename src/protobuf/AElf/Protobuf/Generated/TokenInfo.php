@@ -14,45 +14,59 @@ use Google\Protobuf\Internal\GPBUtil;
 class TokenInfo extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The symbol of the token.f
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
     protected $symbol = '';
     /**
+     * The full name of the token.
+     *
      * Generated from protobuf field <code>string token_name = 2;</code>
      */
     protected $token_name = '';
     /**
+     * The current supply of the token.
+     *
      * Generated from protobuf field <code>int64 supply = 3;</code>
      */
     protected $supply = 0;
     /**
+     * The total supply of the token.
+     *
      * Generated from protobuf field <code>int64 total_supply = 4;</code>
      */
     protected $total_supply = 0;
     /**
+     * The precision of the token.
+     *
      * Generated from protobuf field <code>int32 decimals = 5;</code>
      */
     protected $decimals = 0;
     /**
+     * The address that created the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address issuer = 6;</code>
      */
     protected $issuer = null;
     /**
+     * A flag indicating if this token is burnable.
+     *
      * Generated from protobuf field <code>bool is_burnable = 7;</code>
      */
     protected $is_burnable = false;
     /**
-     * Generated from protobuf field <code>bool is_profitable = 8;</code>
-     */
-    protected $is_profitable = false;
-    /**
-     * Generated from protobuf field <code>int32 issue_chain_id = 9;</code>
+     * The chain id of the token.
+     *
+     * Generated from protobuf field <code>int32 issue_chain_id = 8;</code>
      */
     protected $issue_chain_id = 0;
     /**
-     * Generated from protobuf field <code>int64 burned = 10;</code>
+     * The amount of issued tokens.
+     *
+     * Generated from protobuf field <code>int64 issued = 9;</code>
      */
-    protected $burned = 0;
+    protected $issued = 0;
 
     /**
      * Constructor.
@@ -61,15 +75,23 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $symbol
+     *           The symbol of the token.f
      *     @type string $token_name
+     *           The full name of the token.
      *     @type int|string $supply
+     *           The current supply of the token.
      *     @type int|string $total_supply
+     *           The total supply of the token.
      *     @type int $decimals
+     *           The precision of the token.
      *     @type \AElf\Protobuf\Generated\Address $issuer
+     *           The address that created the token.
      *     @type bool $is_burnable
-     *     @type bool $is_profitable
+     *           A flag indicating if this token is burnable.
      *     @type int $issue_chain_id
-     *     @type int|string $burned
+     *           The chain id of the token.
+     *     @type int|string $issued
+     *           The amount of issued tokens.
      * }
      */
     public function __construct($data = NULL) {
@@ -78,6 +100,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of the token.f
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @return string
      */
@@ -87,6 +111,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of the token.f
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @param string $var
      * @return $this
@@ -100,6 +126,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The full name of the token.
+     *
      * Generated from protobuf field <code>string token_name = 2;</code>
      * @return string
      */
@@ -109,6 +137,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The full name of the token.
+     *
      * Generated from protobuf field <code>string token_name = 2;</code>
      * @param string $var
      * @return $this
@@ -122,6 +152,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The current supply of the token.
+     *
      * Generated from protobuf field <code>int64 supply = 3;</code>
      * @return int|string
      */
@@ -131,6 +163,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The current supply of the token.
+     *
      * Generated from protobuf field <code>int64 supply = 3;</code>
      * @param int|string $var
      * @return $this
@@ -144,6 +178,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The total supply of the token.
+     *
      * Generated from protobuf field <code>int64 total_supply = 4;</code>
      * @return int|string
      */
@@ -153,6 +189,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The total supply of the token.
+     *
      * Generated from protobuf field <code>int64 total_supply = 4;</code>
      * @param int|string $var
      * @return $this
@@ -166,6 +204,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The precision of the token.
+     *
      * Generated from protobuf field <code>int32 decimals = 5;</code>
      * @return int
      */
@@ -175,6 +215,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The precision of the token.
+     *
      * Generated from protobuf field <code>int32 decimals = 5;</code>
      * @param int $var
      * @return $this
@@ -188,6 +230,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The address that created the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address issuer = 6;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -197,6 +241,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The address that created the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address issuer = 6;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -210,6 +256,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * A flag indicating if this token is burnable.
+     *
      * Generated from protobuf field <code>bool is_burnable = 7;</code>
      * @return bool
      */
@@ -219,6 +267,8 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * A flag indicating if this token is burnable.
+     *
      * Generated from protobuf field <code>bool is_burnable = 7;</code>
      * @param bool $var
      * @return $this
@@ -232,29 +282,9 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>bool is_profitable = 8;</code>
-     * @return bool
-     */
-    public function getIsProfitable()
-    {
-        return $this->is_profitable;
-    }
-
-    /**
-     * Generated from protobuf field <code>bool is_profitable = 8;</code>
-     * @param bool $var
-     * @return $this
-     */
-    public function setIsProfitable($var)
-    {
-        GPBUtil::checkBool($var);
-        $this->is_profitable = $var;
-
-        return $this;
-    }
-
-    /**
-     * Generated from protobuf field <code>int32 issue_chain_id = 9;</code>
+     * The chain id of the token.
+     *
+     * Generated from protobuf field <code>int32 issue_chain_id = 8;</code>
      * @return int
      */
     public function getIssueChainId()
@@ -263,7 +293,9 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 issue_chain_id = 9;</code>
+     * The chain id of the token.
+     *
+     * Generated from protobuf field <code>int32 issue_chain_id = 8;</code>
      * @param int $var
      * @return $this
      */
@@ -276,23 +308,27 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int64 burned = 10;</code>
+     * The amount of issued tokens.
+     *
+     * Generated from protobuf field <code>int64 issued = 9;</code>
      * @return int|string
      */
-    public function getBurned()
+    public function getIssued()
     {
-        return $this->burned;
+        return $this->issued;
     }
 
     /**
-     * Generated from protobuf field <code>int64 burned = 10;</code>
+     * The amount of issued tokens.
+     *
+     * Generated from protobuf field <code>int64 issued = 9;</code>
      * @param int|string $var
      * @return $this
      */
-    public function setBurned($var)
+    public function setIssued($var)
     {
         GPBUtil::checkInt64($var);
-        $this->burned = $var;
+        $this->issued = $var;
 
         return $this;
     }

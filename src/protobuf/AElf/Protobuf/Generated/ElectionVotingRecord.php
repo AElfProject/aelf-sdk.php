@@ -14,45 +14,77 @@ use Google\Protobuf\Internal\GPBUtil;
 class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The address of voter.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address voter = 1;</code>
      */
     protected $voter = null;
     /**
+     * The public key of candidate.
+     *
      * Generated from protobuf field <code>string candidate = 2;</code>
      */
     protected $candidate = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * Amount of voting.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      */
     protected $amount = 0;
     /**
-     * Generated from protobuf field <code>sint64 term_number = 4;</code>
+     * The term number of voting.
+     *
+     * Generated from protobuf field <code>int64 term_number = 4;</code>
      */
     protected $term_number = 0;
     /**
+     * The vote id.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Hash vote_id = 5;</code>
      */
     protected $vote_id = null;
     /**
-     * Generated from protobuf field <code>sint64 lock_time = 7;</code>
+     * Vote lock time.
+     *
+     * Generated from protobuf field <code>int64 lock_time = 6;</code>
      */
     protected $lock_time = 0;
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 10;</code>
+     * The unlock timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 7;</code>
      */
     protected $unlock_timestamp = null;
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 11;</code>
+     * The withdraw timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 8;</code>
      */
     protected $withdraw_timestamp = null;
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 12;</code>
+     * The vote timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 9;</code>
      */
     protected $vote_timestamp = null;
     /**
-     * Generated from protobuf field <code>bool is_withdrawn = 13;</code>
+     * Indicates if the vote has been withdrawn.
+     *
+     * Generated from protobuf field <code>bool is_withdrawn = 10;</code>
      */
     protected $is_withdrawn = false;
+    /**
+     * Vote weight for sharing bonus.
+     *
+     * Generated from protobuf field <code>int64 weight = 11;</code>
+     */
+    protected $weight = 0;
+    /**
+     * Whether vote others.
+     *
+     * Generated from protobuf field <code>bool is_change_target = 12;</code>
+     */
+    protected $is_change_target = false;
 
     /**
      * Constructor.
@@ -61,15 +93,29 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Address $voter
+     *           The address of voter.
      *     @type string $candidate
+     *           The public key of candidate.
      *     @type int|string $amount
+     *           Amount of voting.
      *     @type int|string $term_number
+     *           The term number of voting.
      *     @type \AElf\Protobuf\Generated\Hash $vote_id
+     *           The vote id.
      *     @type int|string $lock_time
+     *           Vote lock time.
      *     @type \Google\Protobuf\Timestamp $unlock_timestamp
+     *           The unlock timestamp.
      *     @type \Google\Protobuf\Timestamp $withdraw_timestamp
+     *           The withdraw timestamp.
      *     @type \Google\Protobuf\Timestamp $vote_timestamp
+     *           The vote timestamp.
      *     @type bool $is_withdrawn
+     *           Indicates if the vote has been withdrawn.
+     *     @type int|string $weight
+     *           Vote weight for sharing bonus.
+     *     @type bool $is_change_target
+     *           Whether vote others.
      * }
      */
     public function __construct($data = NULL) {
@@ -78,6 +124,8 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The address of voter.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address voter = 1;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -87,6 +135,8 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The address of voter.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address voter = 1;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -100,6 +150,8 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The public key of candidate.
+     *
      * Generated from protobuf field <code>string candidate = 2;</code>
      * @return string
      */
@@ -109,6 +161,8 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The public key of candidate.
+     *
      * Generated from protobuf field <code>string candidate = 2;</code>
      * @param string $var
      * @return $this
@@ -122,7 +176,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * Amount of voting.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      * @return int|string
      */
     public function getAmount()
@@ -131,7 +187,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * Amount of voting.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      * @param int|string $var
      * @return $this
      */
@@ -144,7 +202,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 term_number = 4;</code>
+     * The term number of voting.
+     *
+     * Generated from protobuf field <code>int64 term_number = 4;</code>
      * @return int|string
      */
     public function getTermNumber()
@@ -153,7 +213,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 term_number = 4;</code>
+     * The term number of voting.
+     *
+     * Generated from protobuf field <code>int64 term_number = 4;</code>
      * @param int|string $var
      * @return $this
      */
@@ -166,6 +228,8 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The vote id.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Hash vote_id = 5;</code>
      * @return \AElf\Protobuf\Generated\Hash
      */
@@ -175,6 +239,8 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The vote id.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Hash vote_id = 5;</code>
      * @param \AElf\Protobuf\Generated\Hash $var
      * @return $this
@@ -188,7 +254,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 lock_time = 7;</code>
+     * Vote lock time.
+     *
+     * Generated from protobuf field <code>int64 lock_time = 6;</code>
      * @return int|string
      */
     public function getLockTime()
@@ -197,7 +265,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 lock_time = 7;</code>
+     * Vote lock time.
+     *
+     * Generated from protobuf field <code>int64 lock_time = 6;</code>
      * @param int|string $var
      * @return $this
      */
@@ -210,7 +280,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 10;</code>
+     * The unlock timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 7;</code>
      * @return \Google\Protobuf\Timestamp
      */
     public function getUnlockTimestamp()
@@ -219,7 +291,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 10;</code>
+     * The unlock timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 7;</code>
      * @param \Google\Protobuf\Timestamp $var
      * @return $this
      */
@@ -232,7 +306,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 11;</code>
+     * The withdraw timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 8;</code>
      * @return \Google\Protobuf\Timestamp
      */
     public function getWithdrawTimestamp()
@@ -241,7 +317,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 11;</code>
+     * The withdraw timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 8;</code>
      * @param \Google\Protobuf\Timestamp $var
      * @return $this
      */
@@ -254,7 +332,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 12;</code>
+     * The vote timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 9;</code>
      * @return \Google\Protobuf\Timestamp
      */
     public function getVoteTimestamp()
@@ -263,7 +343,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 12;</code>
+     * The vote timestamp.
+     *
+     * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 9;</code>
      * @param \Google\Protobuf\Timestamp $var
      * @return $this
      */
@@ -276,7 +358,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>bool is_withdrawn = 13;</code>
+     * Indicates if the vote has been withdrawn.
+     *
+     * Generated from protobuf field <code>bool is_withdrawn = 10;</code>
      * @return bool
      */
     public function getIsWithdrawn()
@@ -285,7 +369,9 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>bool is_withdrawn = 13;</code>
+     * Indicates if the vote has been withdrawn.
+     *
+     * Generated from protobuf field <code>bool is_withdrawn = 10;</code>
      * @param bool $var
      * @return $this
      */
@@ -293,6 +379,58 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkBool($var);
         $this->is_withdrawn = $var;
+
+        return $this;
+    }
+
+    /**
+     * Vote weight for sharing bonus.
+     *
+     * Generated from protobuf field <code>int64 weight = 11;</code>
+     * @return int|string
+     */
+    public function getWeight()
+    {
+        return $this->weight;
+    }
+
+    /**
+     * Vote weight for sharing bonus.
+     *
+     * Generated from protobuf field <code>int64 weight = 11;</code>
+     * @param int|string $var
+     * @return $this
+     */
+    public function setWeight($var)
+    {
+        GPBUtil::checkInt64($var);
+        $this->weight = $var;
+
+        return $this;
+    }
+
+    /**
+     * Whether vote others.
+     *
+     * Generated from protobuf field <code>bool is_change_target = 12;</code>
+     * @return bool
+     */
+    public function getIsChangeTarget()
+    {
+        return $this->is_change_target;
+    }
+
+    /**
+     * Whether vote others.
+     *
+     * Generated from protobuf field <code>bool is_change_target = 12;</code>
+     * @param bool $var
+     * @return $this
+     */
+    public function setIsChangeTarget($var)
+    {
+        GPBUtil::checkBool($var);
+        $this->is_change_target = $var;
 
         return $this;
     }
