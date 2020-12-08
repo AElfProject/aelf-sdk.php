@@ -14,18 +14,26 @@ use Google\Protobuf\Internal\GPBUtil;
 class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The source chain id.
+     *
      * Generated from protobuf field <code>int32 from_chain_id = 1;</code>
      */
     protected $from_chain_id = 0;
     /**
+     * The height of the transfer transaction.
+     *
      * Generated from protobuf field <code>int64 parent_chain_height = 2;</code>
      */
     protected $parent_chain_height = 0;
     /**
+     * The raw bytes of the transfer transaction.
+     *
      * Generated from protobuf field <code>bytes transfer_transaction_bytes = 3;</code>
      */
     protected $transfer_transaction_bytes = '';
     /**
+     * The merkle path created from the transfer transaction.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.MerklePath merkle_path = 4;</code>
      */
     protected $merkle_path = null;
@@ -37,9 +45,13 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type int $from_chain_id
+     *           The source chain id.
      *     @type int|string $parent_chain_height
+     *           The height of the transfer transaction.
      *     @type string $transfer_transaction_bytes
+     *           The raw bytes of the transfer transaction.
      *     @type \AElf\Protobuf\Generated\MerklePath $merkle_path
+     *           The merkle path created from the transfer transaction.
      * }
      */
     public function __construct($data = NULL) {
@@ -48,6 +60,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The source chain id.
+     *
      * Generated from protobuf field <code>int32 from_chain_id = 1;</code>
      * @return int
      */
@@ -57,6 +71,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The source chain id.
+     *
      * Generated from protobuf field <code>int32 from_chain_id = 1;</code>
      * @param int $var
      * @return $this
@@ -70,6 +86,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The height of the transfer transaction.
+     *
      * Generated from protobuf field <code>int64 parent_chain_height = 2;</code>
      * @return int|string
      */
@@ -79,6 +97,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The height of the transfer transaction.
+     *
      * Generated from protobuf field <code>int64 parent_chain_height = 2;</code>
      * @param int|string $var
      * @return $this
@@ -92,6 +112,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The raw bytes of the transfer transaction.
+     *
      * Generated from protobuf field <code>bytes transfer_transaction_bytes = 3;</code>
      * @return string
      */
@@ -101,6 +123,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The raw bytes of the transfer transaction.
+     *
      * Generated from protobuf field <code>bytes transfer_transaction_bytes = 3;</code>
      * @param string $var
      * @return $this
@@ -114,6 +138,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The merkle path created from the transfer transaction.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.MerklePath merkle_path = 4;</code>
      * @return \AElf\Protobuf\Generated\MerklePath
      */
@@ -123,6 +149,8 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The merkle path created from the transfer transaction.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.MerklePath merkle_path = 4;</code>
      * @param \AElf\Protobuf\Generated\MerklePath $var
      * @return $this

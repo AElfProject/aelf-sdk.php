@@ -18,7 +18,7 @@ class TransactionFeeCharged extends \Google\Protobuf\Internal\Message
      */
     protected $symbol = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      */
     protected $amount = 0;
 
@@ -60,7 +60,7 @@ class TransactionFeeCharged extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      * @return int|string
      */
     public function getAmount()
@@ -69,7 +69,7 @@ class TransactionFeeCharged extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      * @param int|string $var
      * @return $this
      */

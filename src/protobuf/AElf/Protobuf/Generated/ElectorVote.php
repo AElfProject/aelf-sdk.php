@@ -14,33 +14,47 @@ use Google\Protobuf\Internal\GPBUtil;
 class ElectorVote extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The active voting record ids.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash active_voting_record_ids = 1;</code>
      */
     private $active_voting_record_ids;
     /**
+     * The voting record ids that were withdrawn.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash withdrawn_voting_record_ids = 2;</code>
      */
     private $withdrawn_voting_record_ids;
     /**
-     * Generated from protobuf field <code>sint64 active_voted_votes_amount = 3;</code>
+     * The total number of active votes.
+     *
+     * Generated from protobuf field <code>int64 active_voted_votes_amount = 3;</code>
      */
     protected $active_voted_votes_amount = 0;
     /**
-     * Generated from protobuf field <code>sint64 all_voted_votes_amount = 4;</code>
+     * The total number of votes (including the number of votes withdrawn).
+     *
+     * Generated from protobuf field <code>int64 all_voted_votes_amount = 4;</code>
      */
     protected $all_voted_votes_amount = 0;
     /**
+     * The active voting records.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord active_voting_records = 5;</code>
      */
     private $active_voting_records;
     /**
+     * The voting records that were withdrawn.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord withdrawn_votes_records = 6;</code>
      */
     private $withdrawn_votes_records;
     /**
-     * Generated from protobuf field <code>bytes public_key = 7;</code>
+     * Public key for voter.
+     *
+     * Generated from protobuf field <code>bytes pubkey = 7;</code>
      */
-    protected $public_key = '';
+    protected $pubkey = '';
 
     /**
      * Constructor.
@@ -49,12 +63,19 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $active_voting_record_ids
+     *           The active voting record ids.
      *     @type \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $withdrawn_voting_record_ids
+     *           The voting record ids that were withdrawn.
      *     @type int|string $active_voted_votes_amount
+     *           The total number of active votes.
      *     @type int|string $all_voted_votes_amount
+     *           The total number of votes (including the number of votes withdrawn).
      *     @type \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $active_voting_records
+     *           The active voting records.
      *     @type \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $withdrawn_votes_records
-     *     @type string $public_key
+     *           The voting records that were withdrawn.
+     *     @type string $pubkey
+     *           Public key for voter.
      * }
      */
     public function __construct($data = NULL) {
@@ -63,6 +84,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The active voting record ids.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash active_voting_record_ids = 1;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
      */
@@ -72,6 +95,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The active voting record ids.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash active_voting_record_ids = 1;</code>
      * @param \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
@@ -85,6 +110,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The voting record ids that were withdrawn.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash withdrawn_voting_record_ids = 2;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
      */
@@ -94,6 +121,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The voting record ids that were withdrawn.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash withdrawn_voting_record_ids = 2;</code>
      * @param \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
@@ -107,7 +136,9 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 active_voted_votes_amount = 3;</code>
+     * The total number of active votes.
+     *
+     * Generated from protobuf field <code>int64 active_voted_votes_amount = 3;</code>
      * @return int|string
      */
     public function getActiveVotedVotesAmount()
@@ -116,7 +147,9 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 active_voted_votes_amount = 3;</code>
+     * The total number of active votes.
+     *
+     * Generated from protobuf field <code>int64 active_voted_votes_amount = 3;</code>
      * @param int|string $var
      * @return $this
      */
@@ -129,7 +162,9 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 all_voted_votes_amount = 4;</code>
+     * The total number of votes (including the number of votes withdrawn).
+     *
+     * Generated from protobuf field <code>int64 all_voted_votes_amount = 4;</code>
      * @return int|string
      */
     public function getAllVotedVotesAmount()
@@ -138,7 +173,9 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 all_voted_votes_amount = 4;</code>
+     * The total number of votes (including the number of votes withdrawn).
+     *
+     * Generated from protobuf field <code>int64 all_voted_votes_amount = 4;</code>
      * @param int|string $var
      * @return $this
      */
@@ -151,6 +188,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The active voting records.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord active_voting_records = 5;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
      */
@@ -160,6 +199,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The active voting records.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord active_voting_records = 5;</code>
      * @param \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
@@ -173,6 +214,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The voting records that were withdrawn.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord withdrawn_votes_records = 6;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
      */
@@ -182,6 +225,8 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The voting records that were withdrawn.
+     *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord withdrawn_votes_records = 6;</code>
      * @param \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
@@ -195,23 +240,27 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>bytes public_key = 7;</code>
+     * Public key for voter.
+     *
+     * Generated from protobuf field <code>bytes pubkey = 7;</code>
      * @return string
      */
-    public function getPublicKey()
+    public function getPubkey()
     {
-        return $this->public_key;
+        return $this->pubkey;
     }
 
     /**
-     * Generated from protobuf field <code>bytes public_key = 7;</code>
+     * Public key for voter.
+     *
+     * Generated from protobuf field <code>bytes pubkey = 7;</code>
      * @param string $var
      * @return $this
      */
-    public function setPublicKey($var)
+    public function setPubkey($var)
     {
         GPBUtil::checkString($var, False);
-        $this->public_key = $var;
+        $this->pubkey = $var;
 
         return $this;
     }

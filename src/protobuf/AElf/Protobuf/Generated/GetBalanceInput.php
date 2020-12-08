@@ -14,10 +14,14 @@ use Google\Protobuf\Internal\GPBUtil;
 class GetBalanceInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
     protected $symbol = '';
     /**
+     * The target address of the query.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address owner = 2;</code>
      */
     protected $owner = null;
@@ -29,7 +33,9 @@ class GetBalanceInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $symbol
+     *           The symbol of token.
      *     @type \AElf\Protobuf\Generated\Address $owner
+     *           The target address of the query.
      * }
      */
     public function __construct($data = NULL) {
@@ -38,6 +44,8 @@ class GetBalanceInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @return string
      */
@@ -47,6 +55,8 @@ class GetBalanceInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @param string $var
      * @return $this
@@ -60,6 +70,8 @@ class GetBalanceInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The target address of the query.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address owner = 2;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -69,6 +81,8 @@ class GetBalanceInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The target address of the query.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address owner = 2;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this

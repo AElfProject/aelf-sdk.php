@@ -14,6 +14,8 @@ use Google\Protobuf\Internal\GPBUtil;
 class GetTokenInfoInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      */
     protected $symbol = '';
@@ -25,6 +27,7 @@ class GetTokenInfoInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $symbol
+     *           The symbol of token.
      * }
      */
     public function __construct($data = NULL) {
@@ -33,6 +36,8 @@ class GetTokenInfoInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @return string
      */
@@ -42,6 +47,8 @@ class GetTokenInfoInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 1;</code>
      * @param string $var
      * @return $this

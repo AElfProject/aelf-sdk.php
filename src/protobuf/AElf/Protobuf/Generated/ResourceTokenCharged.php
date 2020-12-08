@@ -18,9 +18,13 @@ class ResourceTokenCharged extends \Google\Protobuf\Internal\Message
      */
     protected $symbol = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      */
     protected $amount = 0;
+    /**
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address contract_address = 3;</code>
+     */
+    protected $contract_address = null;
 
     /**
      * Constructor.
@@ -30,6 +34,7 @@ class ResourceTokenCharged extends \Google\Protobuf\Internal\Message
      *
      *     @type string $symbol
      *     @type int|string $amount
+     *     @type \AElf\Protobuf\Generated\Address $contract_address
      * }
      */
     public function __construct($data = NULL) {
@@ -60,7 +65,7 @@ class ResourceTokenCharged extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      * @return int|string
      */
     public function getAmount()
@@ -69,7 +74,7 @@ class ResourceTokenCharged extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 2;</code>
+     * Generated from protobuf field <code>int64 amount = 2;</code>
      * @param int|string $var
      * @return $this
      */
@@ -77,6 +82,28 @@ class ResourceTokenCharged extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkInt64($var);
         $this->amount = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address contract_address = 3;</code>
+     * @return \AElf\Protobuf\Generated\Address
+     */
+    public function getContractAddress()
+    {
+        return $this->contract_address;
+    }
+
+    /**
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address contract_address = 3;</code>
+     * @param \AElf\Protobuf\Generated\Address $var
+     * @return $this
+     */
+    public function setContractAddress($var)
+    {
+        GPBUtil::checkMessage($var, \AElf\Protobuf\Generated\Address::class);
+        $this->contract_address = $var;
 
         return $this;
     }

@@ -14,9 +14,11 @@ use Google\Protobuf\Internal\GPBUtil;
 class MinerList extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>repeated bytes public_keys = 1;</code>
+     * The miners public key list.
+     *
+     * Generated from protobuf field <code>repeated bytes pubkeys = 1;</code>
      */
-    private $public_keys;
+    private $pubkeys;
 
     /**
      * Constructor.
@@ -24,7 +26,8 @@ class MinerList extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type string[]|\Google\Protobuf\Internal\RepeatedField $public_keys
+     *     @type string[]|\Google\Protobuf\Internal\RepeatedField $pubkeys
+     *           The miners public key list.
      * }
      */
     public function __construct($data = NULL) {
@@ -33,23 +36,27 @@ class MinerList extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated bytes public_keys = 1;</code>
+     * The miners public key list.
+     *
+     * Generated from protobuf field <code>repeated bytes pubkeys = 1;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
      */
-    public function getPublicKeys()
+    public function getPubkeys()
     {
-        return $this->public_keys;
+        return $this->pubkeys;
     }
 
     /**
-     * Generated from protobuf field <code>repeated bytes public_keys = 1;</code>
+     * The miners public key list.
+     *
+     * Generated from protobuf field <code>repeated bytes pubkeys = 1;</code>
      * @param string[]|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
-    public function setPublicKeys($var)
+    public function setPubkeys($var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::BYTES);
-        $this->public_keys = $arr;
+        $this->pubkeys = $arr;
 
         return $this;
     }

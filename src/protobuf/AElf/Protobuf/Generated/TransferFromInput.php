@@ -14,22 +14,32 @@ use Google\Protobuf\Internal\GPBUtil;
 class TransferFromInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The source address of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
      */
     protected $from = null;
     /**
+     * The destination address of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
      */
     protected $to = null;
     /**
+     * The symbol of the token to transfer.
+     *
      * Generated from protobuf field <code>string symbol = 3;</code>
      */
     protected $symbol = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 4;</code>
+     * The amount to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 4;</code>
      */
     protected $amount = 0;
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 5;</code>
      */
     protected $memo = '';
@@ -41,10 +51,15 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Address $from
+     *           The source address of the token.
      *     @type \AElf\Protobuf\Generated\Address $to
+     *           The destination address of the token.
      *     @type string $symbol
+     *           The symbol of the token to transfer.
      *     @type int|string $amount
+     *           The amount to transfer.
      *     @type string $memo
+     *           The memo.
      * }
      */
     public function __construct($data = NULL) {
@@ -53,6 +68,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The source address of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -62,6 +79,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The source address of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -75,6 +94,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The destination address of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -84,6 +105,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The destination address of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -97,6 +120,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of the token to transfer.
+     *
      * Generated from protobuf field <code>string symbol = 3;</code>
      * @return string
      */
@@ -106,6 +131,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of the token to transfer.
+     *
      * Generated from protobuf field <code>string symbol = 3;</code>
      * @param string $var
      * @return $this
@@ -119,7 +146,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 4;</code>
+     * The amount to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 4;</code>
      * @return int|string
      */
     public function getAmount()
@@ -128,7 +157,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 4;</code>
+     * The amount to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 4;</code>
      * @param int|string $var
      * @return $this
      */
@@ -141,6 +172,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 5;</code>
      * @return string
      */
@@ -150,6 +183,8 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 5;</code>
      * @param string $var
      * @return $this

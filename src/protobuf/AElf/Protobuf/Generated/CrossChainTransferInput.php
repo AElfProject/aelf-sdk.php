@@ -14,26 +14,38 @@ use Google\Protobuf\Internal\GPBUtil;
 class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The receiver of transfer.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 1;</code>
      */
     protected $to = null;
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 2;</code>
      */
     protected $symbol = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * The amount of token to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      */
     protected $amount = 0;
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 4;</code>
      */
     protected $memo = '';
     /**
+     * The destination chain id.
+     *
      * Generated from protobuf field <code>int32 to_chain_id = 5;</code>
      */
     protected $to_chain_id = 0;
     /**
+     * The chain id of the token.
+     *
      * Generated from protobuf field <code>int32 issue_chain_id = 6;</code>
      */
     protected $issue_chain_id = 0;
@@ -45,11 +57,17 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Address $to
+     *           The receiver of transfer.
      *     @type string $symbol
+     *           The symbol of token.
      *     @type int|string $amount
+     *           The amount of token to transfer.
      *     @type string $memo
+     *           The memo.
      *     @type int $to_chain_id
+     *           The destination chain id.
      *     @type int $issue_chain_id
+     *           The chain id of the token.
      * }
      */
     public function __construct($data = NULL) {
@@ -58,6 +76,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The receiver of transfer.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 1;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -67,6 +87,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The receiver of transfer.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 1;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -80,6 +102,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 2;</code>
      * @return string
      */
@@ -89,6 +113,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The symbol of token.
+     *
      * Generated from protobuf field <code>string symbol = 2;</code>
      * @param string $var
      * @return $this
@@ -102,7 +128,9 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * The amount of token to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      * @return int|string
      */
     public function getAmount()
@@ -111,7 +139,9 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * The amount of token to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      * @param int|string $var
      * @return $this
      */
@@ -124,6 +154,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 4;</code>
      * @return string
      */
@@ -133,6 +165,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 4;</code>
      * @param string $var
      * @return $this
@@ -146,6 +180,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The destination chain id.
+     *
      * Generated from protobuf field <code>int32 to_chain_id = 5;</code>
      * @return int
      */
@@ -155,6 +191,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The destination chain id.
+     *
      * Generated from protobuf field <code>int32 to_chain_id = 5;</code>
      * @param int $var
      * @return $this
@@ -168,6 +206,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The chain id of the token.
+     *
      * Generated from protobuf field <code>int32 issue_chain_id = 6;</code>
      * @return int
      */
@@ -177,6 +217,8 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The chain id of the token.
+     *
      * Generated from protobuf field <code>int32 issue_chain_id = 6;</code>
      * @param int $var
      * @return $this

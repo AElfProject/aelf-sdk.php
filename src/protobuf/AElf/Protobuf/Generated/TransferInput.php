@@ -14,18 +14,26 @@ use Google\Protobuf\Internal\GPBUtil;
 class TransferInput extends \Google\Protobuf\Internal\Message
 {
     /**
+     * The receiver of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 1;</code>
      */
     protected $to = null;
     /**
+     * The token symbol to transfer.
+     *
      * Generated from protobuf field <code>string symbol = 2;</code>
      */
     protected $symbol = '';
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * The amount to to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      */
     protected $amount = 0;
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 4;</code>
      */
     protected $memo = '';
@@ -37,9 +45,13 @@ class TransferInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Address $to
+     *           The receiver of the token.
      *     @type string $symbol
+     *           The token symbol to transfer.
      *     @type int|string $amount
+     *           The amount to to transfer.
      *     @type string $memo
+     *           The memo.
      * }
      */
     public function __construct($data = NULL) {
@@ -48,6 +60,8 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The receiver of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 1;</code>
      * @return \AElf\Protobuf\Generated\Address
      */
@@ -57,6 +71,8 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The receiver of the token.
+     *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 1;</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
@@ -70,6 +86,8 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The token symbol to transfer.
+     *
      * Generated from protobuf field <code>string symbol = 2;</code>
      * @return string
      */
@@ -79,6 +97,8 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The token symbol to transfer.
+     *
      * Generated from protobuf field <code>string symbol = 2;</code>
      * @param string $var
      * @return $this
@@ -92,7 +112,9 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * The amount to to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      * @return int|string
      */
     public function getAmount()
@@ -101,7 +123,9 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>sint64 amount = 3;</code>
+     * The amount to to transfer.
+     *
+     * Generated from protobuf field <code>int64 amount = 3;</code>
      * @param int|string $var
      * @return $this
      */
@@ -114,6 +138,8 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 4;</code>
      * @return string
      */
@@ -123,6 +149,8 @@ class TransferInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * The memo.
+     *
      * Generated from protobuf field <code>string memo = 4;</code>
      * @param string $var
      * @return $this
