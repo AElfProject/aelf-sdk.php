@@ -56,7 +56,7 @@ jobs:
 # All tasks on macOS
   displayName: Build all tasks (macos)
   pool:
-    vmImage: macos-latest
+    vmImage: macOS-10.14
   variables:
     phpVersion: 7.2
   steps:
@@ -78,7 +78,7 @@ jobs:
       php composer-setup.php
       sudo mv composer.phar /usr/local/bin/composer
       composer config -g repo.packagist composer https://packagist.phpcomposer.com
-      composer install --no-interaction --prefer-dist --ignore-platform-reqs
+      composer install --no-interaction --prefer-dist 
   - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php
     displayName: 'test'
 
