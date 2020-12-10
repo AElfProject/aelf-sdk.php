@@ -78,7 +78,7 @@ jobs:
       php composer-setup.php
       sudo mv composer.phar /usr/local/bin/composer
       composer config -g repo.packagist composer https://packagist.phpcomposer.com
-      composer install --no-interaction --prefer-dist
+      composer install --no-interaction --prefer-dist --ignore-platform-reqs
   - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php
     displayName: 'test'
 
