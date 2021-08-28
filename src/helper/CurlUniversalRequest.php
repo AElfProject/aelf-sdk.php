@@ -8,7 +8,7 @@
 *@param Int $type requests data type 0-array 1- Jason
 * @ return string | bool
  */
-function send_request($url, $method = "POST", $data = array(), $header = array(), $type = '0') {
+function send_request($url, $username, $password,$method = "POST",$data = array(), $header = array(), $type = '0') {
    // check if the address is empty
     if (empty($url)) {
         return false;
@@ -42,6 +42,8 @@ function send_request($url, $method = "POST", $data = array(), $header = array()
             break;
         default:
     }
+    $request_headers[] = "Authorization: Basic ".base64_encode("{$username}:{$password}");
+
     //Send an HTTP request
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);

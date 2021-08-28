@@ -9,6 +9,8 @@ Class NetSdk
     private $curl;
     private $version;
     private $aelfClientUrl;
+    private $username;
+    private $password;
     private static $WA_ADDPEER = "/api/net/peer";
     private static $WA_REMOVEPEER = "/api/net/peer";
     private static $WA_GETPEERS = "/api/net/peers";
@@ -17,11 +19,13 @@ Class NetSdk
     /**
      * Object construction through the url path.
      */
-    public function __construct($url, $version = '')
+    public function __construct($url, $version = '',$username,$password)
     {
         $this->aelfClientUrl = $url;
         $this->version = $version;
         $this->curl = new Curl();
+        $this->username = $username;
+        $this->password = $password;
         $this->postRequestHeader = ['Content-Type' => 'application/json;charset=UTF-8' . $version];
         $this->getRequestHeader = ['Accept' => 'application/json;charset=UTF-8' . $version];
     }
@@ -33,6 +37,9 @@ Class NetSdk
     {
         $url = $this->aelfClientUrl . self::$WA_ADDPEER;
         $this->curl->makePost($url, json_encode(['address' => $input]), array('Content-type: application/json;charset=UTF-8'));
+        $headers = array();
+        $headers[] = "Authorization: Basic ".base64_encode("{$this->username}:{$this->password}");
+        curl_setopt($this->curl,CURLOPT_HTTPHEADER,$headers);
         $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
@@ -49,7 +56,7 @@ Class NetSdk
     public function removePeer($address)
     {
         $url = $this->aelfClientUrl . self::$WA_REMOVEPEER;
-        $response = send_request($url . '?address=' . $address, 'DELETE');
+        $response = send_request($url . '?address=' . $address,$this->username,$this->password ,'DELETE');
         if ($response['httpCode'] == 200) {
             //Fail
             return $response['data'];
