@@ -8,7 +8,7 @@ Class NetSdk
 {
     private $curl;
     private $version;
-    private $username;
+    private $userName;
     private $password;
     private $aelfClientUrl;
     private static $WA_ADDPEER = "/api/net/peer";
@@ -19,11 +19,11 @@ Class NetSdk
     /**
      * Object construction through the url path.
      */
-    public function __construct($url, $version = '', $username = '',$password = '')
+    public function __construct($url, $version = '', $userName = '',$password = '')
     {
         $this->aelfClientUrl = $url;
         $this->version = $version;
-        $this->username = $username;
+        $this->userName = $userName;
         $this->password = $password;
         $this->curl = new Curl();
         $this->postRequestHeader = ['Content-Type' => 'application/json;charset=UTF-8' . $version];
@@ -37,8 +37,8 @@ Class NetSdk
     {
         $url = $this->aelfClientUrl . self::$WA_ADDPEER;
         $header = array('Content-type: application/json;charset=UTF-8');
-        if($this->username != null && $this->password != null){
-            $auth ="Authorization: Basic ".base64_encode("{$this->username}:{$this->password}");
+        if($this->userName != null && $this->password != null){
+            $auth ="Authorization: Basic ".base64_encode("{$this->userName}:{$this->password}");
             array_push($header,$auth);
         }
         $this->curl->makePost($url, json_encode(['address' => $input]), $header);
@@ -59,8 +59,8 @@ Class NetSdk
     {
         $url = $this->aelfClientUrl . self::$WA_REMOVEPEER;
         $header = array();
-        if($this->username != null && $this->password != null){
-            $auth ="Authorization: Basic ".base64_encode("{$this->username}:{$this->password}");
+        if($this->userName != null && $this->password != null){
+            $auth ="Authorization: Basic ".base64_encode("{$this->userName}:{$this->password}");
             array_push($header,$auth);
         }
         $response = send_request($url . '?address=' . $address,'DELETE',array(),$header);
