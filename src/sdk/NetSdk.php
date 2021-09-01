@@ -8,6 +8,8 @@ Class NetSdk
 {
     private $curl;
     private $version;
+    private $userName;
+    private $password;
     private $aelfClientUrl;
     private static $WA_ADDPEER = "/api/net/peer";
     private static $WA_REMOVEPEER = "/api/net/peer";
@@ -17,10 +19,12 @@ Class NetSdk
     /**
      * Object construction through the url path.
      */
-    public function __construct($url, $version = '')
+    public function __construct($url, $version = '', $userName = '',$password = '')
     {
         $this->aelfClientUrl = $url;
         $this->version = $version;
+        $this->userName = $userName;
+        $this->password = $password;
         $this->curl = new Curl();
         $this->postRequestHeader = ['Content-Type' => 'application/json;charset=UTF-8' . $version];
         $this->getRequestHeader = ['Accept' => 'application/json;charset=UTF-8' . $version];
@@ -32,7 +36,12 @@ Class NetSdk
     public function addPeer($input)
     {
         $url = $this->aelfClientUrl . self::$WA_ADDPEER;
-        $this->curl->makePost($url, json_encode(['address' => $input]), array('Content-type: application/json;charset=UTF-8'));
+        $header = array('Content-type: application/json;charset=UTF-8');
+        if($this->userName != null && $this->password != null){
+            $auth ="Authorization: Basic ".base64_encode("{$this->userName}:{$this->password}");
+            array_push($header,$auth);
+        }
+        $this->curl->makePost($url, json_encode(['address' => $input]), $header);
         $response = $this->curl->exec();
         if ($response->hasError()) {
             //Fail
@@ -49,7 +58,12 @@ Class NetSdk
     public function removePeer($address)
     {
         $url = $this->aelfClientUrl . self::$WA_REMOVEPEER;
-        $response = send_request($url . '?address=' . $address, 'DELETE');
+        $header = array();
+        if($this->userName != null && $this->password != null){
+            $auth ="Authorization: Basic ".base64_encode("{$this->userName}:{$this->password}");
+            array_push($header,$auth);
+        }
+        $response = send_request($url . '?address=' . $address,'DELETE',array(),$header);
         if ($response['httpCode'] == 200) {
             //Fail
             return $response['data'];

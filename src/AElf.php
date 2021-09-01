@@ -27,6 +27,8 @@ class AElf
     public $url;
     public $base58;
     public $version;
+    public $userName;
+    public $password;
     public $netSdk;
     public $blockChainSdk;
     public $getRequestHeader;
@@ -39,11 +41,17 @@ class AElf
      * @param url Http Request Url exp:(http://xxxx)
      * @param version application/json;v={version}
      */
-    public function __construct($url, $version = null)
+    public function __construct($url, $version = null,$userName = null,$password = null)
     {
         $this->url = $url;
         if ($version != null) {
             $this->$version = $version;
+        }
+        if ($userName != null) {
+            $this->userName = $userName;
+        }
+        if ($password != null) {
+            $this->password = $password;
         }
         $this->getBlockChainSdkObj();
         $this->getNetSdkObj();
@@ -62,7 +70,7 @@ class AElf
     public function getNetSdkObj()
     {
         if ($this->netSdk == NULL) {
-            $this->netSdk = new NetSdk($this->url, $this->version);
+            $this->netSdk = new NetSdk($this->url, $this->version,$this->userName,$this->password);
         } else {
             return $this->netSdk;
         }
