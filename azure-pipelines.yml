@@ -4,7 +4,7 @@ jobs:
   pool:
     vmImage: 'windows-2019'
   variables:
-    phpVersion: 7.2
+    phpVersion: 7.4
   steps:  
   - script: |
       cp scripts/aelf-node/php.ini /c/tools/php/php.ini
@@ -28,7 +28,7 @@ jobs:
   pool:
     vmImage: ubuntu-latest
   variables:
-    phpVersion: 7.2
+    phpVersion: 7.4
   steps:
   - task: DotNetCoreInstaller@0
     inputs:
@@ -58,7 +58,7 @@ jobs:
   pool:
     vmImage: macOS-10.14
   variables:
-    phpVersion: 7.2
+    phpVersion: 7.4
   steps:
   - task: DotNetCoreInstaller@0
     inputs:
