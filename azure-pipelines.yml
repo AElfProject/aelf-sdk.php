@@ -56,7 +56,7 @@ jobs:
 # All tasks on macOS
   displayName: Build all tasks (macos)
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-latest
   variables:
     phpVersion: 7.2
   steps:
