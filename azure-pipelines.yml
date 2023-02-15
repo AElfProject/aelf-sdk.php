@@ -13,7 +13,7 @@ jobs:
       php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
       php composer-setup.php
       php composer.phar config -g repo.packagist composer https://packagist.phpcomposer.com
-      php composer.phar install --no-interaction --prefer-dist --ignore-platform-req=ext-filter
+      php composer.phar install --no-interaction --prefer-dist --ignore-platform-reqs
     displayName: 'composer install'
   - powershell: ./scripts/aelf-node/start-window.ps1
     displayName: 'deploy and test'
