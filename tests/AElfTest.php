@@ -24,7 +24,7 @@ class AElfTest extends TestCase
         $this->aelf = new AElf($url);
         $this->opreationAddress = '127.0.0.1:6800';
         $aelfEcdsa = new BitcoinECDSA();
-        $this->privateKey = 'cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458';
+        $this->privateKey = 'e3ca0260c3e50526fda2dd3ea8f42476d28d63dfced53e25954d04c2f0c88f17';
         $aelfEcdsa->setPrivateKey($this->privateKey);
         $this->publicKey = $aelfEcdsa->getUncompressedPubKey();
         $address = $aelfEcdsa->hash256(hex2bin($this->publicKey));
@@ -236,6 +236,29 @@ class AElfTest extends TestCase
         $addressVal = $this->aelf->getFormattedAddress($this->privateKey, $this->address);
         $nowAddress = "ELF_" . $this->address . "_AELF";
         $this->assertEquals($nowAddress, $addressVal);
+    }
+
+    public function testCalculateTransactionFee(){
+        $status = $this->aelf->getChainStatus();
+        $params = base64_encode(hex2bin(hash('sha256', 'AElf.ContractNames.Consensus')));
+        $param = array('value' => $params);
+        $transaction = [
+            "from" => $this->aelf->getAddressFromPrivateKey($this->privateKey),
+            "to" => $this->aelf->getGenesisContractAddress(),
+            "refBlockNumber" => $status['BestChainHeight'],
+            "refBlockHash" => $status['BestChainHash'],
+            "methodName" => "GetContractAddressByName",
+            "params" => json_encode($param)
+        ];
+        $rawTransaction = $this->aelf->createRawTransaction($transaction);
+        print_r($rawTransaction);
+        $rawTransactionInput = $rawTransaction['RawTransaction'];
+        $rawTransactionInputParam = [
+            "rawTransaction" => $rawTransactionInput,
+        ];
+        $result = $this->aelf->calculateTransactionFeeResult($rawTransactionInputParam);
+        print_r($result);
+        $this->assertTrue($result['Success']);
     }
 
     private function buildTransaction($toaddress, $methodName, $params)
