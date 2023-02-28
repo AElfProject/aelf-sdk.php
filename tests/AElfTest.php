@@ -18,13 +18,13 @@ class AElfTest extends TestCase
     public $address;
     public $opreationAddress;
 
-    public function setUp()
+    public function setUp() :void
     {
-        $url = 'http://127.0.0.1:8001';
+        $url = 'http://127.0.0.1:8000';
         $this->aelf = new AElf($url);
         $this->opreationAddress = '127.0.0.1:6800';
         $aelfEcdsa = new BitcoinECDSA();
-        $this->privateKey = 'e3ca0260c3e50526fda2dd3ea8f42476d28d63dfced53e25954d04c2f0c88f17';
+        $this->privateKey = 'cd86ab6347d8e52bbbe8532141fc59ce596268143a308d1d40fedf385528b458';
         $aelfEcdsa->setPrivateKey($this->privateKey);
         $this->publicKey = $aelfEcdsa->getUncompressedPubKey();
         $address = $aelfEcdsa->hash256(hex2bin($this->publicKey));
