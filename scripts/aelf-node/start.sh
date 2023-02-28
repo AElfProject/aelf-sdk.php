@@ -6,8 +6,8 @@ cd ../../
 wget https://github.com/AElfProject/AElf/releases/download/v1.2.3/aelf.zip
 sudo unzip aelf.zip
 sed -i "s/127.0.0.1/$ip/g" scripts/aelf-node/appsettings.json
-sudo mkdir -p aelf/aelf/keys
-sudo cp scripts/aelf-node/keys/*.json aelf/aelf/keys/
+sudo mkdir -p /root/.local/share/aelf/keys/
+sudo cp scripts/aelf-node/keys/*.json /root/.local/share/aelf/keys/
 sudo cp scripts/aelf-node/app* aelf/
 echo "start node"
 cd aelf && sudo dotnet AElf.Launcher.dll >/dev/null 2>&1 &
