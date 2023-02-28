@@ -4,8 +4,11 @@ jobs:
   pool:
     vmImage: 'windows-2019'
   variables:
-    phpVersion: 8.2
-  steps:  
+    phpVersion: 7.2
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      version: '6.0.x'
   - script: |
       cp scripts/aelf-node/php.ini /c/tools/php/php.ini
       php -c /c/tools/php/php.ini
@@ -28,11 +31,11 @@ jobs:
   pool:
     vmImage: ubuntu-latest
   variables:
-    phpVersion: 8.1
+    phpVersion: 7.2
   steps:
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     inputs:
-      version: '3.1.101'
+      version: '6.0.x'
   - script: cd scripts/aelf-node && bash start.sh
     displayName: 'Deploy a full node'
   - script: |
@@ -58,11 +61,11 @@ jobs:
   pool:
     vmImage: macOS-latest
   variables:
-    phpVersion: 8.2
+    phpVersion: 7.2
   steps:
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     inputs:
-      version: '3.1.101'
+      version: '6.0.x'
   - script: cd scripts/aelf-node && bash start-mac.sh
     displayName: 'Deploy a full node'
   - script: |
