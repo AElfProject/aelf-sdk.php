@@ -347,7 +347,7 @@ Class BlockChainSdk
 
 
     /**
-     * CalculateTransactionFee  wa:/api/blockChain/calculateTransactionFeeResult.
+     * CalculateTransactionFee  wa:/api/blockChain/calculateTransactionFee.
      */
     public function calculateTransactionFee($input)
     {
