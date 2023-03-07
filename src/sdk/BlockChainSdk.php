@@ -28,7 +28,7 @@ Class BlockChainSdk
     private static $WA_GETTRANSACTIONRESULTS = "/api/blockChain/transactionResults";
     private static $WA_SENDTRANSACTIONS = "/api/blockChain/sendTransactions";
     private static $WA_GETMBYTRANSACTIONID = "/api/blockChain/merklePathByTransactionId";
-    private static $WA_CALCULATETRANSACTIONFEERESULT = "/api/blockChain/calculateTransactionFee";
+    private static $WA_CALCULATETRANSACTIONFEE = "/api/blockChain/calculateTransactionFee";
     private static $WA_GET;
 
     /**
@@ -351,7 +351,7 @@ Class BlockChainSdk
      */
     public function calculateTransactionFee($input)
     {
-        $url = $this->aelfClientUrl . self::$WA_CALCULATETRANSACTIONFEERESULT;
+        $url = $this->aelfClientUrl . self::$WA_CALCULATETRANSACTIONFEE;
         $this->curl->makePost($url, json_encode($input), array('Content-type: application/json;charset=UTF-8'));
         $response = $this->curl->exec();
         if ($response->hasError()) {
