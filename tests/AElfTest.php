@@ -194,6 +194,8 @@ class AElfTest extends TestCase
     {
         print('getNetworkInfo');
         echo "<br>";
+        $networkInfo = $this->aelf->getNetworkInfo();
+        $this->assertEquals("1.2.3.0", $networkInfo['Version']);
         print_r($this->aelf->getNetworkInfo());
         echo "<br>";
         print('remove_peer');
@@ -256,9 +258,12 @@ class AElfTest extends TestCase
         $rawTransactionInputParam = [
             "rawTransaction" => $rawTransactionInput,
         ];
-        $result = $this->aelf->calculateTransactionFeeResult($rawTransactionInputParam);
+        $result = $this->aelf->calculateTransactionFee($rawTransactionInputParam);
         print_r($result);
         $this->assertTrue($result['Success']);
+        $this->assertGreaterThan(17000000,$result['TransactionFee']['ELF']);
+        $this->assertLessThan(19000000,$result['TransactionFee']['ELF']);
+
     }
 
     private function buildTransaction($toaddress, $methodName, $params)

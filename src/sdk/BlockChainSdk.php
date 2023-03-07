@@ -349,7 +349,7 @@ Class BlockChainSdk
     /**
      * CalculateTransactionFee  wa:/api/blockChain/calculateTransactionFeeResult.
      */
-    public function calculateTransactionFeeResult($input)
+    public function calculateTransactionFee($input)
     {
         $url = $this->aelfClientUrl . self::$WA_CALCULATETRANSACTIONFEERESULT;
         $this->curl->makePost($url, json_encode($input), array('Content-type: application/json;charset=UTF-8'));

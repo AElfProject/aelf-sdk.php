@@ -459,8 +459,8 @@ class AElf
      * @param $input
      * @return TransactionFeeResultOutput
      */
-    public function calculateTransactionFeeResult($input)
+    public function calculateTransactionFee($input)
     {
-        return $this->getBlockChainSdkObj()->calculateTransactionFeeResult($input);
+        return $this->getBlockChainSdkObj()->calculateTransactionFee($input);
     }
 }
