@@ -255,10 +255,10 @@ class AElfTest extends TestCase
         $rawTransaction = $this->aelf->createRawTransaction($transaction);
         print_r($rawTransaction);
         $rawTransactionInput = $rawTransaction['RawTransaction'];
-        $rawTransactionInputParam = [
+        $calculateTransactionFeeInputParam = [
             "rawTransaction" => $rawTransactionInput,
         ];
-        $result = $this->aelf->calculateTransactionFee($rawTransactionInputParam);
+        $result = $this->aelf->calculateTransactionFee($calculateTransactionFeeInputParam);
         print_r($result);
         $this->assertTrue($result['Success']);
         $this->assertGreaterThan(17000000,$result['TransactionFee']['ELF']);
