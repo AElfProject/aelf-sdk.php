@@ -41,7 +41,7 @@ class AElf
      * @param url Http Request Url exp:(http://xxxx)
      * @param version application/json;v={version}
      */
-    public function __construct($url, $version = null,$userName = null,$password = null)
+    public function __construct($url, $version = null, $userName = null, $password = null)
     {
         $this->url = $url;
         if ($version != null) {
@@ -70,7 +70,7 @@ class AElf
     public function getNetSdkObj()
     {
         if ($this->netSdk == NULL) {
-            $this->netSdk = new NetSdk($this->url, $this->version,$this->userName,$this->password);
+            $this->netSdk = new NetSdk($this->url, $this->version, $this->userName, $this->password);
         } else {
             return $this->netSdk;
         }
@@ -453,5 +453,14 @@ class AElf
         }
         return $transactionFees;
 
+    }
+
+    /**
+     * @param $input
+     * @return TransactionFeeResultOutput
+     */
+    public function calculateTransactionFee($input)
+    {
+        return $this->getBlockChainSdkObj()->calculateTransactionFee($input);
     }
 }

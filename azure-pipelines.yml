@@ -4,8 +4,11 @@ jobs:
   pool:
     vmImage: 'windows-2019'
   variables:
-    phpVersion: 7.2
-  steps:  
+    phpVersion: 8.2
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      version: '6.0.x'
   - script: |
       cp scripts/aelf-node/php.ini /c/tools/php/php.ini
       php -c /c/tools/php/php.ini
@@ -13,7 +16,7 @@ jobs:
       php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
       php composer-setup.php
       php composer.phar config -g repo.packagist composer https://packagist.phpcomposer.com
-      php composer.phar install --no-interaction --prefer-dist
+      php composer.phar install --no-interaction --prefer-dist --ignore-platform-reqs
     displayName: 'composer install'
   - powershell: ./scripts/aelf-node/start-window.ps1
     displayName: 'deploy and test'
@@ -28,11 +31,11 @@ jobs:
   pool:
     vmImage: ubuntu-latest
   variables:
-    phpVersion: 7.2
+    phpVersion: 8.2
   steps:
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     inputs:
-      version: '3.1.101'
+      version: '6.0.x'
   - script: cd scripts/aelf-node && bash start.sh
     displayName: 'Deploy a full node'
   - script: |
@@ -48,7 +51,7 @@ jobs:
       php composer-setup.php
       sudo mv composer.phar /usr/local/bin/composer
       composer config -g repo.packagist composer https://packagist.phpcomposer.com
-      composer install --no-interaction --prefer-dist
+      composer install --no-interaction --prefer-dist --ignore-platform-reqs
     displayName: 'composer install'
   - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php 
     displayName: 'test'
@@ -56,13 +59,13 @@ jobs:
 # All tasks on macOS
   displayName: Build all tasks (macos)
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-latest
   variables:
-    phpVersion: 7.2
+    phpVersion: 8.2
   steps:
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     inputs:
-      version: '3.1.101'
+      version: '6.0.x'
   - script: cd scripts/aelf-node && bash start-mac.sh
     displayName: 'Deploy a full node'
   - script: |
@@ -78,7 +81,7 @@ jobs:
       php composer-setup.php
       sudo mv composer.phar /usr/local/bin/composer
       composer config -g repo.packagist composer https://packagist.phpcomposer.com
-      composer install --no-interaction --prefer-dist 
+      composer install --no-interaction --prefer-dist --ignore-platform-reqs
   - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php
     displayName: 'test'
 

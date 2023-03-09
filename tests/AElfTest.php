@@ -18,7 +18,7 @@ class AElfTest extends TestCase
     public $address;
     public $opreationAddress;
 
-    public function setUp()
+    public function setUp() :void
     {
         $url = 'http://127.0.0.1:8001';
         $this->aelf = new AElf($url);
@@ -194,6 +194,8 @@ class AElfTest extends TestCase
     {
         print('getNetworkInfo');
         echo "<br>";
+        $networkInfo = $this->aelf->getNetworkInfo();
+        $this->assertEquals("1.2.3.0", $networkInfo['Version']);
         print_r($this->aelf->getNetworkInfo());
         echo "<br>";
         print('remove_peer');
@@ -236,6 +238,32 @@ class AElfTest extends TestCase
         $addressVal = $this->aelf->getFormattedAddress($this->privateKey, $this->address);
         $nowAddress = "ELF_" . $this->address . "_AELF";
         $this->assertEquals($nowAddress, $addressVal);
+    }
+
+    public function testCalculateTransactionFee(){
+        $status = $this->aelf->getChainStatus();
+        $params = base64_encode(hex2bin(hash('sha256', 'AElf.ContractNames.Consensus')));
+        $param = array('value' => $params);
+        $transaction = [
+            "from" => $this->aelf->getAddressFromPrivateKey($this->privateKey),
+            "to" => $this->aelf->getGenesisContractAddress(),
+            "refBlockNumber" => $status['BestChainHeight'],
+            "refBlockHash" => $status['BestChainHash'],
+            "methodName" => "GetContractAddressByName",
+            "params" => json_encode($param)
+        ];
+        $rawTransaction = $this->aelf->createRawTransaction($transaction);
+        print_r($rawTransaction);
+        $rawTransactionInput = $rawTransaction['RawTransaction'];
+        $calculateTransactionFeeInputParam = [
+            "rawTransaction" => $rawTransactionInput,
+        ];
+        $result = $this->aelf->calculateTransactionFee($calculateTransactionFeeInputParam);
+        print_r($result);
+        $this->assertTrue($result['Success']);
+        $this->assertGreaterThan(17000000,$result['TransactionFee']['ELF']);
+        $this->assertLessThan(19000000,$result['TransactionFee']['ELF']);
+
     }
 
     private function buildTransaction($toaddress, $methodName, $params)
