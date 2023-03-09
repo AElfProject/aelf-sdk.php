@@ -1,0 +1,87 @@
+jobs:
+# All tasks on window
+- job: build_all_window
+  pool:
+    vmImage: 'windows-2019'
+  variables:
+    phpVersion: 8.2
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      version: '6.0.x'
+  - script: |
+      cp scripts/aelf-node/php.ini /c/tools/php/php.ini
+      php -c /c/tools/php/php.ini
+  - script: |
+      php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
+      php composer-setup.php
+      php composer.phar config -g repo.packagist composer https://packagist.phpcomposer.com
+      php composer.phar install --no-interaction --prefer-dist --ignore-platform-reqs
+    displayName: 'composer install'
+  - powershell: ./scripts/aelf-node/start-window.ps1
+    displayName: 'deploy and test'
+# All tasks on Linux
+- job: build_all_linux
+  displayName: Build all tasks (Linux)
+  services:
+    redis:
+      image: redis
+      ports:
+      - 6379:6379
+  pool:
+    vmImage: ubuntu-latest
+  variables:
+    phpVersion: 8.2
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      version: '6.0.x'
+  - script: cd scripts/aelf-node && bash start.sh
+    displayName: 'Deploy a full node'
+  - script: |
+      sudo update-alternatives --set php /usr/bin/php$(phpVersion)
+      sudo update-alternatives --set phar /usr/bin/phar$(phpVersion)
+      sudo update-alternatives --set phpdbg /usr/bin/phpdbg$(phpVersion)
+      sudo update-alternatives --set php-cgi /usr/bin/php-cgi$(phpVersion)
+      sudo update-alternatives --set phar.phar /usr/bin/phar.phar$(phpVersion)
+      php -version
+    displayName: 'Use PHP version $(phpVersion)'
+  - script: |
+      php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
+      php composer-setup.php
+      sudo mv composer.phar /usr/local/bin/composer
+      composer config -g repo.packagist composer https://packagist.phpcomposer.com
+      composer install --no-interaction --prefer-dist --ignore-platform-reqs
+    displayName: 'composer install'
+  - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php 
+    displayName: 'test'
+- job: build_all_macos
+# All tasks on macOS
+  displayName: Build all tasks (macos)
+  pool:
+    vmImage: macOS-latest
+  variables:
+    phpVersion: 8.2
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      version: '6.0.x'
+  - script: cd scripts/aelf-node && bash start-mac.sh
+    displayName: 'Deploy a full node'
+  - script: |
+      sudo update-alternatives --set php /usr/bin/php$(phpVersion)
+      sudo update-alternatives --set phar /usr/bin/phar$(phpVersion)
+      sudo update-alternatives --set phpdbg /usr/bin/phpdbg$(phpVersion)
+      sudo update-alternatives --set php-cgi /usr/bin/php-cgi$(phpVersion)
+      sudo update-alternatives --set phar.phar /usr/bin/phar.phar$(phpVersion)
+      php -version
+    displayName: 'Use PHP version $(phpVersion)'
+  - script: |
+      php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
+      php composer-setup.php
+      sudo mv composer.phar /usr/local/bin/composer
+      composer config -g repo.packagist composer https://packagist.phpcomposer.com
+      composer install --no-interaction --prefer-dist --ignore-platform-reqs
+  - script: php phpunit.phar --bootstrap bootstrap.php tests/AElfTest.php
+    displayName: 'test'
+

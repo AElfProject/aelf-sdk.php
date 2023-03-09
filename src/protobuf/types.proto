@@ -1,0 +1,228 @@
+syntax = "proto3";
+package AElf.protobuf.generated;
+import "timestamp.proto";
+
+message StringInput {
+    string string_value = 1;
+}
+
+message MinerList {
+    // The miners public key list.
+    repeated bytes pubkeys = 1;
+}
+
+message Hash {
+    bytes value = 1;
+}
+
+message Address {
+    bytes value = 1;
+}
+
+message Transaction {
+    Address from_address = 1;
+    Address to_address = 2;
+    int64 ref_block_number = 3;
+    bytes ref_block_prefix = 4;
+    string method_name = 5;
+    bytes params = 6;
+    bytes signature = 10000;
+}
+
+message ElectionVotingRecord {
+    // The address of voter.
+    Address voter = 1;
+    // The public key of candidate.
+    string candidate = 2;
+    // Amount of voting.
+    int64 amount = 3;
+    // The term number of voting.
+    int64 term_number = 4;
+    // The vote id.
+    Hash vote_id = 5;
+    // Vote lock time.
+    int64 lock_time = 6;
+    // The unlock timestamp.
+    google.protobuf.Timestamp unlock_timestamp = 7;
+    // The withdraw timestamp.
+    google.protobuf.Timestamp withdraw_timestamp = 8;
+    // The vote timestamp.
+    google.protobuf.Timestamp vote_timestamp = 9;
+    // Indicates if the vote has been withdrawn.
+    bool is_withdrawn = 10;
+    // Vote weight for sharing bonus.
+    int64 weight = 11;
+    // Whether vote others.
+    bool is_change_target = 12;
+}
+
+message ElectorVote {
+    // The active voting record ids.
+    repeated Hash active_voting_record_ids = 1;
+    // The voting record ids that were withdrawn.
+    repeated Hash withdrawn_voting_record_ids = 2;
+    // The total number of active votes.
+    int64 active_voted_votes_amount = 3;
+    // The total number of votes (including the number of votes withdrawn).
+    int64 all_voted_votes_amount = 4;
+    // The active voting records.
+    repeated ElectionVotingRecord active_voting_records = 5;
+    // The voting records that were withdrawn.
+    repeated ElectionVotingRecord withdrawn_votes_records = 6;
+    // Public key for voter.
+    bytes pubkey = 7;
+}
+
+message CandidateVote {
+    // The active voting record ids obtained.
+    repeated Hash obtained_active_voting_record_ids = 1;
+    // The active voting record ids that were withdrawn.
+    repeated Hash obtained_withdrawn_voting_record_ids = 2;
+    // The total number of active votes obtained.
+    int64 obtained_active_voted_votes_amount = 3;
+    // The total number of votes obtained.
+    int64 all_obtained_voted_votes_amount = 4;
+    // The active voting records.
+    repeated ElectionVotingRecord obtained_active_voting_records = 5;
+    // The voting records that were withdrawn.
+    repeated ElectionVotingRecord obtained_withdrawn_votes_records = 6;
+    // Public key for candidate.
+    bytes pubkey = 7;
+}
+
+message ContractDeploymentInput {
+    // The category of contract code(0: C#).
+    sint32 category = 1;
+    // The byte array of the contract code.
+    bytes code = 2;
+}
+
+message ContractUpdateInput {
+    // The contract address that needs to be updated.
+    Address address = 1;
+    // The byte array of the new contract code.
+    bytes code = 2;
+}
+
+message CrossChainTransferInput {
+    // The receiver of transfer.
+    Address to = 1;
+    // The symbol of token.
+    string symbol = 2;
+    // The amount of token to transfer.
+    int64 amount = 3;
+    // The memo.
+    string memo = 4;
+    // The destination chain id.
+    int32 to_chain_id = 5;
+    // The chain id of the token.
+    int32 issue_chain_id = 6;
+}
+
+message MerklePath {
+    repeated MerklePathNode merkle_path_nodes = 1;
+}
+
+message MerklePathNode{
+    Hash hash = 1;
+    bool is_left_child_node = 2;
+}
+
+message CrossChainReceiveTokenInput {
+    // The source chain id.
+    int32 from_chain_id = 1;
+    // The height of the transfer transaction.
+    int64 parent_chain_height = 2;
+    // The raw bytes of the transfer transaction.
+    bytes transfer_transaction_bytes = 3;
+    // The merkle path created from the transfer transaction.
+    MerklePath merkle_path = 4;
+}
+
+message GetTokenInfoInput {
+    // The symbol of token.
+    string symbol = 1;
+}
+
+message GetBalanceInput {
+    // The symbol of token.
+    string symbol = 1;
+    // The target address of the query.
+    Address owner = 2;
+}
+
+message GetBalanceOutput {
+    // The symbol of token.
+    string symbol = 1;
+    // The target address of the query.
+    Address owner = 2;
+    // The balance of the owner.
+    int64 balance = 3;
+}
+
+message IssueInput {
+    // The token symbol to issue.
+    string symbol = 1;
+    // The token amount to issue.
+    int64 amount = 2;
+    // The memo.
+    string memo = 3;
+    // The target address to issue.
+    Address to = 4;
+}
+
+message TransferInput {
+    // The receiver of the token.
+    Address to = 1;
+    // The token symbol to transfer.
+    string symbol = 2;
+    // The amount to to transfer.
+    int64 amount = 3;
+    // The memo.
+    string memo = 4;
+}
+
+message TransferFromInput {
+    // The source address of the token.
+    Address from = 1;
+    // The destination address of the token.
+    Address to = 2;
+    // The symbol of the token to transfer.
+    string symbol = 3;
+    // The amount to transfer.
+    int64 amount = 4;
+    // The memo.
+    string memo = 5;
+}
+
+message TransactionFeeCharged {
+    string symbol = 1;
+    int64 amount = 2;
+}
+
+message ResourceTokenCharged {
+    string symbol = 1;
+    int64 amount = 2;
+    Address contract_address = 3;
+}
+
+message TokenInfo {
+    // The symbol of the token.f
+    string symbol = 1;
+    // The full name of the token.
+    string token_name = 2;
+    // The current supply of the token.
+    int64 supply = 3;
+    // The total supply of the token.
+    int64 total_supply = 4;
+    // The precision of the token.
+    int32 decimals = 5;
+    // The address that created the token.
+    Address issuer = 6;
+    // A flag indicating if this token is burnable.
+    bool is_burnable = 7;
+    // The chain id of the token.
+    int32 issue_chain_id = 8;
+    // The amount of issued tokens.
+    int64 issued = 9;
+}
