@@ -9,30 +9,30 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>AElf.protobuf.generated.TransferFromInput</code>
+ * Generated from protobuf message <code>AElf.protobuf.generated.Transferred</code>
  */
-class TransferFromInput extends \Google\Protobuf\Internal\Message
+class Transferred extends \Google\Protobuf\Internal\Message
 {
     /**
-     * The source address of the token.
+     * The source address of the transferred token.
      *
-     * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1 [(.client.is_indexed) = true];</code>
      */
     protected $from = null;
     /**
-     * The destination address of the token.
+     * The destination address of the transferred token.
      *
-     * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2 [(.client.is_indexed) = true];</code>
      */
     protected $to = null;
     /**
-     * The symbol of the token to transfer.
+     * The symbol of the transferred token.
      *
-     * Generated from protobuf field <code>string symbol = 3;</code>
+     * Generated from protobuf field <code>string symbol = 3 [(.client.is_indexed) = true];</code>
      */
     protected $symbol = '';
     /**
-     * The amount to transfer.
+     * The amount of the transferred token.
      *
      * Generated from protobuf field <code>int64 amount = 4;</code>
      */
@@ -51,13 +51,13 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Address $from
-     *           The source address of the token.
+     *           The source address of the transferred token.
      *     @type \AElf\Protobuf\Generated\Address $to
-     *           The destination address of the token.
+     *           The destination address of the transferred token.
      *     @type string $symbol
-     *           The symbol of the token to transfer.
+     *           The symbol of the transferred token.
      *     @type int|string $amount
-     *           The amount to transfer.
+     *           The amount of the transferred token.
      *     @type string $memo
      *           The memo.
      * }
@@ -68,9 +68,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The source address of the token.
+     * The source address of the transferred token.
      *
-     * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1 [(.client.is_indexed) = true];</code>
      * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getFrom()
@@ -89,9 +89,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The source address of the token.
+     * The source address of the transferred token.
      *
-     * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1 [(.client.is_indexed) = true];</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
      */
@@ -104,9 +104,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The destination address of the token.
+     * The destination address of the transferred token.
      *
-     * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2 [(.client.is_indexed) = true];</code>
      * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getTo()
@@ -125,9 +125,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The destination address of the token.
+     * The destination address of the transferred token.
      *
-     * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
+     * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2 [(.client.is_indexed) = true];</code>
      * @param \AElf\Protobuf\Generated\Address $var
      * @return $this
      */
@@ -140,9 +140,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The symbol of the token to transfer.
+     * The symbol of the transferred token.
      *
-     * Generated from protobuf field <code>string symbol = 3;</code>
+     * Generated from protobuf field <code>string symbol = 3 [(.client.is_indexed) = true];</code>
      * @return string
      */
     public function getSymbol()
@@ -151,9 +151,9 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The symbol of the token to transfer.
+     * The symbol of the transferred token.
      *
-     * Generated from protobuf field <code>string symbol = 3;</code>
+     * Generated from protobuf field <code>string symbol = 3 [(.client.is_indexed) = true];</code>
      * @param string $var
      * @return $this
      */
@@ -166,7 +166,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The amount to transfer.
+     * The amount of the transferred token.
      *
      * Generated from protobuf field <code>int64 amount = 4;</code>
      * @return int|string
@@ -177,7 +177,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The amount to transfer.
+     * The amount of the transferred token.
      *
      * Generated from protobuf field <code>int64 amount = 4;</code>
      * @param int|string $var

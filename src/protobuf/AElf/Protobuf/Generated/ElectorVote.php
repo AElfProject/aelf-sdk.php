@@ -62,17 +62,17 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $active_voting_record_ids
+     *     @type array<\AElf\Protobuf\Generated\Hash>|\Google\Protobuf\Internal\RepeatedField $active_voting_record_ids
      *           The active voting record ids.
-     *     @type \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $withdrawn_voting_record_ids
+     *     @type array<\AElf\Protobuf\Generated\Hash>|\Google\Protobuf\Internal\RepeatedField $withdrawn_voting_record_ids
      *           The voting record ids that were withdrawn.
      *     @type int|string $active_voted_votes_amount
      *           The total number of active votes.
      *     @type int|string $all_voted_votes_amount
      *           The total number of votes (including the number of votes withdrawn).
-     *     @type \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $active_voting_records
+     *     @type array<\AElf\Protobuf\Generated\ElectionVotingRecord>|\Google\Protobuf\Internal\RepeatedField $active_voting_records
      *           The active voting records.
-     *     @type \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $withdrawn_votes_records
+     *     @type array<\AElf\Protobuf\Generated\ElectionVotingRecord>|\Google\Protobuf\Internal\RepeatedField $withdrawn_votes_records
      *           The voting records that were withdrawn.
      *     @type string $pubkey
      *           Public key for voter.
@@ -98,7 +98,7 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
      * The active voting record ids.
      *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash active_voting_record_ids = 1;</code>
-     * @param \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<\AElf\Protobuf\Generated\Hash>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setActiveVotingRecordIds($var)
@@ -124,7 +124,7 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
      * The voting record ids that were withdrawn.
      *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.Hash withdrawn_voting_record_ids = 2;</code>
-     * @param \AElf\Protobuf\Generated\Hash[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<\AElf\Protobuf\Generated\Hash>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setWithdrawnVotingRecordIds($var)
@@ -202,7 +202,7 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
      * The active voting records.
      *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord active_voting_records = 5;</code>
-     * @param \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<\AElf\Protobuf\Generated\ElectionVotingRecord>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setActiveVotingRecords($var)
@@ -228,7 +228,7 @@ class ElectorVote extends \Google\Protobuf\Internal\Message
      * The voting records that were withdrawn.
      *
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.ElectionVotingRecord withdrawn_votes_records = 6;</code>
-     * @param \AElf\Protobuf\Generated\ElectionVotingRecord[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<\AElf\Protobuf\Generated\ElectionVotingRecord>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setWithdrawnVotesRecords($var)

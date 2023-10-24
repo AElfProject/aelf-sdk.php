@@ -79,11 +79,21 @@ class CrossChainTransferInput extends \Google\Protobuf\Internal\Message
      * The receiver of transfer.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 1;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getTo()
     {
         return $this->to;
+    }
+
+    public function hasTo()
+    {
+        return isset($this->to);
+    }
+
+    public function clearTo()
+    {
+        unset($this->to);
     }
 
     /**

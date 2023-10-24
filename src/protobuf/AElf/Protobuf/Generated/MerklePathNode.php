@@ -39,11 +39,21 @@ class MerklePathNode extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.AElf.protobuf.generated.Hash hash = 1;</code>
-     * @return \AElf\Protobuf\Generated\Hash
+     * @return \AElf\Protobuf\Generated\Hash|null
      */
     public function getHash()
     {
         return $this->hash;
+    }
+
+    public function hasHash()
+    {
+        return isset($this->hash);
+    }
+
+    public function clearHash()
+    {
+        unset($this->hash);
     }
 
     /**

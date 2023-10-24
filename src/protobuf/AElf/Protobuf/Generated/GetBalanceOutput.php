@@ -81,11 +81,21 @@ class GetBalanceOutput extends \Google\Protobuf\Internal\Message
      * The target address of the query.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address owner = 2;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getOwner()
     {
         return $this->owner;
+    }
+
+    public function hasOwner()
+    {
+        return isset($this->owner);
+    }
+
+    public function clearOwner()
+    {
+        unset($this->owner);
     }
 
     /**

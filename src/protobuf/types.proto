@@ -1,6 +1,7 @@
 syntax = "proto3";
 package AElf.protobuf.generated;
-import "timestamp.proto";
+import "google/protobuf/timestamp.proto";
+import "options.proto";
 
 message StringInput {
     string string_value = 1;
@@ -225,4 +226,60 @@ message TokenInfo {
     int32 issue_chain_id = 8;
     // The amount of issued tokens.
     int64 issued = 9;
+}
+
+message Transferred {
+    option (client.is_event) = true;
+    // The source address of the transferred token.
+    Address from = 1 [(client.is_indexed) = true];
+    // The destination address of the transferred token.
+    Address to = 2 [(client.is_indexed) = true];
+    // The symbol of the transferred token.
+    string symbol = 3 [(client.is_indexed) = true];
+    // The amount of the transferred token.
+    int64 amount = 4;
+    // The memo.
+    string memo = 5;
+}
+
+
+
+message CrossChainTransferred {
+    option (client.is_event) = true;
+    // The source address of the transferred token.
+    Address from = 1;
+    // The destination address of the transferred token.
+    Address to = 2;
+    // The symbol of the transferred token.
+    string symbol = 3;
+    // The amount of the transferred token.
+    int64 amount = 4;
+    // The memo.
+    string memo = 5;
+    // The destination chain id.
+    int32 to_chain_id = 6;
+    // The chain id of the token.
+    int32 issue_chain_id = 7;
+}
+
+message CrossChainReceived {
+    option (client.is_event) = true;
+    // The source address of the transferred token.
+    Address from = 1;
+    // The destination address of the transferred token.
+    Address to = 2;
+    // The symbol of the received token.
+    string symbol = 3;
+    // The amount of the received token.
+    int64 amount = 4;
+    // The memo.
+    string memo = 5;
+    // The destination chain id.
+    int32 from_chain_id = 6;
+    // The chain id of the token.
+    int32 issue_chain_id = 7;
+    // The parent chain height of the transfer transaction.
+    int64 parent_chain_height = 8;
+    // The id of transfer transaction.
+    Hash transfer_transaction_id = 9;
 }

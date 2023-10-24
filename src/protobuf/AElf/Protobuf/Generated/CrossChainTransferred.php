@@ -9,30 +9,30 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>AElf.protobuf.generated.TransferFromInput</code>
+ * Generated from protobuf message <code>AElf.protobuf.generated.CrossChainTransferred</code>
  */
-class TransferFromInput extends \Google\Protobuf\Internal\Message
+class CrossChainTransferred extends \Google\Protobuf\Internal\Message
 {
     /**
-     * The source address of the token.
+     * The source address of the transferred token.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
      */
     protected $from = null;
     /**
-     * The destination address of the token.
+     * The destination address of the transferred token.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
      */
     protected $to = null;
     /**
-     * The symbol of the token to transfer.
+     * The symbol of the transferred token.
      *
      * Generated from protobuf field <code>string symbol = 3;</code>
      */
     protected $symbol = '';
     /**
-     * The amount to transfer.
+     * The amount of the transferred token.
      *
      * Generated from protobuf field <code>int64 amount = 4;</code>
      */
@@ -43,6 +43,18 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>string memo = 5;</code>
      */
     protected $memo = '';
+    /**
+     * The destination chain id.
+     *
+     * Generated from protobuf field <code>int32 to_chain_id = 6;</code>
+     */
+    protected $to_chain_id = 0;
+    /**
+     * The chain id of the token.
+     *
+     * Generated from protobuf field <code>int32 issue_chain_id = 7;</code>
+     */
+    protected $issue_chain_id = 0;
 
     /**
      * Constructor.
@@ -51,15 +63,19 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \AElf\Protobuf\Generated\Address $from
-     *           The source address of the token.
+     *           The source address of the transferred token.
      *     @type \AElf\Protobuf\Generated\Address $to
-     *           The destination address of the token.
+     *           The destination address of the transferred token.
      *     @type string $symbol
-     *           The symbol of the token to transfer.
+     *           The symbol of the transferred token.
      *     @type int|string $amount
-     *           The amount to transfer.
+     *           The amount of the transferred token.
      *     @type string $memo
      *           The memo.
+     *     @type int $to_chain_id
+     *           The destination chain id.
+     *     @type int $issue_chain_id
+     *           The chain id of the token.
      * }
      */
     public function __construct($data = NULL) {
@@ -68,7 +84,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The source address of the token.
+     * The source address of the transferred token.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
      * @return \AElf\Protobuf\Generated\Address|null
@@ -89,7 +105,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The source address of the token.
+     * The source address of the transferred token.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address from = 1;</code>
      * @param \AElf\Protobuf\Generated\Address $var
@@ -104,7 +120,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The destination address of the token.
+     * The destination address of the transferred token.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
      * @return \AElf\Protobuf\Generated\Address|null
@@ -125,7 +141,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The destination address of the token.
+     * The destination address of the transferred token.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 2;</code>
      * @param \AElf\Protobuf\Generated\Address $var
@@ -140,7 +156,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The symbol of the token to transfer.
+     * The symbol of the transferred token.
      *
      * Generated from protobuf field <code>string symbol = 3;</code>
      * @return string
@@ -151,7 +167,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The symbol of the token to transfer.
+     * The symbol of the transferred token.
      *
      * Generated from protobuf field <code>string symbol = 3;</code>
      * @param string $var
@@ -166,7 +182,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The amount to transfer.
+     * The amount of the transferred token.
      *
      * Generated from protobuf field <code>int64 amount = 4;</code>
      * @return int|string
@@ -177,7 +193,7 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * The amount to transfer.
+     * The amount of the transferred token.
      *
      * Generated from protobuf field <code>int64 amount = 4;</code>
      * @param int|string $var
@@ -213,6 +229,58 @@ class TransferFromInput extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkString($var, True);
         $this->memo = $var;
+
+        return $this;
+    }
+
+    /**
+     * The destination chain id.
+     *
+     * Generated from protobuf field <code>int32 to_chain_id = 6;</code>
+     * @return int
+     */
+    public function getToChainId()
+    {
+        return $this->to_chain_id;
+    }
+
+    /**
+     * The destination chain id.
+     *
+     * Generated from protobuf field <code>int32 to_chain_id = 6;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setToChainId($var)
+    {
+        GPBUtil::checkInt32($var);
+        $this->to_chain_id = $var;
+
+        return $this;
+    }
+
+    /**
+     * The chain id of the token.
+     *
+     * Generated from protobuf field <code>int32 issue_chain_id = 7;</code>
+     * @return int
+     */
+    public function getIssueChainId()
+    {
+        return $this->issue_chain_id;
+    }
+
+    /**
+     * The chain id of the token.
+     *
+     * Generated from protobuf field <code>int32 issue_chain_id = 7;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setIssueChainId($var)
+    {
+        GPBUtil::checkInt32($var);
+        $this->issue_chain_id = $var;
 
         return $this;
     }

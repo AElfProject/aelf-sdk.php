@@ -141,11 +141,21 @@ class IssueInput extends \Google\Protobuf\Internal\Message
      * The target address to issue.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to = 4;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getTo()
     {
         return $this->to;
+    }
+
+    public function hasTo()
+    {
+        return isset($this->to);
+    }
+
+    public function clearTo()
+    {
+        unset($this->to);
     }
 
     /**

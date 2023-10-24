@@ -47,11 +47,21 @@ class ContractUpdateInput extends \Google\Protobuf\Internal\Message
      * The contract address that needs to be updated.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address address = 1;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getAddress()
     {
         return $this->address;
+    }
+
+    public function hasAddress()
+    {
+        return isset($this->address);
+    }
+
+    public function clearAddress()
+    {
+        unset($this->address);
     }
 
     /**
