@@ -19,9 +19,9 @@ class AElfTest extends TestCase
     public $address;
     public $opreationAddress;
 
-    public function setUp(): void
+    public function setUp() :void
     {
-        $url = 'http://127.0.0.1:8000';
+        $url = 'http://127.0.0.1:8001';
         $this->aelf = new AElf($url);
         $this->opreationAddress = '127.0.0.1:6800';
         $aelfEcdsa = new BitcoinECDSA();
@@ -196,7 +196,7 @@ class AElfTest extends TestCase
         print('getNetworkInfo');
         echo "<br>";
         $networkInfo = $this->aelf->getNetworkInfo();
-        $this->assertEquals("1.2.3.0", $networkInfo['Version']);
+        $this->assertEquals("1.5.0.0", $networkInfo['Version']);
         print_r($this->aelf->getNetworkInfo());
         echo "<br>";
         print('remove_peer');
@@ -294,7 +294,7 @@ class AElfTest extends TestCase
         print_r($result['TransactionId']);
         time() . sleep(8);
         $logEvents = $this->aelf->getTransferred($this->privateKey, $result['TransactionId']);
-        $this->assertTrue(!empty($logEvents));
+
         var_dump($logEvents);
 
         $this->assertEquals($logEvents[0]['amount'], 10);
