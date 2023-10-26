@@ -513,9 +513,9 @@ class AElf
 
     public function getCrossChainTransferred($privateKey, $transactionId): array
     {
-        $items = array();
+        $items = [];
         $response = $this->getTransactionResult($transactionId);
-        if ($response == null || empty($response['Logs'])) return $items;
+        if (empty($response) || empty($response['Logs'])) return $items;
 
         $contractNames = new Hash();
         $contractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
@@ -541,9 +541,9 @@ class AElf
 
     public function getCrossChainReceived($privateKey, $transactionId): array
     {
-        $items = array();
+        $items = [];
         $response = $this->getTransactionResult($transactionId);
-        if ($response == null || empty($response['Logs'])) return $items;
+        if (empty($response) || empty($response['Logs'])) return $items;
 
         $contractNames = new Hash();
         $contractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
@@ -560,7 +560,9 @@ class AElf
                     'amount'=> $transferred->getAmount(),
                     'memo'=> $transferred->getMemo(),
                     'issueChainId'=> $transferred->getIssueChainId(),
-                    'toChainId'=> $transferred->getToChainId()
+                    'fromChainId'=> $transferred->getFromChainId(),
+                    'parentChainHeight'=> $transferred->getParentChainHeight(),
+                    'transferTransactionId'=> $transferred->getTransferTransactionId()
                 ];
             }
         }
