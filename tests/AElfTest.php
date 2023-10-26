@@ -196,7 +196,7 @@ class AElfTest extends TestCase
         print('getNetworkInfo');
         echo "<br>";
         $networkInfo = $this->aelf->getNetworkInfo();
-        $this->assertEquals("1.5.0.0", $networkInfo['Version']);
+        $this->assertEquals("1.6.0.0", $networkInfo['Version']);
         print_r($this->aelf->getNetworkInfo());
         echo "<br>";
         print('remove_peer');
