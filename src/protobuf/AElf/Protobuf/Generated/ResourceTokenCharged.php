@@ -88,11 +88,21 @@ class ResourceTokenCharged extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address contract_address = 3;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getContractAddress()
     {
         return $this->contract_address;
+    }
+
+    public function hasContractAddress()
+    {
+        return isset($this->contract_address);
+    }
+
+    public function clearContractAddress()
+    {
+        unset($this->contract_address);
     }
 
     /**

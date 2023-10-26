@@ -1,4 +1,5 @@
 <?php
+
 use AElf\AElf;
 use PHPUnit\Framework\TestCase;
 use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
@@ -195,7 +196,7 @@ class AElfTest extends TestCase
         print('getNetworkInfo');
         echo "<br>";
         $networkInfo = $this->aelf->getNetworkInfo();
-        $this->assertEquals("1.2.3.0", $networkInfo['Version']);
+        $this->assertEquals("1.6.0.0", $networkInfo['Version']);
         print_r($this->aelf->getNetworkInfo());
         echo "<br>";
         print('remove_peer');
@@ -240,7 +241,8 @@ class AElfTest extends TestCase
         $this->assertEquals($nowAddress, $addressVal);
     }
 
-    public function testCalculateTransactionFee(){
+    public function testCalculateTransactionFee()
+    {
         $status = $this->aelf->getChainStatus();
         $params = base64_encode(hex2bin(hash('sha256', 'AElf.ContractNames.Consensus')));
         $param = array('value' => $params);
@@ -261,10 +263,47 @@ class AElfTest extends TestCase
         $result = $this->aelf->calculateTransactionFee($calculateTransactionFeeInputParam);
         print_r($result);
         $this->assertTrue($result['Success']);
-        $this->assertGreaterThan(17000000,$result['TransactionFee']['ELF']);
-        $this->assertLessThan(19000000,$result['TransactionFee']['ELF']);
+        $this->assertGreaterThan(17000000, $result['TransactionFee']['ELF']);
+        $this->assertLessThan(19000000, $result['TransactionFee']['ELF']);
 
     }
+
+    public function testGetTransferLogEvent()
+    {
+        $pairInfo = $this->aelf->generateKeyPairInfo();
+
+        $toAddress = new Address();
+        $toAddressStr = $pairInfo['address'];
+        $toAddress -> setValue(decodeChecked($toAddressStr));
+        $methodName = "Transfer";
+        $param = new TransferInput();
+        $param -> setMemo('transfer');
+        $param -> setTo($toAddress);
+        $param -> setAmount(10);
+        $param -> setSymbol('ELF');
+
+        $contractNames = new Hash();
+        $contractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
+        $tokenContractAddress = $this->aelf->getContractAddressByName($this->privateKey, $contractNames);
+
+        $transaction = $this->buildTransaction($tokenContractAddress, $methodName, $param);
+        $executeTransactionDtoObj = ['RawTransaction' => bin2hex($transaction->serializeToString())];
+        $result = $this->aelf->sendTransaction($executeTransactionDtoObj);
+
+        $this->assertTrue(!empty($result));
+        print_r($result['TransactionId']);
+        time() . sleep(8);
+        $logEvents = $this->aelf->getTransferred($this->privateKey, $result['TransactionId']);
+
+        var_dump($logEvents);
+
+        $this->assertEquals($logEvents[0]['amount'], 10);
+        $this->assertEquals($logEvents[0]['symbol'],'ELF');
+        $this->assertEquals($logEvents[0]['memo'],'transfer');
+        $this->assertEquals($logEvents[0]['to'],$pairInfo['address']);
+
+    }
+
 
     private function buildTransaction($toaddress, $methodName, $params)
     {

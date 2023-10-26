@@ -3,10 +3,14 @@
 namespace AElf\Api;
 
 use AElf\Bytes\Bytes;
+use AElf\Protobuf\Generated\CrossChainTransferInput;
+use AElf\Protobuf\Generated\Hash;
+use AElf\Protobuf\Generated\Transaction;
 use StephenHill\Base58;
 use Hhxsv5\PhpMultiCurl\Curl as Curl;
+use function Sodium\add;
 
-Class BlockChainSdk
+class BlockChainSdk
 {
     private $curl;
     private $base58;
@@ -362,6 +366,8 @@ Class BlockChainSdk
             return json_decode($response->getBody(), JSON_UNESCAPED_UNICODE);
         }
     }
+
+
 
 
     private function createBlockDto($block, $includeTransactions)

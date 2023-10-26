@@ -233,11 +233,21 @@ class TokenInfo extends \Google\Protobuf\Internal\Message
      * The address that created the token.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address issuer = 6;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getIssuer()
     {
         return $this->issuer;
+    }
+
+    public function hasIssuer()
+    {
+        return isset($this->issuer);
+    }
+
+    public function clearIssuer()
+    {
+        unset($this->issuer);
     }
 
     /**

@@ -4,6 +4,9 @@ namespace AElf;
 
 use AElf\Api\NetSdk;
 use AElf\Bytes\Bytes;
+use AElf\Protobuf\Generated\CrossChainReceived;
+use AElf\Protobuf\Generated\CrossChainTransferred;
+use AElf\Protobuf\Generated\Transferred;
 use GPBMetadata\Types;
 use StephenHill\Base58;
 use kornrunner\Secp256k1;
@@ -434,20 +437,20 @@ class AElf
                 if ($log['Name'] == 'TransactionFeeCharged') {
                     $transactionFee = new TransactionFeeCharged();
                     $transactionFee->mergeFromString(base64_decode($log['NonIndexed']));
-                    array_push($transactionFees, [
+                    $transactionFees[] = [
                         'name' => 'transaction_fee_charged',
                         'symbol' => $transactionFee->getSymbol(),
                         'amount' => $transactionFee->getAmount(),
-                    ]);
+                    ];
                 }
                 if ($log['Name'] == 'ResourceTokenCharged') {
                     $resourceTokenFee = new ResourceTokenCharged();
                     $resourceTokenFee->mergeFromString(base64_decode($log['NonIndexed']));
-                    array_push($transactionFees, [
+                    $transactionFees[] = [
                         'name' => 'resource_token_charged',
                         'symbol' => $resourceTokenFee->getSymbol(),
                         'amount' => $resourceTokenFee->getAmount(),
-                    ]);
+                    ];
                 }
             }
         }
@@ -463,4 +466,108 @@ class AElf
     {
         return $this->getBlockChainSdkObj()->calculateTransactionFee($input);
     }
+
+
+    /**
+     * @param $privateKey
+     * @param $transactionId
+     * @return array
+     */
+    public function getTransferred($privateKey, $transactionId): array
+    {
+        $items = [];
+        $response = $this->getTransactionResult($transactionId);
+        if (empty($response) || empty($response['Logs'])) return $items;
+        $contractNames = new Hash();
+        $contractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
+        $toAddress = $this->getContractAddressByName($privateKey, $contractNames);
+        foreach ($response['Logs'] as $log) {
+            if ($log['Name'] == 'Transferred' && $log['Address'] == $toAddress) {
+                $transferred = new Transferred();
+                $transferred->mergeFromString(base64_decode($log['NonIndexed']));
+
+                $tmpTransferred = new Transferred();
+                $tmpTransferred->mergeFromString(base64_decode($log['Indexed'][0]));
+                $transferred->setFrom($tmpTransferred->getFrom());
+
+                $tmpTransferred1 = new Transferred();
+                $tmpTransferred1->mergeFromString(base64_decode($log['Indexed'][1]));
+                $transferred->setTo($tmpTransferred1->getTo());
+
+                $tmpTransferred2 = new Transferred();
+
+                $tmpTransferred2->mergeFromString(base64_decode($log['Indexed'][2]));
+                $transferred->setSymbol($tmpTransferred2->getSymbol());
+                $items[] = [
+                    'from' => encodeChecked($transferred->getFrom()->getValue()),
+                    'to'  => encodeChecked($transferred->getTo()->getValue()),
+                    'symbol' => $transferred->getSymbol(),
+                    'amount' => $transferred->getAmount(),
+                    'memo' => $transferred->getMemo()
+                ];
+            }
+        }
+        return $items;
+    }
+
+
+    public function getCrossChainTransferred($privateKey, $transactionId): array
+    {
+        $items = [];
+        $response = $this->getTransactionResult($transactionId);
+        if (empty($response) || empty($response['Logs'])) return $items;
+
+        $contractNames = new Hash();
+        $contractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
+        $toAddress = $this->getContractAddressByName($privateKey, $contractNames);
+
+        foreach ($response['Logs'] as $log) {
+            if ($log['Name'] == 'CrossChainTransferred' && $log['Address'] == $toAddress) {
+                $transferred = new CrossChainTransferred();
+                $transferred -> mergeFromString(base64_decode($log['NonIndexed']));
+                $items = [
+                    'from' => encodeChecked($transferred->getFrom()->getValue()),
+                    'to' => encodeChecked($transferred->getTo()->getValue()),
+                    'symbol'=> $transferred->getSymbol(),
+                    'amount'=> $transferred->getAmount(),
+                    'memo'=> $transferred->getMemo(),
+                    'issueChainId'=> $transferred->getIssueChainId(),
+                    'toChainId'=> $transferred->getToChainId()
+                ];
+            }
+        }
+        return $items;
+    }
+
+    public function getCrossChainReceived($privateKey, $transactionId): array
+    {
+        $items = [];
+        $response = $this->getTransactionResult($transactionId);
+        if (empty($response) || empty($response['Logs'])) return $items;
+
+        $contractNames = new Hash();
+        $contractNames->setValue(hex2bin(sha256('AElf.ContractNames.Token')));
+        $toAddress = $this->getContractAddressByName($privateKey, $contractNames);
+
+        foreach ($response['Logs'] as $log) {
+            if ($log['Name'] == 'CrossChainReceived' && $log['Address'] == $toAddress) {
+                $transferred = new CrossChainReceived();
+                $transferred -> mergeFromString(base64_decode($log['NonIndexed']));
+                $items = [
+                    'from' => encodeChecked($transferred->getFrom()->getValue()),
+                    'to' => encodeChecked($transferred->getTo()->getValue()),
+                    'symbol'=> $transferred->getSymbol(),
+                    'amount'=> $transferred->getAmount(),
+                    'memo'=> $transferred->getMemo(),
+                    'issueChainId'=> $transferred->getIssueChainId(),
+                    'fromChainId'=> $transferred->getFromChainId(),
+                    'parentChainHeight'=> $transferred->getParentChainHeight(),
+                    'transferTransactionId'=> $transferred->getTransferTransactionId()
+                ];
+            }
+        }
+        return $items;
+    }
+
+
 }

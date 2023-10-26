@@ -24,7 +24,7 @@ class MerklePath extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type \AElf\Protobuf\Generated\MerklePathNode[]|\Google\Protobuf\Internal\RepeatedField $merkle_path_nodes
+     *     @type array<\AElf\Protobuf\Generated\MerklePathNode>|\Google\Protobuf\Internal\RepeatedField $merkle_path_nodes
      * }
      */
     public function __construct($data = NULL) {
@@ -43,7 +43,7 @@ class MerklePath extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>repeated .AElf.protobuf.generated.MerklePathNode merkle_path_nodes = 1;</code>
-     * @param \AElf\Protobuf\Generated\MerklePathNode[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<\AElf\Protobuf\Generated\MerklePathNode>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setMerklePathNodes($var)

@@ -64,11 +64,21 @@ class Transaction extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address from_address = 1;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getFromAddress()
     {
         return $this->from_address;
+    }
+
+    public function hasFromAddress()
+    {
+        return isset($this->from_address);
+    }
+
+    public function clearFromAddress()
+    {
+        unset($this->from_address);
     }
 
     /**
@@ -86,11 +96,21 @@ class Transaction extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address to_address = 2;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getToAddress()
     {
         return $this->to_address;
+    }
+
+    public function hasToAddress()
+    {
+        return isset($this->to_address);
+    }
+
+    public function clearToAddress()
+    {
+        unset($this->to_address);
     }
 
     /**

@@ -127,11 +127,21 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
      * The address of voter.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Address voter = 1;</code>
-     * @return \AElf\Protobuf\Generated\Address
+     * @return \AElf\Protobuf\Generated\Address|null
      */
     public function getVoter()
     {
         return $this->voter;
+    }
+
+    public function hasVoter()
+    {
+        return isset($this->voter);
+    }
+
+    public function clearVoter()
+    {
+        unset($this->voter);
     }
 
     /**
@@ -231,11 +241,21 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
      * The vote id.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.Hash vote_id = 5;</code>
-     * @return \AElf\Protobuf\Generated\Hash
+     * @return \AElf\Protobuf\Generated\Hash|null
      */
     public function getVoteId()
     {
         return $this->vote_id;
+    }
+
+    public function hasVoteId()
+    {
+        return isset($this->vote_id);
+    }
+
+    public function clearVoteId()
+    {
+        unset($this->vote_id);
     }
 
     /**
@@ -283,11 +303,21 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
      * The unlock timestamp.
      *
      * Generated from protobuf field <code>.google.protobuf.Timestamp unlock_timestamp = 7;</code>
-     * @return \Google\Protobuf\Timestamp
+     * @return \Google\Protobuf\Timestamp|null
      */
     public function getUnlockTimestamp()
     {
         return $this->unlock_timestamp;
+    }
+
+    public function hasUnlockTimestamp()
+    {
+        return isset($this->unlock_timestamp);
+    }
+
+    public function clearUnlockTimestamp()
+    {
+        unset($this->unlock_timestamp);
     }
 
     /**
@@ -309,11 +339,21 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
      * The withdraw timestamp.
      *
      * Generated from protobuf field <code>.google.protobuf.Timestamp withdraw_timestamp = 8;</code>
-     * @return \Google\Protobuf\Timestamp
+     * @return \Google\Protobuf\Timestamp|null
      */
     public function getWithdrawTimestamp()
     {
         return $this->withdraw_timestamp;
+    }
+
+    public function hasWithdrawTimestamp()
+    {
+        return isset($this->withdraw_timestamp);
+    }
+
+    public function clearWithdrawTimestamp()
+    {
+        unset($this->withdraw_timestamp);
     }
 
     /**
@@ -335,11 +375,21 @@ class ElectionVotingRecord extends \Google\Protobuf\Internal\Message
      * The vote timestamp.
      *
      * Generated from protobuf field <code>.google.protobuf.Timestamp vote_timestamp = 9;</code>
-     * @return \Google\Protobuf\Timestamp
+     * @return \Google\Protobuf\Timestamp|null
      */
     public function getVoteTimestamp()
     {
         return $this->vote_timestamp;
+    }
+
+    public function hasVoteTimestamp()
+    {
+        return isset($this->vote_timestamp);
+    }
+
+    public function clearVoteTimestamp()
+    {
+        unset($this->vote_timestamp);
     }
 
     /**

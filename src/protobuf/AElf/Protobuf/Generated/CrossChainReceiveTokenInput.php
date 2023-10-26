@@ -141,11 +141,21 @@ class CrossChainReceiveTokenInput extends \Google\Protobuf\Internal\Message
      * The merkle path created from the transfer transaction.
      *
      * Generated from protobuf field <code>.AElf.protobuf.generated.MerklePath merkle_path = 4;</code>
-     * @return \AElf\Protobuf\Generated\MerklePath
+     * @return \AElf\Protobuf\Generated\MerklePath|null
      */
     public function getMerklePath()
     {
         return $this->merkle_path;
+    }
+
+    public function hasMerklePath()
+    {
+        return isset($this->merkle_path);
+    }
+
+    public function clearMerklePath()
+    {
+        unset($this->merkle_path);
     }
 
     /**
